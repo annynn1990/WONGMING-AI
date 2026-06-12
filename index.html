@@ -3,14 +3,24 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>黃名帝國虛擬人AI</title>
+<title>黃名帝國虛擬人</title>
 <meta name="description" content="網頁右下角的語音 AI 虛擬人助理 — 自建 Demo（Live2D + 瀏覽器語音 + 本機 LLM）" />
 <style>
-  /* 移除所有預設背景與外距，確保內嵌時完全透明且不干擾其他網頁 */
+  /* 1. 讓整個網頁底色透明，並完全「穿透」點擊，不阻擋底層網站 */
   html, body {
     margin: 0;
     padding: 0;
     background: transparent !important;
+    pointer-events: none !important;
+    overflow: hidden; /* 隱藏滾動條 */
+    width: 100%;
+    height: 100%;
+  }
+
+  /* 2. 透過強制疊加規則，把 embed.js 產生出來的虛擬人元件重新開啟點擊功能 */
+  /* 這裡設定常見的可能外層標籤（如 canvas、iframe、或帶有 widget/live2d 字眼的容器）*/
+  body * {
+    pointer-events: auto !important;
   }
 </style>
 </head>
