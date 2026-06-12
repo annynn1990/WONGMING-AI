@@ -1,0 +1,21 @@
+# dependencies (install from package.json / package-lock.json instead)
+node_modules/
+
+# vercel
+.vercel
+
+# secrets / env — never commit
+.env
+.env.*
+*.local
+
+# logs & os junk
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# scratch / generated audio
+*.mp3
+_test_*.js
+_debug_*.js

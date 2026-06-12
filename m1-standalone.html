@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI 虛擬人 · M1 佔位模型</title>
+<style>
+  /* ===== M1：純前端、零安裝。雙擊這個檔案就會在右下角看到會動的虛擬人 ===== */
+  html, body { margin: 0; height: 100%; background: #f4f6f8; font-family: "Noto Sans TC", system-ui, sans-serif; }
+
+  /* 假裝這是一個「網站內容」，用來感受虛擬人疊在頁面上的樣子 */
+  .fake-page { padding: 40px 48px; color: #334; max-width: 760px; }
+  .fake-page h1 { font-size: 26px; color: #1f3a5f; }
+  .fake-page p  { line-height: 1.9; color: #5a6b7b; }
+
+  /* 右下角的虛擬人容器（之後 M2 會變成可嵌入任何網站的 iframe widget） */
+  #avatar-widget {
+    position: fixed; right: 16px; bottom: 16px;
+    width: 320px; height: 460px;
+    z-index: 9999;
+    pointer-events: none;           /* 容器本身不擋點擊，只有人物可被點 */
+  }
+  #avatar-canvas { width: 100%; height: 100%; display: block; pointer-events: auto; }
+
+  /* 模仿常見網站右下角的底部控制列（M1 只是外觀） */
+  #control-bar {
+    position: absolute; left: 0; bottom: 0;
+    display: flex; gap: 6px; align-items: center;
+    padding: 6px 8px;
+  }
+  .ctrl {
+    background: #2f5d54; color: #fff; border: none; border-radius: 6px;
+    font-size: 13px; padding: 6px 10px; cursor: pointer; pointer-events: auto;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .ctrl:hover { background: #3a7166; }
+
+  #status {
+    position: fixed; left: 16px; bottom: 16px;
+    background: rgba(0,0,0,.72); color: #fff; font-size: 12px;
+    padding: 6px 10px; border-radius: 6px; z-index: 10000; max-width: 60vw;
+  }
+</style>
+</head>
+<body>
+  <!-- 模擬的網站內容（無意義佔位，只為了看疊加效果） -->
+  <div class="fake-page">
+    <h1>示範網站（佔位內容）</h1>
+    <p>這一頁本身沒有意義，純粹用來感受「右下角虛擬人」疊在真實網頁上的樣子。</p>
+    <p>右下角那位是 <b>佔位模型（Live2D 官方免費 Haru）</b>。她會自己呼吸、眨眼、待機微動；
+       用滑鼠點她身體會做出反應動作。等技術鏈路都通了，再把她換成我們的全新動漫角色。</p>
+  </div>
+
+  <!-- 虛擬人 widget -->
+  <div id="avatar-widget">
+    <canvas id="avatar-canvas"></canvas>
+    <div id="control-bar">
+      <button class="ctrl" id="btn-speak" title="語音（M3 接 Azure）">🔊</button>
+      <button class="ctrl" id="btn-speed" title="語速（M3）">速度</button>
+      <button class="ctrl" id="btn-close" title="關閉">✕</button>
+    </div>
+  </div>
+
+  <div id="status">載入中…</div>
+
+  <!-- 1) Live2D Cubism 核心執行檔（必須最先載入） -->
+  <script src="https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js"></script>
+  <!-- 2) PixiJS v6（WebGL 繪圖引擎） -->
+  <script src="https://cdn.jsdelivr.net/npm/pixi.js@6.5.10/dist/browser/pixi.min.js"></script>
+  <!-- 3) pixi-live2d-display（把 Live2D 模型畫到 Pixi 上，含對嘴/眨眼支援） -->
+  <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0/dist/cubism4.min.js"></script>
+
+  <script>
+  const statusEl = document.getElementById('status');
+  const setStatus = (t, ok) => { statusEl.textContent = t; statusEl.style.background = ok ? 'rgba(20,120,60,.85)' : 'rgba(0,0,0,.72)'; };
+
+  // 免費佔位模型（Live2D 官方範例 Haru，可合法用於開發）
+  const MODEL_URL = 'https://cdn.jsdelivr.net/gh/guansss/pixi-live2d-display/test/assets/haru/haru_greeter_t03.model3.json';
+
+  (async () => {
+    try {
+      if (!window.Live2DCubismCore) throw new Error('Cubism Core 沒載到');
+      if (!window.PIXI || !PIXI.live2d) throw new Error('Pixi / live2d 外掛沒載到');
+
+      const Live2DModel = PIXI.live2d.Live2DModel;
+      // 讓模型的待機動作/呼吸/眨眼會自動更新
+      try { Live2DModel.registerTicker(PIXI.Ticker); } catch (e) {}
+
+      const canvas = document.getElementById('avatar-canvas');
+      const app = new PIXI.Application({
+        view: canvas,
+        autoStart: true,
+        backgroundAlpha: 0,           // 透明背景，疊在網頁上
+        resizeTo: document.getElementById('avatar-widget'),
+        antialias: true,
+      });
+
+      setStatus('正在載入虛擬人模型…');
+      const model = await Live2DModel.from(MODEL_URL);
+      app.stage.addChild(model);
+
+      // 以「水平置中、底部對齊」擺進角落
+      model.anchor.set(0.5, 1.0);
+
+      function fit() {
+        const w = app.renderer.width, h = app.renderer.height;
+        const nativeH = (model.internalModel && model.internalModel.height) || model.height || 1000;
+        const scale = (h / nativeH) * 0.96;
+        model.scale.set(scale);
+        model.x = w / 2;
+        model.y = h;                  // 貼著底邊
+      }
+      fit();
+      window.addEventListener('resize', fit);
+
+      // 點身體 → 播放「Tap」反應動作
+      model.on('hit', (areas) => {
+        model.motion('Tap');
+      });
+      // 沒有 hit 區也讓整體可點
+      canvas.addEventListener('pointerdown', () => model.motion('Tap'));
+
+      setStatus('✅ M1 完成：佔位模型已載入，會呼吸/眨眼，點她會反應', true);
+    } catch (err) {
+      console.error(err);
+      setStatus('❌ 載入失敗：' + err.message, false);
+    }
+  })();
+
+  // 控制列：M1 先做關閉，語音/速度等 M3 接 Azure 再實作
+  document.getElementById('btn-close').onclick = () =>
+    document.getElementById('avatar-widget').style.display = 'none';
+  document.getElementById('btn-speak').onclick = () => alert('語音功能在 M3（接 Azure 語音）會實作');
+  document.getElementById('btn-speed').onclick = () => alert('語速調整在 M3 會實作');
+  </script>
+</body>
+</html>

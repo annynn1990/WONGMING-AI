@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>客戶網站（示範）— 一行嵌入 AI 虛擬人</title>
+<style>
+  body { margin: 0; font-family: "Noto Sans TC", system-ui, sans-serif; color: #2a3b4c; }
+  header { background: linear-gradient(120deg,#1f3a5f,#2f6d8f); color: #fff; padding: 40px 48px; }
+  header h1 { margin: 0 0 6px; font-size: 28px; }
+  header p  { margin: 0; opacity: .85; }
+  main { padding: 36px 48px; max-width: 820px; line-height: 1.9; }
+  main h2 { color: #1f3a5f; }
+  .card { background: #f4f7fa; border-radius: 12px; padding: 18px 22px; margin: 16px 0; }
+  code { background: #eef2f6; padding: 2px 6px; border-radius: 4px; }
+  button.demo { background:#5b54e8; color:#fff; border:0; border-radius:8px; padding:10px 16px; cursor:pointer; font-size:15px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>示範客戶網站</h1>
+    <p>這是一個跟我們無關的「別人的網站」，用來證明虛擬人可以一行嵌進去。</p>
+  </header>
+  <main>
+    <h2>嵌入方式</h2>
+    <p>網站主只要在頁尾貼這一行，右下角就會出現會動、（之後）會講話的 AI 虛擬人：</p>
+    <div class="card"><code>&lt;script src="embed.js" data-widget="widget.html"&gt;&lt;/script&gt;</code></div>
+
+    <h2>測試對外 API</h2>
+    <p>別的程式也能叫她說話（會真的開口、對嘴）：</p>
+    <p>
+      <button class="demo" onclick="AvatarWidget.say('哈囉！我是這個網站的 AI 助理，有什麼想問的嗎？')">叫她說話</button>
+      <button class="demo" onclick="AvatarWidget.close()">收起</button>
+      <button class="demo" onclick="AvatarWidget.open()">展開</button>
+    </p>
+
+    <h2>佔位內容</h2>
+    <p>下面是一些假文字，純粹讓頁面有內容、好觀察虛擬人疊在真實網頁上的樣子。本網站的版型、配色都跟虛擬人無關——重點是它能獨立掛載、不干擾原本的頁面結構。</p>
+    <p>滑到任何位置，右下角的虛擬人都會固定跟著。按虛擬人下方的 ✕ 會收合成小泡泡，點泡泡再展開。</p>
+  </main>
+
+  <!-- ★ 這就是「一行嵌入」 ★ -->
+  <script src="embed.js" data-widget="widget.html"></script>
+</body>
+</html>

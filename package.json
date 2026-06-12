@@ -1,0 +1,10 @@
+{
+  "name": "ai-avatar-bot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Web 右下角 Live2D 語音 AI 虛擬人 demo",
+  "dependencies": {
+    "msedge-tts": "^2.0.5",
+    "ws": "^8.18.0"
+  }
+}
