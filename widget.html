@@ -321,7 +321,7 @@
     let best = null, bestScore = 0;
     for (const e of (window.KB || [])) { const s = scoreEntry(q, e); if (s > bestScore) { bestScore = s; best = e; } }
     if (best && bestScore >= 0.16) return best.a;
-    return '你問的是「' + q + '」對吧？這個問題我目前還沒有辦法回答～你可以問我「黃名帝國的事情」「如何成為國家公民」「帶我導覽國家」「麥克風怎麼用」這些喔。';
+    return '你問的是「' + q + '」對吧？這個問題我目前還沒有辦法回答～你可以問我「黃名帝國的事情」「如何成為公民」「帶我導覽國家」「麥克風怎麼用」這些喔。';
   }
   // 有啟用 WebLLM 時，用「檢索到的資料 + LLM」生成更自然的回答；否則退回檢索式
   async function answer(q) {
