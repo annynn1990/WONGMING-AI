@@ -29,7 +29,7 @@
   })();
   var base = me ? me.src.replace(/[^/]*$/, '') : '';
   var widgetUrl = (me && me.getAttribute('data-widget')) || (base + 'widget.html');
-  var startOpen = (me && me.getAttribute('data-open') !== 'false'); // 預設一進來就展開
+  var startOpen = (me && me.getAttribute('data-open') !== 'true'); // 預設一進來就展開
   var widgetOrigin = (function () { try { return new URL(widgetUrl, location.href).origin; } catch (e) { return '*'; } })();
 
   // 把可設定項帶進 widget：皮=model / 肉的語音後端=api / 內容=knowledge / 聲線=voice
