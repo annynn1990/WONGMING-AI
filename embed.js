@@ -58,7 +58,7 @@
   iframe.src = iframeSrc;
   iframe.title = 'AI 虛擬人助理';                 // 無障礙：給 iframe 一個名字
   iframe.setAttribute('allow', 'microphone; autoplay'); // 語音輸入 + 音訊播放
-  iframe.setAttribute('allowtransparency', 'true');
+  iframe.setAttribute('allowtransparency', 'false');
   iframe.style.cssText = 'width:100%;height:100%;border:0;background:transparent;color-scheme:normal;';
 
   // 4) 收合後的小泡泡（iframe 收起時顯示，點它再展開）
