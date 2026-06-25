@@ -57,6 +57,24 @@ vercel --prod          # 本機開發：vercel dev
 ```
 沒設 `data-api` 時 widget 會自動試同站的 `api/tts`，抓不到就退回瀏覽器語音。
 
+## 🎭 換成你自己的 3D 角色（VRM）
+
+這個元件**不夾帶任何 3D 角色**（避開授權與檔案大小問題）——3D 皮是「你自己的」。三種導入方式：
+
+**① 拖放試玩（最快，零改 code）**
+直接把你的 `.vrm` 檔**拖到角色身上**，立刻換成你的 3D 角色，還會自動長出 2D/3D 切換鈕。適合快速試。
+
+**② 網址／embed 永久換**
+- 嵌到你網站：`<script src="embed.js" data-vrm="你的.vrm"></script>`（再加 `data-model` 給 2D 就會有 2D/3D 切換鈕）
+- 本機試：`widget.html?dev=1&engine=3d&vrm=你的.vrm`
+
+**③ 哪裡拿 VRM？**
+- **[VRoid Studio](https://vroid.com/studio)**（免費）→ 自己捏一個動漫角色、匯出 `.vrm`
+- **[VRoid Hub](https://hub.vroid.com)** / **[Booth](https://booth.pm)** → 別人做好的模型
+
+> ⚠ **授權**：每個 `.vrm` 內嵌作者設定的使用條款（可否商用／修改）——商用前務必確認；自己用 VRoid Studio 捏的最單純。
+> 📦 **檔案大小**：VRM 通常 10–30MB，**別塞進 git**；放 CDN／GitHub Release／自己的網站，用 `data-vrm` 指過去。
+
 ## 🌐 瀏覽器需求
 
 - **Chrome / Chromium 桌機**（語音辨識 `webkitSpeechRecognition` 僅 Chromium 支援）
@@ -67,7 +85,9 @@ vercel --prod          # 本機開發：vercel dev
 
 | 屬性 | 作用 | 預設 |
 |---|---|---|
-| `data-model` | **皮**：Live2D `.model3.json` 網址 | 內建 Haru 範例 |
+| `data-model` | **皮（2D）**：Live2D `.model3.json` 網址 | 內建 Haru 範例 |
+| `data-vrm` | **皮（3D）**：VRM `.vrm` 網址；設了就改走 3D（three-vrm）引擎，可拖放／換成自製 VRoid 角色 | 無（不設＝走 2D Live2D） |
+| `data-engine` | 預設引擎 `2d`／`3d`；**同時給 `data-model` ＋ `data-vrm` 時，widget 會長出 2D/3D 即時切換鈕** | 有 2D 皮→`2d`，否則 `3d` |
 | `data-knowledge` | **內容**：知識庫 JSON 網址（陣列 `[{q,kw,a}]`） | 內建 `knowledge.js` |
 | `data-api` | **肉**：神經語音後端端點；不設＝純瀏覽器語音 | 試同站 `api/tts` |
 | `data-voice` | 神經語音聲線（需後端支援） | `zh-TW-HsiaoChenNeural` |
