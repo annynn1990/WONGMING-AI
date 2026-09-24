@@ -33,6 +33,8 @@
   try { savedOpen = localStorage.getItem('wm_ai_open'); } catch (e) {}
   var attrOpen = me ? me.getAttribute('data-open') : null;
   var startOpen = savedOpen === '1' ? true : (savedOpen === '0' ? false : attrOpen !== 'false'); // 預設展開，可跨頁保留狀態
+  var widgetOpen = startOpen;
+  var widgetReady = false;
   var widgetOrigin = (function () { try { return new URL(widgetUrl, location.href).origin; } catch (e) { return '*'; } })();
 
   // 把可設定項帶進 widget：皮=model / 肉的語音後端=api / 內容=knowledge / 聲線=voice
@@ -84,6 +86,7 @@
 
   // 5) 展開 / 收合
   function setOpen(open) {
+    widgetOpen = !!open;
     try { localStorage.setItem('wm_ai_open', open ? '1' : '0'); } catch (e) {}
     if (open) {
       root.style.width = EXPANDED.w + 'px';
@@ -97,7 +100,7 @@
       bubble.style.display = 'flex';
     }
   }
-  bubble.onclick = function () { setOpen(true); };
+  bubble.onclick = function () { setOpen(true); if (widgetReady && iframe.contentWindow) iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'host-context', context: pageContext() }, widgetOrigin); };
   setOpen(startOpen);
 
   // 6) 接收 iframe 的訊息（驗證來源 origin）
@@ -153,7 +156,8 @@
       path: location.pathname + location.search,
       area: detectForumArea(),
       fid: getForumFid(),
-      greeting: getForumGreeting()
+      greeting: getForumGreeting(),
+      isOpen: widgetOpen
     };
   }
   function sendPageContent() {
@@ -198,6 +202,7 @@
     if (d.ns !== NS_IN) return;
     if (d.type === 'close') setOpen(false);
     if (d.type === 'ready') {
+      widgetReady = true;
       iframe.contentWindow && iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'host-context', context: pageContext() }, widgetOrigin);
       setTimeout(sendPageContent, 300);
       try {
