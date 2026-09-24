@@ -116,7 +116,8 @@
     foreign_affairs: WM_FORUM_BASE + 'forum.php?fid=129&mod=forumdisplay',
     laws: WM_FORUM_BASE + 'forum.php?fid=45&mod=forumdisplay',
     structure: WM_FORUM_BASE + 'forum.php?extra=page%3D1&mod=viewthread&tid=22468',
-    intro: WM_FORUM_BASE + 'forum.php?mod=viewthread&tid=23066'
+    intro: WM_FORUM_BASE + 'forum.php?mod=viewthread&tid=23066',
+    register: WM_FORUM_BASE + 'member.php?mod=welcomewongmingempire'
   };
   var WM_FORUM_GREETINGS = {
     '58': '現在我們在韻賢角，這是一個充滿音樂的城市角落！不妨看看這裡最近有哪些音樂、活動與有趣的討論。',
