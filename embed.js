@@ -28,7 +28,7 @@
     return null;
   })();
   var base = me ? me.src.replace(/[^/]*$/, '') : '';
-  var widgetUrl = (me && me.getAttribute('data-widget')) || (base + 'widget.html');
+  var widgetUrl = (me && me.getAttribute('data-widget')) || (base + 'widget.html?v=20260924');
   var startOpen = (me && me.getAttribute('data-open') !== 'true'); // 預設一進來就展開
   var widgetOrigin = (function () { try { return new URL(widgetUrl, location.href).origin; } catch (e) { return '*'; } })();
 
