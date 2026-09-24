@@ -417,51 +417,9 @@
     return '你問的是「' + q + '」對吧？這個我目前沒辦法回答喔！';
   }
   // 有啟用 WebLLM 時，用「檢索到的資料 + LLM」生成更自然的回答；否則退回檢索式
-  async function askLegalCenter(q) {
-    try {
-      showBubble('我正在查閱法律資源中心的法規與相關討論…');
-      if (gesture3D) gesture3D('thinking');
-      const r = await fetch('/api/legal', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({query:q})
-      });
-      if (!r.ok) {
-        let detail = '';
-        try { const er = await r.json(); detail = er.error || ''; } catch (_) {}
-        throw new Error('legal http ' + r.status + (detail ? ': ' + detail : ''));
-      }
-      const j=await r.json();
-      if (j.answer) return j.answer;
-      throw new Error('legal api returned no answer');
-    } catch(e) {
-      console.warn('Legal center error',e);
-      const msg = String(e && e.message || e);
-      if (/503/.test(msg) && /GROQ_API_KEY/.test(msg)) {
-        showBubble('法律 AI 尚未連上：請在 Vercel 設定 GROQ_API_KEY。');
-      } else if (/404/.test(msg)) {
-        showBubble('法律 AI API 尚未部署成功，請稍後再測或檢查 Vercel 部署。');
-      } else {
-        showBubble('法律資料查詢失敗：' + msg.slice(0, 120));
-      }
-    }
-    return null;
-  }
-  function isLegalContext() {
-    return /[?&]fid=45(?:&|$)/.test(location.href) || String(hostContext.area||'') === '法律';
-  }
-  function isLegalQuestion(q) {
-    return /法律|法規|法條|條例|憲法|皇室典範|內閣法|國會法|刑事|民事|債務|破產|人權|選舉|政黨|國民身份|土地|誹謗|司法|法院|公職|薪俸|牌照|註冊|宣誓|國旗|國徽|國歌/.test(String(q||''));
-  }
-
   async function answer(q) {
     q = (q || '').trim();
     if (!q) return '我好像沒聽清楚，可以再說一次嗎？';
-    // 法律資源中心：在法律板塊直接使用專用法規檢索；其他頁面遇到明確法律問題也可查詢。
-    if (isLegalContext() || isLegalQuestion(q)) {
-      const legal = await askLegalCenter(q);
-      if (legal) return legal;
-    }
     // 1) 本機 Ollama 大腦（最聰明，優先）
     if (window.OLLAMA && window.OLLAMA.enabled && window.OLLAMA.ready) {
       try {
