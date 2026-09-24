@@ -131,19 +131,49 @@
     '129': '現在我們在外交相關區域，這裡可以看看帝國與友邦之間的交流與外交資訊。'
   };
   function getForumFid() {
-    var m = (location.search || '').match(/[?&]fid=(\d+)/i);
-    return m ? m[1] : '';
+    var search = location.search || '';
+    var m = search.match(/[?&]fid=(\d+)/i);
+    if (m) {
+      try { sessionStorage.setItem('wm_current_forum_fid', m[1]); } catch (e) {}
+      return m[1];
+    }
+    var p = location.pathname + search;
+    if (/forum\.php$/i.test(location.pathname) && /(?:^|[?&])mod=viewthread(?:&|$)/i.test(search)) {
+      try {
+        return sessionStorage.getItem('wm_current_forum_fid') || '';
+      } catch (e) {}
+    }
+    if (/bbswm\/?$/.test(p)) {
+      try { sessionStorage.removeItem('wm_current_forum_fid'); } catch (e) {}
+    }
+    return '';
   }
   function detectForumArea() {
-    var p = location.pathname + location.search;
-    if (/fid=88/.test(p)) return '皇宮';
-    if (/fid=92/.test(p)) return '內閣';
-    if (/fid=90/.test(p)) return '國會';
-    if (/fid=45/.test(p)) return '法律';
-    if (/fid=129/.test(p)) return '外交';
-    if (/fid=58/.test(p)) return '韻賢角';
-    if (/bbswm\/?$/.test(p)) return '論壇首頁';
+    var fid = getForumFid();
+    if (fid === '88') return '皇宮';
+    if (fid === '92') return '內閣';
+    if (fid === '90') return '國會';
+    if (fid === '45') return '法律';
+    if (fid === '129') return '外交';
+    if (fid === '58') return '韻賢角';
+    if (/bbswm\/?$/.test(location.pathname + location.search)) return '論壇首頁';
     return '';
+  }
+  function getForumAreaState(fid, area) {
+    var key = String(fid || area || '').trim();
+    if (!key) return { key: '', pending: false };
+    try {
+      var current = sessionStorage.getItem('wm_current_forum_area') || '';
+      var pending = sessionStorage.getItem('wm_pending_forum_greeting') === '1';
+      if (current !== key) {
+        sessionStorage.setItem('wm_current_forum_area', key);
+        sessionStorage.setItem('wm_pending_forum_greeting', '1');
+        pending = true;
+      }
+      return { key: key, pending: pending };
+    } catch (e) {
+      return { key: key, pending: true };
+    }
   }
   function getForumGreeting() {
     var fid = getForumFid();
@@ -154,14 +184,22 @@
     return '現在我們就在這個版面。你可以先看看這裡的內容，想知道這裡是做什麼的就直接問我吧。';
   }
   function pageContext() {
+    var fid = getForumFid();
+    var area = detectForumArea();
+    var areaState = getForumAreaState(fid, area);
+    var shouldGreet = !!(widgetOpen && areaState.pending);
+    if (shouldGreet) {
+      try { sessionStorage.removeItem('wm_pending_forum_greeting'); } catch (e) {}
+    }
     return {
       url: location.href,
       title: document.title || '',
       path: location.pathname + location.search,
-      area: detectForumArea(),
-      fid: getForumFid(),
+      area: area,
+      fid: fid,
       greeting: getForumGreeting(),
-      isOpen: widgetOpen
+      isOpen: widgetOpen,
+      shouldGreet: shouldGreet
     };
   }
   function sendPageContent() {
@@ -209,13 +247,19 @@
       widgetReady = true;
       var blockedGreeting = WM_BLOCKED_FORUMS[getForumFid()];
       if (blockedGreeting) {
-        iframe.contentWindow && iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'say', text: blockedGreeting }, widgetOrigin);
-        iframe.style.pointerEvents = 'none';
-        setTimeout(function () {
+        if (widgetOpen) {
+          iframe.contentWindow && iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'say', text: blockedGreeting }, widgetOrigin);
+          iframe.style.pointerEvents = 'none';
+          setTimeout(function () {
+            try { root.remove(); } catch (e) {
+              try { root.style.display = 'none'; } catch (e2) {}
+            }
+          }, 3750);
+        } else {
           try { root.remove(); } catch (e) {
             try { root.style.display = 'none'; } catch (e2) {}
           }
-        }, 3600);
+        }
         return;
       }
       iframe.contentWindow && iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'host-context', context: pageContext() }, widgetOrigin);
