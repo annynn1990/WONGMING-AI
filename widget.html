@@ -190,7 +190,8 @@
   let hostContext = { url: '', title: '', path: '', area: '', fid: '', greeting: '' };
   let hostPageText = '';
   let conversationHistory = [];
-  let lastGreetedUrl = '';
+  let lastGreetedArea = '';
+  try { lastGreetedArea = sessionStorage.getItem('wm_last_greeted_area') || ''; } catch (e) {}
   let lastIntent = null;
 
   const AREA_GUIDE = {
@@ -257,9 +258,10 @@
       hostContext = Object.assign({}, hostContext, d.context || {});
       if (d.type === 'host-page-content') hostPageText = String(d.text || '').slice(0, 9000);
       const ctx = d.context || hostContext;
-      const pageUrl = String(ctx.url || '');
-      if (pageUrl && pageUrl !== lastGreetedUrl) {
-        lastGreetedUrl = pageUrl;
+      const sceneKey = String(ctx.fid || ctx.area || '').trim();
+      if (sceneKey && sceneKey !== lastGreetedArea) {
+        lastGreetedArea = sceneKey;
+        try { sessionStorage.setItem('wm_last_greeted_area', sceneKey); } catch (e) {}
         const greeting = String(ctx.greeting || '').trim() ||
           '到了，這裡就是目前的頁面。你可以直接問我這一頁的內容。';
         setTimeout(() => speak(greeting), 250);
