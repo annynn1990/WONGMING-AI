@@ -10,10 +10,6 @@
       "use": "@vercel/node"
     },
     {
-      "src": "api/legal.js",
-      "use": "@vercel/node"
-    },
-    {
       "src": "*.html",
       "use": "@vercel/static"
     },
