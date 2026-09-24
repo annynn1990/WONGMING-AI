@@ -854,7 +854,16 @@
     SUGGESTIONS.forEach((s) => {
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'sugg'; b.textContent = s;
-      b.onclick = () => handleUser(s.replace(/？$/, ''));
+      b.onclick = () => {
+        if (s === '我有疑問') {
+          const msg = '當然，直接把你的問題告訴我就好。關於目前這個版面、帝國資料或論壇操作，都可以直接問我。';
+          speak(msg);
+          const ti = document.getElementById('type-input');
+          if (ti) setTimeout(() => ti.focus(), 100);
+          return;
+        }
+        handleUser(s.replace(/？$/, ''));
+      };
       box.appendChild(b);
     });
   })();
