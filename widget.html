@@ -260,9 +260,8 @@
       if (d.type === 'host-page-content') hostPageText = String(d.text || '').slice(0, 9000);
       const ctx = d.context || hostContext;
       const sceneKey = String(ctx.fid || ctx.area || '').trim();
-      if (sceneKey && sceneKey !== lastGreetedArea && ctx.isOpen !== false) {
+      if (sceneKey && ctx.shouldGreet && ctx.isOpen !== false) {
         lastGreetedArea = sceneKey;
-        try { sessionStorage.setItem('wm_last_greeted_area', sceneKey); } catch (e) {}
         const greeting = String(ctx.greeting || '').trim() ||
           '到了，這裡就是目前的頁面。你可以直接問我這一頁的內容。';
         setTimeout(() => speak(greeting), 250);
