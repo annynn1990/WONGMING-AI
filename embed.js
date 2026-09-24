@@ -80,7 +80,22 @@
 
   root.appendChild(iframe);
   root.appendChild(bubble);
-  (document.body || document.documentElement).appendChild(root);
+  (document.body || document.documentElement).appendChild(root);  // 全站語言按鈕：由父頁直接觸發，確保 Translator API 取得使用者手勢
+  var langBtn = document.createElement('button');
+  langBtn.type='button'; langBtn.textContent='🌐';
+  langBtn.title='網站語言 / Website language';
+  langBtn.style.cssText='position:fixed;right:24px;bottom:88px;z-index:2147483001;border:0;border-radius:999px;width:42px;height:42px;cursor:pointer;font-size:20px;background:rgba(255,255,255,.96);box-shadow:0 4px 16px rgba(0,0,0,.22);';
+  (document.body || document.documentElement).appendChild(langBtn);
+  var langMenu=document.createElement('div');
+  langMenu.style.cssText='display:none;position:fixed;right:24px;bottom:136px;z-index:2147483002;background:#fff;border-radius:12px;padding:6px;box-shadow:0 8px 24px rgba(0,0,0,.22);font:14px system-ui,sans-serif;';
+  [['zh-Hant','中文'],['en','English'],['ja','日本語'],['ko','한국어']].forEach(function(item){
+    var b=document.createElement('button'); b.type='button'; b.textContent=item[1]; b.style.cssText='display:block;width:120px;border:0;background:transparent;padding:9px 10px;text-align:left;cursor:pointer;border-radius:8px;';
+    b.onclick=function(){langMenu.style.display='none'; handleTranslation(item[0]);};
+    langMenu.appendChild(b);
+  });
+  (document.body || document.documentElement).appendChild(langMenu);
+  langBtn.onclick=function(){langMenu.style.display=langMenu.style.display==='none'?'block':'none';};
+
 
   // 5) 展開 / 收合
   function setOpen(open) {
@@ -141,29 +156,31 @@
   }
 
   async function handleTranslation(target) {
-    var lang = target === 'zh-Hant' ? null : target;
-    if (!lang) { location.reload(); return; }
+    if (target === 'zh-Hant') { location.reload(); return; }
     try {
-      localStorage.setItem('wm_ai_language', lang);
+      localStorage.setItem('wm_ai_language', target);
       if (!window.Translator || !window.Translator.create) {
-        alert('目前瀏覽器尚未提供內建翻譯功能，請使用支援 Translator API 的新版 Chrome。');
+        alert('此瀏覽器尚未提供內建翻譯 API。請使用支援 Translator API 的新版 Chrome。');
         return;
       }
-      var translator = await window.Translator.create({sourceLanguage:'zh', targetLanguage:lang});
-      var root = document.body;
-      var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-      var nodes=[], n;
-      while(n=walker.nextNode()) {
-        if (!n.nodeValue.trim() || n.parentElement.closest('#avatar-widget-root,script,style,noscript')) continue;
+      var translator = await window.Translator.create({sourceLanguage:'zh', targetLanguage:target});
+      var walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+      var nodes=[],n;
+      while(n=walker.nextNode()){
+        if(!n.nodeValue.trim() || n.parentElement.closest('#avatar-widget-root,#avatar-widget-root *,script,style,noscript')) continue;
+        if(!n.parentElement.dataset.wmOriginal) n.parentElement.dataset.wmOriginal=n.nodeValue;
         nodes.push(n);
       }
-      for (var i=0;i<nodes.length;i++) {
-        var raw=nodes[i].nodeValue;
-        if (!raw.trim()) continue;
-        try { nodes[i].nodeValue=await translator.translate(raw); } catch(e) {}
+      for(var i=0;i<nodes.length;i++){
+        var node=nodes[i];
+        var raw=node.nodeValue;
+        if(!raw.trim() || /^[\d\W_]+$/.test(raw)) continue;
+        try{ node.nodeValue=await translator.translate(raw); }catch(e){}
       }
+      try { iframe.contentWindow.postMessage({ns:NS_OUT,type:'language-changed',language:target},widgetOrigin); } catch(e){}
     } catch(e) {
       console.error('[Wongming AI] translation failed',e);
+      alert('翻譯初始化失敗：'+(e.message||e));
     }
   }
 
@@ -202,11 +219,13 @@
     if (d.type === 'close') setOpen(false);
     if (d.type === 'ready') {
       iframe.contentWindow && iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'host-context', context: pageContext() }, widgetOrigin);
+      setTimeout(sendPageContent, 250);
       try {
         var pending = JSON.parse(localStorage.getItem('wm_ai_pending_action') || 'null');
         if (pending && pending.action && Date.now() - Number(pending.at || 0) < 60000) {
           localStorage.removeItem('wm_ai_pending_action');
           iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'navigation-complete', action: pending.action, context: pageContext() }, widgetOrigin);
+          setTimeout(sendPageContent, 500);
         } else if (pending) localStorage.removeItem('wm_ai_pending_action');
       } catch (err) {}
     }
