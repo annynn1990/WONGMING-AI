@@ -29,7 +29,10 @@
   })();
   var base = me ? me.src.replace(/[^/]*$/, '') : '';
   var widgetUrl = (me && me.getAttribute('data-widget')) || (base + 'widget.html?v=20260924');
-  var startOpen = (me && me.getAttribute('data-open') !== 'true'); // 預設一進來就展開
+  var savedOpen = null;
+  try { savedOpen = localStorage.getItem('wm_ai_open'); } catch (e) {}
+  var attrOpen = me ? me.getAttribute('data-open') : null;
+  var startOpen = savedOpen === '1' ? true : (savedOpen === '0' ? false : attrOpen !== 'false'); // 預設展開，可跨頁保留狀態
   var widgetOrigin = (function () { try { return new URL(widgetUrl, location.href).origin; } catch (e) { return '*'; } })();
 
   // 把可設定項帶進 widget：皮=model / 肉的語音後端=api / 內容=knowledge / 聲線=voice
@@ -81,6 +84,7 @@
 
   // 5) 展開 / 收合
   function setOpen(open) {
+    try { localStorage.setItem('wm_ai_open', open ? '1' : '0'); } catch (e) {}
     if (open) {
       root.style.width = EXPANDED.w + 'px';
       root.style.height = EXPANDED.h + 'px';
