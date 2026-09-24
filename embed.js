@@ -115,6 +115,18 @@
     structure: WM_FORUM_BASE + 'forum.php?extra=page%3D1&mod=viewthread&tid=22468',
     intro: WM_FORUM_BASE + 'forum.php?mod=viewthread&tid=23066'
   };
+  var WM_FORUM_GREETINGS = {
+    '58': '現在我們在韻賢角，這是一個充滿音樂的城市角落！不妨看看這裡最近有哪些音樂、活動與有趣的討論。',
+    '88': '現在我們在皇宮，這裡是帝國皇室與君主相關事務的重要所在。',
+    '92': '現在我們在內閣政府區，這裡可以看看帝國的政府機關與行政事務。',
+    '90': '現在我們在國會，這裡可以看看帝國的議政、立法與國會活動。',
+    '45': '現在我們在法律資源中心，這裡可以查閱帝國法律、法規與相關討論。',
+    '129': '現在我們在外交相關區域，這裡可以看看帝國與友邦之間的交流與外交資訊。'
+  };
+  function getForumFid() {
+    var m = (location.search || '').match(/[?&]fid=(\d+)/i);
+    return m ? m[1] : '';
+  }
   function detectForumArea() {
     var p = location.pathname + location.search;
     if (/fid=88/.test(p)) return '皇宮';
@@ -122,11 +134,27 @@
     if (/fid=90/.test(p)) return '國會';
     if (/fid=45/.test(p)) return '法律';
     if (/fid=129/.test(p)) return '外交';
+    if (/fid=58/.test(p)) return '韻賢角';
     if (/bbswm\/?$/.test(p)) return '論壇首頁';
     return '';
   }
+  function getForumGreeting() {
+    var fid = getForumFid();
+    if (fid && WM_FORUM_GREETINGS[fid]) return WM_FORUM_GREETINGS[fid];
+    var title = (document.title || '').replace(/[-|｜].*$/, '').trim();
+    if (fid && title) return '現在我們來到「' + title + '」，這裡有自己的主題與特色。你可以先看看目前的討論，也可以直接問我這個版面是做什麼的。';
+    if (title) return '現在我們在「' + title + '」。你可以先看看這裡的內容，想了解這個地方也可以直接問我。';
+    return '現在我們就在這個版面。你可以先看看這裡的內容，想知道這裡是做什麼的就直接問我吧。';
+  }
   function pageContext() {
-    return { url: location.href, title: document.title || '', path: location.pathname + location.search, area: detectForumArea() };
+    return {
+      url: location.href,
+      title: document.title || '',
+      path: location.pathname + location.search,
+      area: detectForumArea(),
+      fid: getForumFid(),
+      greeting: getForumGreeting()
+    };
   }
   function sendPageContent() {
     try {
