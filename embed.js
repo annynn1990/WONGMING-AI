@@ -80,22 +80,7 @@
 
   root.appendChild(iframe);
   root.appendChild(bubble);
-  (document.body || document.documentElement).appendChild(root);  // 全站語言按鈕：由父頁直接觸發，確保 Translator API 取得使用者手勢
-  var langBtn = document.createElement('button');
-  langBtn.type='button'; langBtn.textContent='🌐';
-  langBtn.title='網站語言 / Website language';
-  langBtn.style.cssText='position:fixed;right:24px;bottom:88px;z-index:2147483001;border:0;border-radius:999px;width:42px;height:42px;cursor:pointer;font-size:20px;background:rgba(255,255,255,.96);box-shadow:0 4px 16px rgba(0,0,0,.22);';
-  (document.body || document.documentElement).appendChild(langBtn);
-  var langMenu=document.createElement('div');
-  langMenu.style.cssText='display:none;position:fixed;right:24px;bottom:136px;z-index:2147483002;background:#fff;border-radius:12px;padding:6px;box-shadow:0 8px 24px rgba(0,0,0,.22);font:14px system-ui,sans-serif;';
-  [['zh-Hant','中文'],['en','English'],['ja','日本語'],['ko','한국어']].forEach(function(item){
-    var b=document.createElement('button'); b.type='button'; b.textContent=item[1]; b.style.cssText='display:block;width:120px;border:0;background:transparent;padding:9px 10px;text-align:left;cursor:pointer;border-radius:8px;';
-    b.onclick=function(){langMenu.style.display='none'; handleTranslation(item[0]);};
-    langMenu.appendChild(b);
-  });
-  (document.body || document.documentElement).appendChild(langMenu);
-  langBtn.onclick=function(){langMenu.style.display=langMenu.style.display==='none'?'block':'none';};
-
+  (document.body || document.documentElement).appendChild(root);
 
   // 5) 展開 / 收合
   function setOpen(open) {
