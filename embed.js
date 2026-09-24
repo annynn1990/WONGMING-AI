@@ -128,6 +128,17 @@
   function pageContext() {
     return { url: location.href, title: document.title || '', path: location.pathname + location.search, area: detectForumArea() };
   }
+  function sendPageContent() {
+    try {
+      var root = document.body;
+      if (!root || !iframe || !iframe.contentWindow) return;
+      var clone = root.cloneNode(true);
+      clone.querySelectorAll('#avatar-widget-root, script, style, noscript, iframe').forEach(function(n){ n.remove(); });
+      var text = (clone.innerText || clone.textContent || '').replace(/\\s+/g,' ').trim();
+      if (text.length > 14000) text = text.slice(0,14000);
+      iframe.contentWindow.postMessage({ ns:NS_OUT, type:'host-page-content', text:text }, widgetOrigin);
+    } catch(e) { console.warn('[Wongming AI] page content read failed',e); }
+  }
   function savePendingNavigation(action) {
     try { localStorage.setItem('wm_ai_pending_action', JSON.stringify({ action: action, at: Date.now() })); } catch (e) {}
   }
@@ -160,11 +171,13 @@
     if (d.type === 'close') setOpen(false);
     if (d.type === 'ready') {
       iframe.contentWindow && iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'host-context', context: pageContext() }, widgetOrigin);
+      setTimeout(sendPageContent, 300);
       try {
         var pending = JSON.parse(localStorage.getItem('wm_ai_pending_action') || 'null');
         if (pending && pending.action && Date.now() - Number(pending.at || 0) < 60000) {
           localStorage.removeItem('wm_ai_pending_action');
           iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'navigation-complete', action: pending.action, context: pageContext() }, widgetOrigin);
+          setTimeout(sendPageContent, 500);
         } else if (pending) localStorage.removeItem('wm_ai_pending_action');
       } catch (err) {}
     }
