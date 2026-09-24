@@ -28,7 +28,7 @@
     return null;
   })();
   var base = me ? me.src.replace(/[^/]*$/, '') : '';
-  var widgetUrl = (me && me.getAttribute('data-widget')) || (base + 'widget.html?v=20260924-2');
+  var widgetUrl = (me && me.getAttribute('data-widget')) || (base + 'widget.html?v=20260924');
   var savedOpen = null;
   try { savedOpen = localStorage.getItem('wm_ai_open'); } catch (e) {}
   var attrOpen = me ? me.getAttribute('data-open') : null;
@@ -125,50 +125,6 @@
     if (/bbswm\/?$/.test(p)) return '論壇首頁';
     return '';
   }
-  function getVisiblePageText() {
-    try {
-      var clone = document.body.cloneNode(true);
-      clone.querySelectorAll('script,style,noscript,iframe,svg').forEach(function(n){ n.remove(); });
-      return (clone.innerText || clone.textContent || '').replace(/\s+/g,' ').trim().slice(0,12000);
-    } catch (e) { return ''; }
-  }
-  function sendPageContent() {
-    try {
-      if (iframe && iframe.contentWindow) iframe.contentWindow.postMessage({
-        ns: NS_OUT, type:'host-page-content', text:getVisiblePageText()
-      }, widgetOrigin);
-    } catch(e) {}
-  }
-
-  async function handleTranslation(target) {
-    if (target === 'zh-Hant') { location.reload(); return; }
-    try {
-      localStorage.setItem('wm_ai_language', target);
-      if (!window.Translator || !window.Translator.create) {
-        alert('此瀏覽器尚未提供內建翻譯 API。請使用支援 Translator API 的新版 Chrome。');
-        return;
-      }
-      var translator = await window.Translator.create({sourceLanguage:'zh', targetLanguage:target});
-      var walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
-      var nodes=[],n;
-      while(n=walker.nextNode()){
-        if(!n.nodeValue.trim() || n.parentElement.closest('#avatar-widget-root,#avatar-widget-root *,script,style,noscript')) continue;
-        if(!n.parentElement.dataset.wmOriginal) n.parentElement.dataset.wmOriginal=n.nodeValue;
-        nodes.push(n);
-      }
-      for(var i=0;i<nodes.length;i++){
-        var node=nodes[i];
-        var raw=node.nodeValue;
-        if(!raw.trim() || /^[\d\W_]+$/.test(raw)) continue;
-        try{ node.nodeValue=await translator.translate(raw); }catch(e){}
-      }
-      try { iframe.contentWindow.postMessage({ns:NS_OUT,type:'language-changed',language:target},widgetOrigin); } catch(e){}
-    } catch(e) {
-      console.error('[Wongming AI] translation failed',e);
-      alert('翻譯初始化失敗：'+(e.message||e));
-    }
-  }
-
   function pageContext() {
     return { url: location.href, title: document.title || '', path: location.pathname + location.search, area: detectForumArea() };
   }
@@ -204,13 +160,11 @@
     if (d.type === 'close') setOpen(false);
     if (d.type === 'ready') {
       iframe.contentWindow && iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'host-context', context: pageContext() }, widgetOrigin);
-      setTimeout(sendPageContent, 250);
       try {
         var pending = JSON.parse(localStorage.getItem('wm_ai_pending_action') || 'null');
         if (pending && pending.action && Date.now() - Number(pending.at || 0) < 60000) {
           localStorage.removeItem('wm_ai_pending_action');
           iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'navigation-complete', action: pending.action, context: pageContext() }, widgetOrigin);
-          setTimeout(sendPageContent, 500);
         } else if (pending) localStorage.removeItem('wm_ai_pending_action');
       } catch (err) {}
     }
