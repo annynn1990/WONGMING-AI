@@ -10,6 +10,36 @@
 (function () {
   'use strict';
 
+  // 進入論壇時先判斷目前所在的版區。fid=55 會進入「禁用區」，
+  // 帖子頁若沒有 fid，沿用同一分區的 session 記憶。
+  var bootstrapStartOpen = null;
+  var bootstrapForumFid = '';
+  var bootstrapBlocked55 = false;
+  try {
+    var saved = localStorage.getItem('wm_ai_open');
+    var me0 = document.currentScript || null;
+    var attrOpen0 = me0 ? me0.getAttribute('data-open') : null;
+    bootstrapStartOpen = saved === '1' ? true : (saved === '0' ? false : attrOpen0 !== 'false');
+    var search0 = location.search || '';
+    var fidMatch0 = search0.match(/[?&]fid=(\d+)/i);
+    if (fidMatch0) {
+      bootstrapForumFid = fidMatch0[1];
+      sessionStorage.setItem('wm_current_forum_fid', bootstrapForumFid);
+    } else if (/(?:^|[?&])mod=viewthread(?:&|$)/i.test(search0)) {
+      bootstrapForumFid = sessionStorage.getItem('wm_current_forum_fid') || '';
+    } else {
+      sessionStorage.removeItem('wm_current_forum_fid');
+      bootstrapForumFid = '';
+    }
+    if (bootstrapForumFid !== '55') sessionStorage.removeItem('wm_fid55_blocked');
+    bootstrapBlocked55 = bootstrapForumFid === '55' && sessionStorage.getItem('wm_fid55_blocked') === '1';
+  } catch (e) {}
+
+  // 55 區已經說過並關閉後，在同一區及其帖子內完全不建立導覽員。
+  if (bootstrapForumFid === '55' && (bootstrapBlocked55 || bootstrapStartOpen !== true)) {
+    return;
+  }
+
   // 注入收合泡泡的 hover / 注意力 pulse 動畫
   var awStyle = document.createElement('style');
   awStyle.textContent =
@@ -32,7 +62,9 @@
   var savedOpen = null;
   try { savedOpen = localStorage.getItem('wm_ai_open'); } catch (e) {}
   var attrOpen = me ? me.getAttribute('data-open') : null;
-  var startOpen = savedOpen === '1' ? true : (savedOpen === '0' ? false : attrOpen !== 'false'); // 預設展開，可跨頁保留狀態
+  var startOpen = bootstrapStartOpen !== null
+    ? bootstrapStartOpen
+    : (savedOpen === '1' ? true : (savedOpen === '0' ? false : attrOpen !== 'false')); // 預設展開，可跨頁保留狀態
   var widgetOpen = startOpen;
   var widgetReady = false;
   var widgetOrigin = (function () { try { return new URL(widgetUrl, location.href).origin; } catch (e) { return '*'; } })();
@@ -247,19 +279,14 @@
       widgetReady = true;
       var blockedGreeting = WM_BLOCKED_FORUMS[getForumFid()];
       if (blockedGreeting) {
-        if (widgetOpen) {
-          iframe.contentWindow && iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'say', text: blockedGreeting }, widgetOrigin);
-          iframe.style.pointerEvents = 'none';
-          setTimeout(function () {
-            try { root.remove(); } catch (e) {
-              try { root.style.display = 'none'; } catch (e2) {}
-            }
-          }, 3750);
-        } else {
+        try { sessionStorage.setItem('wm_fid55_blocked', '1'); } catch (e) {}
+        iframe.contentWindow && iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'say', text: blockedGreeting }, widgetOrigin);
+        iframe.style.pointerEvents = 'none';
+        setTimeout(function () {
           try { root.remove(); } catch (e) {
             try { root.style.display = 'none'; } catch (e2) {}
           }
-        }
+        }, 3750);
         return;
       }
       iframe.contentWindow && iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'host-context', context: pageContext() }, widgetOrigin);
