@@ -191,6 +191,23 @@
   let hostPageText = '';
   let conversationHistory = [];
   let lastIntent = null;
+  let currentLang = 'zh-Hant';
+  function detectInputLanguage(text) {
+    const t = String(text || '');
+    if (/[\uAC00-\uD7AF]/.test(t)) return 'ko';
+    if (/[\u3040-\u30FF]/.test(t)) return 'ja';
+    const latin = (t.match(/[A-Za-z]/g) || []).length;
+    const han = (t.match(/[\u3400-\u9FFF]/g) || []).length;
+    return latin >= 3 && latin >= han * 2 ? 'en' : 'zh-Hant';
+  }
+  function langName(lang) {
+    return lang === 'en' ? 'English' : lang === 'ja' ? '日本語' : lang === 'ko' ? '한국어' : '繁體中文';
+  }
+  function pageQuestion(text) {
+    const t = String(text || '').toLowerCase();
+    return /這(裡|頁)|這一頁|目前頁面|這個頁面|這個版面|這裡在做什麼|這頁在講什麼|這頁有哪些|介紹一下這裡|摘要這頁/.test(t)
+      || /what is this page|what's on this page|what does this page|what is this section|what's here|what is here|summarize this page|summarise this page|explain this page|tell me about this page/.test(t);
+  }
 
   const AREA_GUIDE = {
     '論壇首頁':'這是黃名論壇首頁，可以從這裡進入皇宮、內閣、國會、法律與其他論壇區域。',
@@ -209,7 +226,7 @@
   function buildLLMMessages(q) {
     const ctx = topK(q, 4).map(e => 'Q：' + e.q + '\nA：' + e.a).join('\n---\n');
     return [
-      { role: 'system', content: '你是「黃名帝國虛擬導覽員」，目前嵌在黃名論壇中。你的工作是介紹網站、理解自然語言、協助操作論壇、解釋目前頁面。請使用繁體中文，自然、直接、像真人導覽員一樣回答，不辱罵、不威脅、不虛構官方資訊。先理解使用者真正意圖，再回答；「這裡、這頁、那個、剛才、下一個」要結合目前頁面與對話上下文理解。要帶路時直接說明目的地，不要把操作指令當成一般問答。若涉及帝國世界觀，視為網站提供的設定/資料。沒有足夠資料就誠實說不知道。\n\n【目前頁面】\n' + JSON.stringify(hostContext) + '\n\n【目前頁面可讀文字】\n' + (hostPageText || '（尚未取得）') + '\n\n【參考資料】\n' + (ctx || '（無）') },
+      { role: 'system', content: '你是「黃名帝國虛擬導覽員」，目前嵌在黃名論壇中。你的工作是介紹網站、理解自然語言、協助操作論壇、解釋目前頁面。請使用使用者目前的語言回答：中文用繁體中文；英文用自然英文；日文用日文；韓文用韓文。自然、直接、像真人導覽員一樣回答，不辱罵、不威脅、不虛構官方資訊。先理解使用者真正意圖，再回答；「這裡、這頁、那個、剛才、下一個」要結合目前頁面與對話上下文理解。要帶路時直接說明目的地，不要把操作指令當成一般問答。若涉及帝國世界觀，視為網站提供的設定/資料。沒有足夠資料就誠實說不知道。\n\n【回答語言】\n' + langName(currentLang) + '\n\n【目前頁面】\n' + JSON.stringify(hostContext) + '\n\n【目前頁面可讀文字】\n' + (hostPageText || '（尚未取得）') + '\n\n【參考資料】\n' + (ctx || '（無）') },
       ...conversationHistory.slice(-6),
       { role: 'user', content: q }
     ];
@@ -255,7 +272,6 @@
       hostPageText = String(d.text || '').slice(0, 9000);
     }
     if (d.type === 'navigation-complete') {
-      if (d.type === 'navigation-complete') {
         const area = (d.context && d.context.area) || '';
         const intro = {
           '論壇首頁':'到了，這裡是黃名論壇首頁，可以從這裡開始瀏覽各個國家機構。',
@@ -419,7 +435,22 @@
   // 有啟用 WebLLM 時，用「檢索到的資料 + LLM」生成更自然的回答；否則退回檢索式
   async function answer(q) {
     q = (q || '').trim();
-    if (!q) return '我好像沒聽清楚，可以再說一次嗎？';
+    if (!q) return currentLang === 'en' ? 'I didn’t catch that. Could you say that again?' : '我好像沒聽清楚，可以再說一次嗎？';
+    if (pageQuestion(q)) {
+      if (!hostPageText) return currentLang === 'en' ? 'I’m still reading this page. Please ask me again in a moment.' : '我正在讀取這一頁，請再問我一次。';
+      if (window.OLLAMA && window.OLLAMA.enabled && window.OLLAMA.ready) {
+        try { showBubble(currentLang === 'en' ? 'Let me read this page…' : '我先讀一下這一頁…'); const out=await window.OLLAMA.chat(buildLLMMessages(q)); if(out&&out.trim()) return out.trim(); } catch(e){}
+      }
+      if (window.LLM && window.LLM.state === 'ready') {
+        try { showBubble(currentLang === 'en' ? 'Let me read this page…' : '我先讀一下這一頁…'); const out=await window.LLM.chat(buildLLMMessages(q)); if(out&&out.trim()) return out.trim(); } catch(e){}
+      }
+      const title=hostContext.title || (currentLang==='en'?'this page':'這一頁');
+      const area=hostContext.area || (currentLang==='en'?'forum page':'論壇頁面');
+      const snippet=hostPageText.replace(/\s+/g,' ').trim().slice(0,1200);
+      return currentLang==='en'
+        ? 'This is “'+title+'”, in the '+area+' area. The page currently contains: '+snippet
+        : '這一頁是「'+title+'」，位於「'+area+'」區域。目前頁面主要內容包括：'+snippet;
+    }
     // 1) 本機 Ollama 大腦（最聰明，優先）
     if (window.OLLAMA && window.OLLAMA.enabled && window.OLLAMA.ready) {
       try {
@@ -436,7 +467,7 @@
         if (out && out.trim()) return out.trim();
       } catch (e) { console.warn('LLM error', e); }
     }
-    return brain(q);
+    const fallback=brain(q); return currentLang==='en' && fallback.startsWith('你問的是「') ? 'I understand your question, but I do not have enough information to answer it yet.' : fallback;
   }
 
   function sendHostAction(action) {
@@ -452,59 +483,58 @@
     { target:'laws', label:'法律區' }
   ];
 
+  function tourSpeak(zh, en) { speak(currentLang === 'en' ? en : zh); }
   function beginTour() {
     try { localStorage.setItem('wm_ai_tour', JSON.stringify({ index:0, at:Date.now() })); } catch(e) {}
     sendHostAction({action:'navigate',target:'home',tourIndex:0});
-    speak('好，我帶你開始參觀黃名論壇，先從首頁開始。');
+    tourSpeak('好，我帶你開始參觀黃名論壇，先從首頁開始。','Sure. I’ll show you around the forum, starting from the home page.');
   }
   function nextTourStop() {
-    let s=null; try { s=JSON.parse(localStorage.getItem('wm_ai_tour')||'null'); } catch(e) {}
-    if (!s || typeof s.index !== 'number') { beginTour(); return true; }
-    const n=s.index+1;
-    if(n>=TOUR_STOPS.length){ try{localStorage.removeItem('wm_ai_tour');}catch(e){} speak('主要導覽路線已經走完了。想去哪裡，直接告訴我。'); return true; }
+    let st=null; try { st=JSON.parse(localStorage.getItem('wm_ai_tour')||'null'); } catch(e) {}
+    if (!st || typeof st.index !== 'number') { beginTour(); return true; }
+    const n=st.index+1;
+    if(n>=TOUR_STOPS.length){ try{localStorage.removeItem('wm_ai_tour');}catch(e){} tourSpeak('主要導覽路線已經走完了。想去哪裡，直接告訴我。','That main tour is complete. Tell me where you’d like to go next.'); return true; }
     try{localStorage.setItem('wm_ai_tour',JSON.stringify({index:n,at:Date.now()}));}catch(e){}
     sendHostAction({action:'navigate',target:TOUR_STOPS[n].target,tourIndex:n});
-    speak('好的，下一站是'+TOUR_STOPS[n].label+'。'); return true;
+    const en={home:'the forum home page',palace:'the Palace',cabinet:'the Cabinet Government',parliament:'Parliament',laws:'the legal section'};
+    tourSpeak('好的，下一站是'+TOUR_STOPS[n].label+'。','Next stop: '+en[TOUR_STOPS[n].target]+'.');
+    return true;
   }
   function classifyNavigateTarget(t) {
-    if(/皇宮|皇室|宮殿|君主/.test(t)) return 'palace';
-    if(/內閣|政府|行政|部門/.test(t)) return 'cabinet';
-    if(/國會|議會|立法|議政|上議院|下議院/.test(t)) return 'parliament';
-    if(/法律|法規|法條|司法/.test(t)) return 'laws';
-    if(/外交|友邦|邦交|建交/.test(t)) return 'foreign_affairs';
-    if(/首頁|主頁|論壇首頁/.test(t)) return 'home';
+    const x=String(t||'').toLowerCase();
+    if(/皇宮|皇室|宮殿|君主|palace|royal|emperor|monarch/.test(x)) return 'palace';
+    if(/內閣|政府|行政|部門|cabinet|government|ministry|executive/.test(x)) return 'cabinet';
+    if(/國會|議會|立法|議政|上議院|下議院|parliament|legislature|senate|assembly/.test(x)) return 'parliament';
+    if(/法律|法規|法條|司法|law|laws|legal|judiciary/.test(x)) return 'laws';
+    if(/外交|友邦|邦交|建交|foreign affairs|diplomacy|foreign/.test(x)) return 'foreign_affairs';
+    if(/首頁|主頁|論壇首頁|home page|forum home|homepage/.test(x)) return 'home';
     return null;
   }
   function tryHostCommand(q) {
-    const t=String(q||'').trim().replace(/[！!。．？?]+$/g,'');
+    const raw=String(q||'').trim().replace(/[！!。．？?]+$/g,'');
+    const t=raw.toLowerCase();
     if(!t) return false;
-    if(/開始導覽|開始參觀|帶我參觀|帶我瀏覽帝國|帶我逛論壇|帶我看看帝國|參觀帝國/.test(t) && !/不要|別/.test(t)){beginTour();return true;}
-    if(/^(下一站|下一個|繼續導覽|繼續參觀|繼續|往下一站|再一個)$/.test(t)){nextTourStop();lastIntent={type:'tour-next'};return true;}
-    if(/^(回上一頁|返回上一頁|上一頁|回去)$/.test(t)){sendHostAction({action:'back'});speak('好，回上一頁。');return true;}
-    if(/^(下一頁|往前|前進)$/.test(t)){sendHostAction({action:'forward'});speak('好，前進到下一頁。');return true;}
-    if(/^(回到(論壇)?首頁|首頁|主頁)$/.test(t)){sendHostAction({action:'navigate',target:'home'});lastIntent={type:'navigate',target:'home'};speak('帶你回論壇首頁。');return true;}
-    if(/往下(看|滑)|下一段|繼續往下|往下滾/.test(t)){sendHostAction({action:'scroll',direction:'down',amount:650});speak('好，我往下帶你看。');return true;}
-    if(/往上(看|滑)|上一段|往上滾/.test(t)){sendHostAction({action:'scroll',direction:'up',amount:650});speak('好，我往上看。');return true;}
-    if(/滑到最上面|頁面最上方|回到頂端/.test(t)){sendHostAction({action:'top'});speak('回到頁面頂端。');return true;}
-    if(/滑到最下面|頁面最下方/.test(t)){sendHostAction({action:'bottom'});speak('帶你看到頁面底部。');return true;}
-    if(/翻譯|翻成|改成英文|英文版|English|英語/.test(t)){sendHostAction({action:'translate',target:'en'});speak('好，我幫你把目前網站內容翻成英文。');return true;}
-    if(/日文|日語|日本語/.test(t)){sendHostAction({action:'translate',target:'ja'});speak('好，我幫你翻成日文。');return true;}
-    if(/韓文|韓語|한국어/.test(t)){sendHostAction({action:'translate',target:'ko'});speak('好，我幫你翻成韓文。');return true;}
-    if(/恢復中文|原文|取消翻譯|翻回中文/.test(t)){sendHostAction({action:'translate',target:'zh-Hant'});speak('好，恢復中文原文。');return true;}
-    if(/這(裡|頁)|目前頁面|這個頁面|這一頁/.test(t) && /什麼|哪裡|做什麼|內容|介紹|說明/.test(t)){
-      lastIntent={type:'page-explain'};
-      const area=hostContext.area;
-      if(area && AREA_GUIDE[area] && !window.LLM?.state) { speak(AREA_GUIDE[area]); return true; }
-    }
-    const wants=/帶我|帶著我|去看看|去看|前往|帶我去|我要去|想去|想看|參觀|看看|去那裡/.test(t);
+    if((/開始導覽|開始參觀|帶我參觀|帶我瀏覽帝國|帶我逛論壇|帶我看看帝國|參觀帝國|導覽一下|帶我逛逛|start (a )?tour|show me around|give me a tour|guide me around|take me around/.test(t)) && !/不要|別|don't|do not/.test(t)){beginTour();lastIntent={type:'tour'};return true;}
+    if(/^(下一站|下一個|繼續導覽|繼續參觀|繼續|往下一站|再一個|next stop|next|continue|go on)$/.test(t)){nextTourStop();lastIntent={type:'tour-next'};return true;}
+    if(/^(回上一頁|返回上一頁|上一頁|回去|go back|previous page|back)$/.test(t)){sendHostAction({action:'back'});tourSpeak('好，回上一頁。','Sure, going back.');return true;}
+    if(/^(下一頁|往前|前進|next page|forward)$/.test(t)){sendHostAction({action:'forward'});tourSpeak('好，前進到下一頁。','Sure, going forward.');return true;}
+    if(/^(回到(論壇)?首頁|首頁|主頁|home|home page|forum home)$/.test(t)){sendHostAction({action:'navigate',target:'home'});lastIntent={type:'navigate',target:'home'};tourSpeak('帶你回論壇首頁。','Taking you to the forum home page.');return true;}
+    if(/往下(看|滑)|下一段|繼續往下|往下滾|scroll down|go down|down a bit/.test(t)){sendHostAction({action:'scroll',direction:'down',amount:650});tourSpeak('好，我往下帶你看。','Sure, I’ll scroll down.');return true;}
+    if(/往上(看|滑)|上一段|往上滾|scroll up|go up|up a bit/.test(t)){sendHostAction({action:'scroll',direction:'up',amount:650});tourSpeak('好，我往上看。','Sure, I’ll scroll up.');return true;}
+    if(/滑到最上面|頁面最上方|回到頂端|scroll to top|top of the page|go to the top/.test(t)){sendHostAction({action:'top'});tourSpeak('回到頁面頂端。','Back to the top of the page.');return true;}
+    if(/滑到最下面|頁面最下方|scroll to bottom|bottom of the page|go to the bottom/.test(t)){sendHostAction({action:'bottom'});tourSpeak('帶你看到頁面底部。','Taking you to the bottom of the page.');return true;}
+    if(/翻譯|翻成|改成英文|英文版|切英文|translate|translation|make it english|switch to english|english version/.test(t)){showBubble(currentLang==='en'?'Use the 🌐 button to choose the website language.':'請使用 🌐 語言按鈕切換整個網站語言。');return true;}
+    if(/恢復中文|原文|取消翻譯|翻回中文|restore chinese|original chinese|switch back to chinese/.test(t)){showBubble(currentLang==='en'?'Use the 🌐 button and choose 中文。':'請使用 🌐 語言按鈕選擇中文原文。');return true;}
+    const wants=/帶我|帶著我|去看看|去看|前往|帶我去|我要去|想去|想看|參觀|看看|去那裡|take me|bring me|show me|go to|take me to|bring me to|let's go|i want to see|show me the/.test(t);
     let target=classifyNavigateTarget(t);
-    if(!target && /那裡|那個地方|剛才說的/.test(t) && lastIntent && lastIntent.target) target=lastIntent.target;
-    if(target&&wants){sendHostAction({action:'navigate',target});lastIntent={type:'navigate',target};const names={home:'論壇首頁',palace:'皇宮',cabinet:'內閣',parliament:'國會',laws:'法律區',foreign_affairs:'外交區'};speak('好的，帶你去'+names[target]+'。');return true;}
+    if(!target && /那裡|那個地方|剛才說的|there|that place|the one you mentioned/.test(t) && lastIntent && lastIntent.target) target=lastIntent.target;
+    if(target&&wants){sendHostAction({action:'navigate',target});lastIntent={type:'navigate',target};const names={home:'論壇首頁',palace:'皇宮',cabinet:'內閣',parliament:'國會',laws:'法律區',foreign_affairs:'外交區'};const en={home:'the forum home page',palace:'the Palace',cabinet:'the Cabinet Government',parliament:'Parliament',laws:'the legal section',foreign_affairs:'the foreign affairs section'};speak(currentLang==='en'?'Taking you to '+en[target]+'.':'好的，帶你去'+names[target]+'。');return true;}
     return false;
   }
 
   function handleUser(text) {
-    if (text) showBubble('你：' + text);
+    currentLang = detectInputLanguage(text);
+    if (text) showBubble(currentLang === 'en' ? 'You: ' + text : '你：' + text);
     if (tryHostCommand(text)) { pushConversation('user', text); return; }
     Promise.resolve().then(async () => {
       pushConversation('user', text);
