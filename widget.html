@@ -482,7 +482,7 @@
       if (registrationRedirectPending) return true;
       registrationRedirectPending = true;
       lastIntent={type:'navigate',target:'register'};
-      speak('我帶您到來註冊入籍帝國。');
+      speak('我來帶您註冊入籍帝國，2 秒後轉移到註冊入口。');
       setTimeout(() => {
         let count = 6;
         showBubble('即將前往註冊頁面\\n倒數：' + count);
