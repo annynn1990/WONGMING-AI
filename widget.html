@@ -193,6 +193,7 @@
   let lastGreetedArea = '';
   try { lastGreetedArea = sessionStorage.getItem('wm_last_greeted_area') || ''; } catch (e) {}
   let lastIntent = null;
+  let registrationRedirectPending = false;
 
   const AREA_GUIDE = {
     '論壇首頁':'這是黃名論壇首頁，可以從這裡進入皇宮、內閣、國會、法律與其他論壇區域。',
@@ -478,9 +479,23 @@
     const t=String(q||'').trim().replace(/[！!。．？?]+$/g,'');
     if(!t) return false;
     if(/註冊|申請會員|加入會員|建立帳號|申請帳號|開通帳號/.test(t)){
-      sendHostAction({action:'navigate',target:'register'});
+      if (registrationRedirectPending) return true;
+      registrationRedirectPending = true;
       lastIntent={type:'navigate',target:'register'};
-      speak('好的，帶你到註冊頁面。你可以直接在那裡建立黃名論壇帳號。');
+      speak('我帶您到來註冊入籍帝國。');
+      setTimeout(() => {
+        let count = 6;
+        showBubble('即將前往註冊頁面\\n倒數：' + count);
+        const timer = setInterval(() => {
+          count -= 1;
+          if (count <= 0) {
+            clearInterval(timer);
+            sendHostAction({action:'navigate',target:'register'});
+            return;
+          }
+          showBubble('即將前往註冊頁面\\n倒數：' + count);
+        }, 1000);
+      }, 2000);
       return true;
     }
     if(/開始導覽|開始參觀|帶我參觀|帶我瀏覽帝國|帶我逛論壇|帶我看看帝國|參觀帝國/.test(t) && !/不要|別/.test(t)){beginTour();return true;}
