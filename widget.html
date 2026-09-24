@@ -477,6 +477,12 @@
   function tryHostCommand(q) {
     const t=String(q||'').trim().replace(/[！!。．？?]+$/g,'');
     if(!t) return false;
+    if(/註冊|申請會員|加入會員|建立帳號|申請帳號|開通帳號/.test(t)){
+      sendHostAction({action:'navigate',target:'register'});
+      lastIntent={type:'navigate',target:'register'};
+      speak('好的，帶你到註冊頁面。你可以直接在那裡建立黃名論壇帳號。');
+      return true;
+    }
     if(/開始導覽|開始參觀|帶我參觀|帶我瀏覽帝國|帶我逛論壇|帶我看看帝國|參觀帝國/.test(t) && !/不要|別/.test(t)){beginTour();return true;}
     if(/^(下一站|下一個|繼續導覽|繼續參觀|繼續|往下一站|再一個)$/.test(t)){nextTourStop();lastIntent={type:'tour-next'};return true;}
     if(/^(回上一頁|返回上一頁|上一頁|回去)$/.test(t)){sendHostAction({action:'back'});speak('好，回上一頁。');return true;}
