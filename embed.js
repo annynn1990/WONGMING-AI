@@ -111,8 +111,18 @@
     structure: WM_FORUM_BASE + 'forum.php?extra=page%3D1&mod=viewthread&tid=22468',
     intro: WM_FORUM_BASE + 'forum.php?mod=viewthread&tid=23066'
   };
+  function detectForumArea() {
+    var p = location.pathname + location.search;
+    if (/fid=88/.test(p)) return '皇宮';
+    if (/fid=92/.test(p)) return '內閣';
+    if (/fid=90/.test(p)) return '國會';
+    if (/fid=45/.test(p)) return '法律';
+    if (/fid=129/.test(p)) return '外交';
+    if (/bbswm\/?$/.test(p)) return '論壇首頁';
+    return '';
+  }
   function pageContext() {
-    return { url: location.href, title: document.title || '', path: location.pathname + location.search };
+    return { url: location.href, title: document.title || '', path: location.pathname + location.search, area: detectForumArea() };
   }
   function savePendingNavigation(action) {
     try { localStorage.setItem('wm_ai_pending_action', JSON.stringify({ action: action, at: Date.now() })); } catch (e) {}
