@@ -690,7 +690,7 @@
             }, 15000);
           } catch (e) { console.warn('VRMA 手勢庫載入失敗：', e && e.message); }
         })();
-        setTimeout(() => { if (!lastGreetedUrl) showBubble('點 🎤 說話、或直接打字問我；想更聰明可按 🧠 啟用 AI 大腦 👋'); }, 1200);
+        setTimeout(() => { if (!lastGreetedUrl && !hostContext.greeting && !hostContext.area) showBubble('點 🎤 說話、或直接打字問我；想更聰明可按 🧠 啟用 AI 大腦 👋'); }, 1200);
         postToParent('ready');
       }, undefined, (e) => { console.error(e); postToParent('error', { message: String(e) }); });
 
