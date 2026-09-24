@@ -125,6 +125,48 @@
     if (/bbswm\/?$/.test(p)) return '論壇首頁';
     return '';
   }
+  function getVisiblePageText() {
+    try {
+      var clone = document.body.cloneNode(true);
+      clone.querySelectorAll('script,style,noscript,iframe,svg').forEach(function(n){ n.remove(); });
+      return (clone.innerText || clone.textContent || '').replace(/\s+/g,' ').trim().slice(0,12000);
+    } catch (e) { return ''; }
+  }
+  function sendPageContent() {
+    try {
+      if (iframe && iframe.contentWindow) iframe.contentWindow.postMessage({
+        ns: NS_OUT, type:'host-page-content', text:getVisiblePageText()
+      }, widgetOrigin);
+    } catch(e) {}
+  }
+
+  async function handleTranslation(target) {
+    var lang = target === 'zh-Hant' ? null : target;
+    if (!lang) { location.reload(); return; }
+    try {
+      localStorage.setItem('wm_ai_language', lang);
+      if (!window.Translator || !window.Translator.create) {
+        alert('目前瀏覽器尚未提供內建翻譯功能，請使用支援 Translator API 的新版 Chrome。');
+        return;
+      }
+      var translator = await window.Translator.create({sourceLanguage:'zh', targetLanguage:lang});
+      var root = document.body;
+      var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      var nodes=[], n;
+      while(n=walker.nextNode()) {
+        if (!n.nodeValue.trim() || n.parentElement.closest('#avatar-widget-root,script,style,noscript')) continue;
+        nodes.push(n);
+      }
+      for (var i=0;i<nodes.length;i++) {
+        var raw=nodes[i].nodeValue;
+        if (!raw.trim()) continue;
+        try { nodes[i].nodeValue=await translator.translate(raw); } catch(e) {}
+      }
+    } catch(e) {
+      console.error('[Wongming AI] translation failed',e);
+    }
+  }
+
   function pageContext() {
     return { url: location.href, title: document.title || '', path: location.pathname + location.search, area: detectForumArea() };
   }
