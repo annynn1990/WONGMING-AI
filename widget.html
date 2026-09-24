@@ -250,7 +250,11 @@
     if (d.type === 'say') speak(String(d.text || '').slice(0, 600));
     if (d.type === 'host-context' || d.type === 'navigation-complete') {
       hostContext = Object.assign({}, hostContext, d.context || {});
-      if (d.type === 'host-page-content') hostPageText = String(d.text || '').slice(0, 9000);
+    }
+    if (d.type === 'host-page-content') {
+      hostPageText = String(d.text || '').slice(0, 9000);
+    }
+    if (d.type === 'navigation-complete') {
       if (d.type === 'navigation-complete') {
         const area = (d.context && d.context.area) || '';
         const intro = {
