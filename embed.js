@@ -97,12 +97,64 @@
   setOpen(startOpen);
 
   // 6) 接收 iframe 的訊息（驗證來源 origin）
+  // ===== 黃名論壇網站操作層 =====
+  // AI 只能提出白名單 action；真正的網址/DOM 操作由宿主頁執行。
+  var WM_FORUM_ORIGIN = 'https://www.wongmingempire.com';
+  var WM_FORUM_BASE = WM_FORUM_ORIGIN + '/bbswm/';
+  var WM_ROUTES = {
+    home: WM_FORUM_BASE,
+    palace: WM_FORUM_BASE + 'forum.php?fid=88&mod=forumdisplay',
+    cabinet: WM_FORUM_BASE + 'forum.php?fid=92&mod=forumdisplay',
+    parliament: WM_FORUM_BASE + 'forum.php?fid=90&mod=forumdisplay',
+    foreign_affairs: WM_FORUM_BASE + 'forum.php?fid=129&mod=forumdisplay',
+    laws: WM_FORUM_BASE + 'forum.php?fid=45&mod=forumdisplay',
+    structure: WM_FORUM_BASE + 'forum.php?extra=page%3D1&mod=viewthread&tid=22468',
+    intro: WM_FORUM_BASE + 'forum.php?mod=viewthread&tid=23066'
+  };
+  function pageContext() {
+    return { url: location.href, title: document.title || '', path: location.pathname + location.search };
+  }
+  function savePendingNavigation(action) {
+    try { localStorage.setItem('wm_ai_pending_action', JSON.stringify({ action: action, at: Date.now() })); } catch (e) {}
+  }
+  function scrollHost(direction, amount) {
+    var px = Math.max(100, Math.min(2000, Number(amount) || 650));
+    if (direction === 'top') window.scrollTo({ top: 0, behavior: 'smooth' });
+    else if (direction === 'bottom') window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+    else window.scrollBy({ top: direction === 'up' ? -px : px, behavior: 'smooth' });
+  }
+  function handleHostAction(action) {
+    if (!action || typeof action !== 'object') return;
+    var type = String(action.action || action.type || '').toLowerCase();
+    if (type === 'navigate') {
+      var url = WM_ROUTES[String(action.target || '').toLowerCase()];
+      if (!url) return;
+      savePendingNavigation(action);
+      location.href = url;
+      return;
+    }
+    if (type === 'back') { history.back(); return; }
+    if (type === 'forward') { history.forward(); return; }
+    if (type === 'scroll') { scrollHost(String(action.direction || 'down').toLowerCase(), action.amount); return; }
+    if (type === 'top') { scrollHost('top'); return; }
+    if (type === 'bottom') { scrollHost('bottom'); return; }
+  }
   window.addEventListener('message', function (e) {
-    if (widgetOrigin !== '*' && e.origin !== widgetOrigin) return; // 只收來自自己 widget 的訊息
+    if (widgetOrigin !== '*' && e.origin !== widgetOrigin) return;
     var d = e.data || {};
     if (d.ns !== NS_IN) return;
-    if (d.type === 'close') setOpen(false);                 // 使用者按 ✕ → 收成泡泡
-    if (d.type === 'ready') { /* 之後可在這觸發歡迎語 */ }
+    if (d.type === 'close') setOpen(false);
+    if (d.type === 'ready') {
+      iframe.contentWindow && iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'host-context', context: pageContext() }, widgetOrigin);
+      try {
+        var pending = JSON.parse(localStorage.getItem('wm_ai_pending_action') || 'null');
+        if (pending && pending.action && Date.now() - Number(pending.at || 0) < 60000) {
+          localStorage.removeItem('wm_ai_pending_action');
+          iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'navigation-complete', action: pending.action, context: pageContext() }, widgetOrigin);
+        } else if (pending) localStorage.removeItem('wm_ai_pending_action');
+      } catch (err) {}
+    }
+    if (d.type === 'action') handleHostAction(d.action);
     if (d.type === 'error') console.warn('[avatar] widget error:', d.message);
   });
 
