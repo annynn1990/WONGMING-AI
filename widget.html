@@ -410,19 +410,53 @@
     try { postToParent('action', { action: action }); } catch (e) {}
   }
 
+  // ===== 自然語言導覽 / 論壇操作 =====
+  const TOUR_STOPS = [
+    { target:'home', label:'論壇首頁' },
+    { target:'palace', label:'皇宮' },
+    { target:'cabinet', label:'內閣' },
+    { target:'parliament', label:'國會' },
+    { target:'laws', label:'法律區' }
+  ];
+
+  function beginTour() {
+    try { localStorage.setItem('wm_ai_tour', JSON.stringify({ index:0, at:Date.now() })); } catch(e) {}
+    sendHostAction({action:'navigate',target:'home',tourIndex:0});
+    speak('好，我帶你開始參觀黃名論壇，先從首頁開始。');
+  }
+  function nextTourStop() {
+    let s=null; try { s=JSON.parse(localStorage.getItem('wm_ai_tour')||'null'); } catch(e) {}
+    if (!s || typeof s.index !== 'number') { beginTour(); return true; }
+    const n=s.index+1;
+    if(n>=TOUR_STOPS.length){ try{localStorage.removeItem('wm_ai_tour');}catch(e){} speak('主要導覽路線已經走完了。想去哪裡，直接告訴我。'); return true; }
+    try{localStorage.setItem('wm_ai_tour',JSON.stringify({index:n,at:Date.now()}));}catch(e){}
+    sendHostAction({action:'navigate',target:TOUR_STOPS[n].target,tourIndex:n});
+    speak('好的，下一站是'+TOUR_STOPS[n].label+'。'); return true;
+  }
+  function classifyNavigateTarget(t) {
+    if(/皇宮|皇室|宮殿|君主/.test(t)) return 'palace';
+    if(/內閣|政府|行政|部門/.test(t)) return 'cabinet';
+    if(/國會|議會|立法|議政|上議院|下議院/.test(t)) return 'parliament';
+    if(/法律|法規|法條|司法/.test(t)) return 'laws';
+    if(/外交|友邦|邦交|建交/.test(t)) return 'foreign_affairs';
+    if(/首頁|主頁|論壇首頁/.test(t)) return 'home';
+    return null;
+  }
   function tryHostCommand(q) {
-    const t = String(q || '').trim().replace(/[！!。．]+$/g, '');
-    if (!t) return false;
-    if (/^(回上一頁|返回上一頁|上一頁|回去)$/.test(t)) { sendHostAction({ action: 'back' }); speak('好，回上一頁。'); return true; }
-    if (/^(下一頁|往前|前進)$/.test(t)) { sendHostAction({ action: 'forward' }); speak('好，往下一頁。'); return true; }
-    if (/^(回到(論壇)?首頁|首頁)$/.test(t)) { sendHostAction({ action: 'navigate', target: 'home' }); speak('帶你回論壇首頁。'); return true; }
-    if (/往下(看|滑)|下一段|繼續往下/.test(t)) { sendHostAction({ action: 'scroll', direction: 'down', amount: 650 }); return true; }
-    if (/往上(看|滑)|上一段/.test(t)) { sendHostAction({ action: 'scroll', direction: 'up', amount: 650 }); return true; }
-    if (/滑到最上面|頁面最上方/.test(t)) { sendHostAction({ action: 'top' }); return true; }
-    if (/滑到最下面|頁面最下方/.test(t)) { sendHostAction({ action: 'bottom' }); return true; }
-    if (/政府|內閣|內閣政府/.test(t) && /帶我|帶你|去看看|去看|前往|看看/.test(t)) { sendHostAction({ action: 'navigate', target: 'cabinet' }); speak('帶你去看看政府相關區域。'); return true; }
-    if (/議會|國會/.test(t) && /帶我|去看看|去看|前往|看看/.test(t)) { sendHostAction({ action: 'navigate', target: 'parliament' }); speak('帶你去看看議會。'); return true; }
-    if (/法律|法規/.test(t) && /帶我|去看看|去看|前往|看看/.test(t)) { sendHostAction({ action: 'navigate', target: 'laws' }); speak('帶你去看看法律相關內容。'); return true; }
+    const t=String(q||'').trim().replace(/[！!。．？?]+$/g,'');
+    if(!t) return false;
+    if(/開始導覽|開始參觀|帶我參觀|帶我瀏覽帝國|帶我逛論壇|帶我看看帝國|參觀帝國/.test(t) && !/不要|別/.test(t)){beginTour();return true;}
+    if(/^(下一站|下一個|繼續導覽|繼續參觀|繼續|往下一站)$/.test(t)){nextTourStop();return true;}
+    if(/^(回上一頁|返回上一頁|上一頁|回去)$/.test(t)){sendHostAction({action:'back'});speak('好，回上一頁。');return true;}
+    if(/^(下一頁|往前|前進)$/.test(t)){sendHostAction({action:'forward'});speak('好，前進到下一頁。');return true;}
+    if(/^(回到(論壇)?首頁|首頁|主頁)$/.test(t)){sendHostAction({action:'navigate',target:'home'});speak('帶你回論壇首頁。');return true;}
+    if(/往下(看|滑)|下一段|繼續往下|往下滾/.test(t)){sendHostAction({action:'scroll',direction:'down',amount:650});speak('好，我往下帶你看。');return true;}
+    if(/往上(看|滑)|上一段|往上滾/.test(t)){sendHostAction({action:'scroll',direction:'up',amount:650});speak('好，我往上看。');return true;}
+    if(/滑到最上面|頁面最上方|回到頂端/.test(t)){sendHostAction({action:'top'});speak('回到頁面頂端。');return true;}
+    if(/滑到最下面|頁面最下方/.test(t)){sendHostAction({action:'bottom'});speak('帶你看到頁面底部。');return true;}
+    const wants=/帶我|帶著我|去看看|去看|前往|帶我去|我要去|想去|想看|參觀|看看/.test(t);
+    const target=classifyNavigateTarget(t);
+    if(target&&wants){sendHostAction({action:'navigate',target});const names={home:'論壇首頁',palace:'皇宮',cabinet:'內閣',parliament:'國會',laws:'法律區',foreign_affairs:'外交區'};speak('好的，帶你去'+names[target]+'。');return true;}
     return false;
   }
 
