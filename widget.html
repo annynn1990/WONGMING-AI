@@ -232,7 +232,16 @@
     if (d.type === 'host-context' || d.type === 'navigation-complete') {
       hostContext = Object.assign({}, hostContext, d.context || {});
       if (d.type === 'navigation-complete') {
-        setTimeout(() => speak('到了，這裡就是目前的頁面。你可以直接問我這一頁的內容。'), 250);
+        const area = (d.context && d.context.area) || '';
+        const intro = {
+          '論壇首頁':'到了，這裡是黃名論壇首頁，可以從這裡開始瀏覽各個國家機構。',
+          '皇宮':'到了，這裡是皇宮區，可以查看君主與皇室相關內容。',
+          '內閣':'到了，這裡是內閣區，可以查看政府與行政相關內容。',
+          '國會':'到了，這裡是國會區，可以查看議政與立法相關內容。',
+          '法律':'到了，這裡是法律區，可以查看法律與法規相關內容。',
+          '外交':'到了，這裡是外交相關區域，可以查看友邦與外交資訊。'
+        };
+        setTimeout(() => speak(intro[area] || '到了，這裡就是目前的頁面。你可以直接問我這一頁的內容。'), 250);
       }
     }
     // 不接受遠端啟動麥克風；麥克風只由使用者點擊觸發。
