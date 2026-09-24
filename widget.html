@@ -187,10 +187,11 @@
     }
   };
   // 共用：檢索到的資料 + 問題 → 給 LLM 的訊息（Ollama 與 WebLLM 共用同一套 RAG 提示）
+  let hostContext = { url: '', title: '', path: '' };
   function buildLLMMessages(q) {
-    const ctx = topK(q, 3).map(e => 'Q：' + e.q + '\nA：' + e.a).join('\n---\n');
+    const ctx = topK(q, 4).map(e => 'Q：' + e.q + '\nA：' + e.a).join('\n---\n');
     return [
-      { role: 'system', content: '你是「可嵌入任何網站的語音虛擬人元件」的示範助手。主題是教人「怎麼把這個元件裝到自己的網站、怎麼換成自己的角色、怎麼使用」。請用繁體中文、口語、最多兩三句話簡短回答。優先依據【參考資料】回答；資料沒有的就用常識簡短回應，不確定就老實說不知道。\n\n【參考資料】\n' + (ctx || '（無）') },
+      { role: 'system', content: '你是「黃名帝國虛擬導覽員」，目前嵌在黃名論壇中。你的工作是介紹黃名帝國網站內容、回答訪客問題、協助操作論壇。請使用繁體中文、自然友善、簡短回答，不辱罵、不威脅、不虛構官方資訊。優先依據【參考資料】；沒有資料就明確說目前不知道。若涉及帝國內部世界觀，視為網站提供的設定/資料，不要把信念或設定說成已被現實世界證實的事實。\n\n【目前頁面】\n' + JSON.stringify(hostContext) + '\n\n【參考資料】\n' + (ctx || '（無）') },
       { role: 'user', content: q }
     ];
   }
@@ -228,7 +229,13 @@
     const d = e.data || {};
     if (d.ns !== 'avatar-widget-host') return;
     if (d.type === 'say') speak(String(d.text || '').slice(0, 600));
-    // 注意：不接受用 postMessage 遠端啟動麥克風（listen），避免惡意父頁偷開麥；麥克風只由使用者點擊觸發
+    if (d.type === 'host-context' || d.type === 'navigation-complete') {
+      hostContext = Object.assign({}, hostContext, d.context || {});
+      if (d.type === 'navigation-complete') {
+        setTimeout(() => speak('到了，這裡就是目前的頁面。你可以直接問我這一頁的內容。'), 250);
+      }
+    }
+    // 不接受遠端啟動麥克風；麥克風只由使用者點擊觸發。
   });
 
   function showBubble(text) {
@@ -399,8 +406,29 @@
     return brain(q);
   }
 
+  function sendHostAction(action) {
+    try { postToParent('action', { action: action }); } catch (e) {}
+  }
+
+  function tryHostCommand(q) {
+    const t = String(q || '').trim().replace(/[！!。．]+$/g, '');
+    if (!t) return false;
+    if (/^(回上一頁|返回上一頁|上一頁|回去)$/.test(t)) { sendHostAction({ action: 'back' }); speak('好，回上一頁。'); return true; }
+    if (/^(下一頁|往前|前進)$/.test(t)) { sendHostAction({ action: 'forward' }); speak('好，往下一頁。'); return true; }
+    if (/^(回到(論壇)?首頁|首頁)$/.test(t)) { sendHostAction({ action: 'navigate', target: 'home' }); speak('帶你回論壇首頁。'); return true; }
+    if (/往下(看|滑)|下一段|繼續往下/.test(t)) { sendHostAction({ action: 'scroll', direction: 'down', amount: 650 }); return true; }
+    if (/往上(看|滑)|上一段/.test(t)) { sendHostAction({ action: 'scroll', direction: 'up', amount: 650 }); return true; }
+    if (/滑到最上面|頁面最上方/.test(t)) { sendHostAction({ action: 'top' }); return true; }
+    if (/滑到最下面|頁面最下方/.test(t)) { sendHostAction({ action: 'bottom' }); return true; }
+    if (/政府|內閣|內閣政府/.test(t) && /帶我|帶你|去看看|去看|前往|看看/.test(t)) { sendHostAction({ action: 'navigate', target: 'cabinet' }); speak('帶你去看看政府相關區域。'); return true; }
+    if (/議會|國會/.test(t) && /帶我|去看看|去看|前往|看看/.test(t)) { sendHostAction({ action: 'navigate', target: 'parliament' }); speak('帶你去看看議會。'); return true; }
+    if (/法律|法規/.test(t) && /帶我|去看看|去看|前往|看看/.test(t)) { sendHostAction({ action: 'navigate', target: 'laws' }); speak('帶你去看看法律相關內容。'); return true; }
+    return false;
+  }
+
   function handleUser(text) {
     if (text) showBubble('你：' + text);
+    if (tryHostCommand(text)) return;
     Promise.resolve().then(async () => { speak(await answer(text)); });
   }
 
