@@ -426,11 +426,24 @@
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({query:q})
       });
-      if (!r.ok) throw new Error('legal http '+r.status);
+      if (!r.ok) {
+        let detail = '';
+        try { const er = await r.json(); detail = er.error || ''; } catch (_) {}
+        throw new Error('legal http ' + r.status + (detail ? ': ' + detail : ''));
+      }
       const j=await r.json();
       if (j.answer) return j.answer;
+      throw new Error('legal api returned no answer');
     } catch(e) {
       console.warn('Legal center error',e);
+      const msg = String(e && e.message || e);
+      if (/503/.test(msg) && /GROQ_API_KEY/.test(msg)) {
+        showBubble('法律 AI 尚未連上：請在 Vercel 設定 GROQ_API_KEY。');
+      } else if (/404/.test(msg)) {
+        showBubble('法律 AI API 尚未部署成功，請稍後再測或檢查 Vercel 部署。');
+      } else {
+        showBubble('法律資料查詢失敗：' + msg.slice(0, 120));
+      }
     }
     return null;
   }
