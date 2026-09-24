@@ -119,6 +119,9 @@
     intro: WM_FORUM_BASE + 'forum.php?mod=viewthread&tid=23066',
     register: WM_FORUM_BASE + 'member.php?mod=welcomewongmingempire'
   };
+  var WM_BLOCKED_FORUMS = {
+    '55': '嗚嗚嗚，這裡我不方便帶你導覽喔，再見。'
+  };
   var WM_FORUM_GREETINGS = {
     '58': '現在我們在韻賢角，這是一個充滿音樂的城市角落！不妨看看這裡最近有哪些音樂、活動與有趣的討論。',
     '88': '現在我們在皇宮，這裡是帝國皇室與君主相關事務的重要所在。',
@@ -204,6 +207,17 @@
     if (d.type === 'close') setOpen(false);
     if (d.type === 'ready') {
       widgetReady = true;
+      var blockedGreeting = WM_BLOCKED_FORUMS[getForumFid()];
+      if (blockedGreeting) {
+        iframe.contentWindow && iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'say', text: blockedGreeting }, widgetOrigin);
+        iframe.style.pointerEvents = 'none';
+        setTimeout(function () {
+          try { root.remove(); } catch (e) {
+            try { root.style.display = 'none'; } catch (e2) {}
+          }
+        }, 3600);
+        return;
+      }
       iframe.contentWindow && iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'host-context', context: pageContext() }, widgetOrigin);
       setTimeout(sendPageContent, 300);
       try {
