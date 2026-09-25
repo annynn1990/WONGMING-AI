@@ -1,5 +1,3 @@
-import { getToken } from '@vercel/connect';
-
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -12,6 +10,7 @@ export default async function handler(req, res) {
     const PATH = 'data/shrine-lamps.json';
     const GH = 'https://api.github.com';
     try {
+      const { getToken } = await import('@vercel/connect');
       const token = await getToken('github/wongming-github');
       if (!token) return res.status(500).json({ok:false,message:'服務尚未完成設定'});
       const headers = {Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json', 'X-GitHub-Api-Version': '2022-11-28'};
