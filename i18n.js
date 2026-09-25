@@ -2,7 +2,7 @@
 'use strict';
 var API='https://wongming-ai.vercel.app';
 var LANG={'zh-Hant':'繁體中文','zh-Hans':'简体中文','en':'English','ja':'日本語','ko':'한국어'};
-var state={language:'zh-Hant',country:''};
+var state={language:'zh-Hant',country:'',ready:false};
 var cache=new Map();
 
 async function detect(){
@@ -14,7 +14,9 @@ async function detect(){
   state.language=l.indexOf('zh-tw')===0||l.indexOf('zh-hant')===0?'zh-Hant':l.indexOf('zh')===0?'zh-Hans':l.indexOf('ja')===0?'ja':l.indexOf('ko')===0?'ko':'en';
 }
 async function translate(text){
-  if(!text||state.language==='zh-Hant')return text;
+  if(!text)return text;
+  if(!state.ready){try{await state.promise;}catch(e){}}
+  if(state.language==='zh-Hant')return text;
   var key=state.language+'|'+text;
   if(cache.has(key))return cache.get(key);
   try{
@@ -24,6 +26,7 @@ async function translate(text){
     cache.set(key,out);return out;
   }catch(e){return text;}
 }
+state.promise=detect();
 window.WM_I18N={
   getLanguage:function(){return state.language;},getVoice:function(){return {'zh-Hant':'zh-TW-HsiaoChenNeural','zh-Hans':'zh-CN-XiaoxiaoNeural','en':'en-US-AriaNeural','ja':'ja-JP-NanamiNeural','ko':'ko-KR-SunHiNeural'}[state.language]||'zh-TW-HsiaoChenNeural';},
   localize:translate,
@@ -40,9 +43,10 @@ window.WM_I18N={
     });
   }
 };
-detect().then(function(){
+state.promise.then(function(){
   var b=document.getElementById('btn-llm');
   if(b){b.textContent='🌐';b.setAttribute('aria-label','翻譯目前頁面');b.title='翻譯目前頁面｜導覽語言：'+LANG[state.language];b.onclick=window.WM_I18N.openMenu;}
+  state.ready=true;
   window.parent.postMessage({ns:'avatar-widget',type:'visitor-locale',language:state.language,country:state.country},'https://wongming-ai.vercel.app');
 });
 })();
