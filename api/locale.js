@@ -13,7 +13,7 @@ export default async function handler(req, res) {
       const { getToken } = await import('@vercel/connect');
       let token;
       try {
-        token = await getToken('github/wongming-ai-github', { subject: { type: 'app' } });
+        token = await getToken('scl_L7qvd50E1HlaP9MzyWLsQ', { subject: { type: 'app' } });
       } catch (e) {
         console.error('CONNECT_TOKEN_ERROR', e);
         return res.status(500).json({ok:false,message:'連線授權失敗',code:e?.name||'TOKEN_ERROR'});
