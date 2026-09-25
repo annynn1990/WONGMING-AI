@@ -113,14 +113,14 @@
   // 獨立國際化模組：翻譯層失效時不影響虛擬人本體。
   try {
     var i18nScript = document.createElement('script');
-    i18nScript.src = 'https://wongming-ai.vercel.app/i18n.js?v=20260925a';
+    i18nScript.src = 'https://wongming-ai.vercel.app/i18n.js?v=20260925b';
     i18nScript.async = true;
     document.head.appendChild(i18nScript);
   } catch (e) {}
 
   try {
     var translationPageScript = document.createElement('script');
-    translationPageScript.src = 'https://wongming-ai.vercel.app/translation-page.js?v=20260925a';
+    translationPageScript.src = 'https://wongming-ai.vercel.app/translation-page.js?v=20260925b';
     translationPageScript.async = true;
     document.head.appendChild(translationPageScript);
   } catch (e) {}
