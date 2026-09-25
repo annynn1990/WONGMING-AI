@@ -399,9 +399,13 @@
       var names = wmGetTodayHolidayNamesFromDoc(document);
       var info = wmGetAnnouncementInfo();
       var parts = [];
-      if (names.length) parts.push('今天是「' + names.join('、') + '」，祝您節日愉快！');
-      else parts.push('現在我們在國家假期列表。');
-      if (info.count > 0) parts.push('另外，目前有 ' + info.count + ' 則公告要留意。');
+      if (names.length) {
+        parts.push('今天是「' + names.join('、') + '」，祝您節日愉快！');
+      }
+      parts.push('這裡是崇興門，是帝國皇室與政府的公告區！');
+      if (info.count > 0) {
+        parts.push('目前有 ' + info.count + ' 則公告要留意喔！');
+      }
       return parts.join(' ');
     }
     if (detectForumArea() === '論壇首頁' && wmTodayHolidayGreeting) return wmTodayHolidayGreeting;
