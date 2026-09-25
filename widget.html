@@ -582,6 +582,10 @@
     const stop = TOUR_STOPS[idx];
     if (!stop) return false;
 
+    // 只有真正抵達目前導覽進度所指定的 fid，才執行導覽站點介紹。
+    // 例如正在導覽 fid=461 時離開到首頁，首頁不應誤播「協和街」。
+    if (String(ctx.fid || '') !== String(stop.fid || '')) return false;
+
     const intro = getTourIntro(ctx, stop);
     setTimeout(() => {
       speak(intro);
