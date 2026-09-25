@@ -60,7 +60,7 @@
     };
 
     try {
-      localStorage.setItem('wm_holiday_source_v2', JSON.stringify(window.WM_HOLIDAY_SOURCE));
+      localStorage.setItem('wm_holiday_source_v3', JSON.stringify(window.WM_HOLIDAY_SOURCE));
     } catch (e) {}
 
     try {
