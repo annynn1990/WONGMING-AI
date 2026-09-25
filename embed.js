@@ -110,6 +110,14 @@
   iframe.setAttribute('allowtransparency', 'true');
   iframe.style.cssText = 'width:100%;height:100%;border:0;background:transparent;color-scheme:normal;';
 
+  // 獨立國際化模組：翻譯層失效時不影響虛擬人本體。
+  try {
+    var i18nScript = document.createElement('script');
+    i18nScript.src = 'https://wongming-ai.vercel.app/i18n.js?v=20260925';
+    i18nScript.async = true;
+    document.head.appendChild(i18nScript);
+  } catch (e) {}
+
   // 4) 收合後的小泡泡（iframe 收起時顯示，點它再展開）
   var bubble = document.createElement('button');
   bubble.type = 'button';
