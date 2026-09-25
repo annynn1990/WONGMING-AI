@@ -275,6 +275,7 @@
       const sceneKey = String(ctx.fid || ctx.area || '').trim();
       if (sceneKey && ctx.shouldGreet && ctx.isOpen !== false) {
         lastGreetedArea = sceneKey;
+        if (handleTourArrival(ctx)) return;
         const greeting = String(ctx.greeting || '').trim() ||
           '到了，這裡就是目前的頁面。你可以直接問我這一頁的內容。';
         setTimeout(() => speak(greeting), 250);
@@ -454,26 +455,154 @@
 
   // ===== 自然語言導覽 / 論壇操作 =====
   const TOUR_STOPS = [
-    { target:'home', label:'論壇首頁' },
-    { target:'palace', label:'皇宮' },
-    { target:'cabinet', label:'內閣' },
-    { target:'parliament', label:'國會' },
-    { target:'laws', label:'法律區' }
+    { target:'tour0', fid:'36', label:'崇興門', intro:'這裡是崇興門，是帝國皇室與政府的公告區！' },
+    { target:'tour1', fid:'72', label:'國民事務中心', intro:'這裡是國民事務中心，可以辦理國民申請、查詢、投訴與相關事務。' },
+    { target:'tour2', fid:'357', label:'友邦資訊中心', intro:'這裡是友邦資訊中心，可以瀏覽帝國與友邦之間的交流與資訊。' },
+    { target:'tour3', fid:'461', label:'461版面', intro:'' },
+    { target:'tour4', fid:'273', label:'273版面', intro:'' },
+    { target:'tour5', fid:'92', label:'內閣政府部門', intro:'這裡是內閣政府部門，是帝國行政機關的重要所在。' },
+    { target:'tour6', fid:'90', label:'國會', intro:'這裡是國會，是帝國議政與立法的重要所在。' },
+    { target:'tour7', fid:'91', label:'91版面', intro:'' },
+    { target:'tour8', fid:'88', label:'皇宮', intro:'這裡是皇宮，是帝國皇室與君主相關事務的重要所在。' },
+    { target:'tour9', fid:'89', label:'89版面', intro:'' }
   ];
 
-  function beginTour() {
-    try { localStorage.setItem('wm_ai_tour', JSON.stringify({ index:0, at:Date.now() })); } catch(e) {}
-    sendHostAction({action:'navigate',target:'home',tourIndex:0});
-    speak('好，我帶你開始參觀黃名論壇，先從首頁開始。');
+  function getTourState() {
+    try {
+      const s = JSON.parse(localStorage.getItem('wm_ai_tour') || 'null');
+      if (!s || typeof s.mode !== 'string' || typeof s.index !== 'number') return null;
+      return s;
+    } catch (e) { return null; }
   }
+
+  function saveTourState(mode, index) {
+    try { localStorage.setItem('wm_ai_tour', JSON.stringify({ mode, index, at: Date.now() })); } catch (e) {}
+  }
+
+  function clearTourState() {
+    try { localStorage.removeItem('wm_ai_tour'); } catch (e) {}
+  }
+
+  function clearTourChoices() {
+    const box = document.getElementById('suggestions');
+    if (!box) return;
+    box.innerHTML = '';
+  }
+
+  function showTourChoices(options) {
+    const box = document.getElementById('suggestions');
+    if (!box) return;
+    box.innerHTML = '';
+    const label = document.createElement('div');
+    label.className = 'sg-label';
+    label.textContent = '📍 接下來想怎麼逛？';
+    box.appendChild(label);
+    options.forEach((item) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sugg';
+      b.textContent = item.label;
+      b.onclick = item.onClick;
+      box.appendChild(b);
+    });
+  }
+
+  function openTourChooser() {
+    clearTourState();
+    speak('當然可以！要我照順序帶你認識帝國，還是隨機帶你逛逛？');
+    showTourChoices([
+      { label:'一、自動嚮導', onClick:beginTour },
+      { label:'二、隨機瀏覽', onClick:beginRandomTour }
+    ]);
+  }
+
+  function beginTour() {
+    clearTourChoices();
+    saveTourState('auto', 0);
+    sendHostAction({action:'navigate', target:TOUR_STOPS[0].target, tourIndex:0});
+  }
+
+  function beginRandomTour() {
+    clearTourChoices();
+    const n = Math.floor(Math.random() * TOUR_STOPS.length);
+    saveTourState('random', n);
+    speak('好，我隨機帶你參觀一個地方。');
+    sendHostAction({action:'navigate', target:TOUR_STOPS[n].target, tourIndex:n});
+  }
+
+  function stopTour() {
+    clearTourState();
+    clearTourChoices();
+    speak('好的，那您自己參觀，如有需求再呼叫我。');
+  }
+
   function nextTourStop() {
-    let s=null; try { s=JSON.parse(localStorage.getItem('wm_ai_tour')||'null'); } catch(e) {}
-    if (!s || typeof s.index !== 'number') { beginTour(); return true; }
-    const n=s.index+1;
-    if(n>=TOUR_STOPS.length){ try{localStorage.removeItem('wm_ai_tour');}catch(e){} speak('主要導覽路線已經走完了。想去哪裡，直接告訴我。'); return true; }
-    try{localStorage.setItem('wm_ai_tour',JSON.stringify({index:n,at:Date.now()}));}catch(e){}
-    sendHostAction({action:'navigate',target:TOUR_STOPS[n].target,tourIndex:n});
-    speak('好的，下一站是'+TOUR_STOPS[n].label+'。'); return true;
+    const s = getTourState();
+    if (!s) { openTourChooser(); return true; }
+
+    if (s.mode === 'random') {
+      let n = Math.floor(Math.random() * TOUR_STOPS.length);
+      if (TOUR_STOPS.length > 1 && n === s.index) n = (n + 1) % TOUR_STOPS.length;
+      saveTourState('random', n);
+      sendHostAction({action:'navigate', target:TOUR_STOPS[n].target, tourIndex:n});
+      return true;
+    }
+
+    const n = s.index + 1;
+    if (n >= TOUR_STOPS.length) {
+      clearTourState();
+      clearTourChoices();
+      speak('自動嚮導已經走完這一圈了。謝謝你的參觀！');
+      return true;
+    }
+
+    saveTourState('auto', n);
+    sendHostAction({action:'navigate', target:TOUR_STOPS[n].target, tourIndex:n});
+    return true;
+  }
+
+  function getTourIntro(ctx, stop) {
+    if (stop && stop.intro) {
+      if (stop.fid === '36' && ctx && ctx.greeting) return String(ctx.greeting);
+      return stop.intro;
+    }
+    const title = String((ctx && ctx.title) || '').replace(/[-|｜].*$/, '').trim();
+    if (title) return '這裡是「' + title + '」，我們現在來到帝國的一個重要版面。你可以看看這裡的內容，也可以直接問我。';
+    return '這裡是帝國的一個重要版面，你可以先看看這裡的內容，也可以直接問我。';
+  }
+
+  function handleTourArrival(ctx) {
+    const s = getTourState();
+    if (!s || !ctx || !ctx.shouldGreet) return false;
+    const idx = Number(s.index);
+    const stop = TOUR_STOPS[idx];
+    if (!stop) return false;
+
+    const intro = getTourIntro(ctx, stop);
+    setTimeout(() => {
+      speak(intro);
+      setTimeout(() => {
+        if (s.mode === 'auto') {
+          if (idx < TOUR_STOPS.length - 1) {
+            showTourChoices([
+              { label:'繼續導覽', onClick:nextTourStop },
+              { label:'自由參觀', onClick:stopTour }
+            ]);
+          } else {
+            showTourChoices([
+              { label:'重新導覽', onClick:beginTour },
+              { label:'自由參觀', onClick:stopTour }
+            ]);
+          }
+        } else {
+          showTourChoices([
+            { label:'再逛一站', onClick:nextTourStop },
+            { label:'自由參觀', onClick:stopTour }
+          ]);
+        }
+      }, Math.max(1800, Math.min(6500, intro.length * 155)));
+    }, 250);
+    return true;
   }
   function classifyNavigateTarget(t) {
     if(/皇宮|皇室|宮殿|君主/.test(t)) return 'palace';
@@ -507,7 +636,8 @@
       }, 2000);
       return true;
     }
-    if(/開始導覽|開始參觀|帶我參觀|帶我瀏覽帝國|帶我逛論壇|帶我看看帝國|參觀帝國/.test(t) && !/不要|別/.test(t)){beginTour();return true;}
+    if(/能帶我瀏覽帝國|帶我瀏覽帝國|帶我參觀帝國/.test(t) && !/不要|別/.test(t)){openTourChooser();return true;}
+    if(/開始導覽|開始參觀|帶我參觀|帶我逛論壇|帶我看看帝國|參觀帝國/.test(t) && !/不要|別/.test(t)){beginTour();return true;}
     if(/^(下一站|下一個|繼續導覽|繼續參觀|繼續|往下一站|再一個)$/.test(t)){nextTourStop();lastIntent={type:'tour-next'};return true;}
     if(/^(回上一頁|返回上一頁|上一頁|回去)$/.test(t)){sendHostAction({action:'back'});speak('好，回上一頁。');return true;}
     if(/^(下一頁|往前|前進)$/.test(t)){sendHostAction({action:'forward'});speak('好，前進到下一頁。');return true;}
