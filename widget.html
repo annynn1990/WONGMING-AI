@@ -95,7 +95,7 @@
       <div class="dock-row" role="toolbar" aria-label="虛擬人控制列">
       <button class="ctrl primary" id="btn-mic"   aria-label="開始語音對話"><span aria-hidden="true">🎤</span> 說話</button>
       <button class="ctrl" id="btn-engine" aria-label="切換 2D / 3D 角色" style="display:none">2D／3D</button>
-      <button class="ctrl" id="btn-translate" aria-label="翻譯目前頁面"><span aria-hidden="true">🌐</span></button>
+      <button class="ctrl" id="btn-llm"   aria-label="啟用瀏覽器內 AI 大腦（首次需下載模型）" aria-pressed="false"><span aria-hidden="true">🧠</span></button>
       <button class="ctrl" id="btn-mute"  aria-label="靜音" aria-pressed="false"><span aria-hidden="true">🔊</span></button>
       <button class="ctrl" id="btn-speed" aria-label="調整語速">1.0×</button>
       <button class="ctrl" id="btn-close" aria-label="收起助理"><span aria-hidden="true">✕</span></button>
@@ -226,11 +226,7 @@
   let audioMouth = 0, useAudioMouth = false, audioCtx = null;
   let speakSeq = 0, currentSource = null, currentRaf = 0; // 控制「點第二下打斷第一下」
   let neuralDisabled = false; // 抓不到神經語音後端就鎖定瀏覽器語音，避免每句都打 404
-  let guideLanguage = 'zh-Hant';
-  let visitorCountry = '';
-  const TTS_VOICES = {'zh-Hant':'zh-TW-HsiaoChenNeural','zh-Hans':'zh-CN-XiaoxiaoNeural','en':'en-US-AriaNeural','ja':'ja-JP-NanamiNeural','ko':'ko-KR-SunHiNeural'};
-  const LANGUAGE_NAMES = {'zh-Hant':'繁體中文','zh-Hans':'简体中文','en':'English','ja':'日本語','ko':'한국어'};
-  const NEURAL_VOICE = 'zh-TW-HsiaoChenNeural';
+  const NEURAL_VOICE = 'zh-TW-HsiaoChenNeural'; // 全站固定使用同一個神經女聲
   let recognition = null, listening = false;
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   let gesture3D = null; // 3D 手勢觸發 hook（bootVRM 設定；2D 模式為 null → 自動 no-op）
@@ -325,15 +321,6 @@
 
   // 對外入口：先試 edge-tts 神經語音(真人感 + 精準對嘴)，失敗自動退回瀏覽器語音
   function speak(text) {
-    const raw = String(text || '');
-    if (!raw) return;
-    if (guideLanguage !== 'zh-Hant') {
-      translateText(raw, guideLanguage).then(function(out){ speakRaw(out); });
-      return;
-    }
-    speakRaw(raw);
-  }
-  function speakRaw(text) {
     const myseq = ++speakSeq;
     showBubble(text);
     postToParent('speaking', { text });
@@ -343,6 +330,7 @@
       if (myseq !== speakSeq) return;
       console.warn('神經語音失敗：', e && e.message || e);
       useAudioMouth = false;
+      // 固定音色：失敗時不切換到瀏覽器 speechSynthesis，避免產生第二種聲音。
     });
   }
 
@@ -350,9 +338,8 @@
   async function speakNeural(text, seq) {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') { try { await audioCtx.resume(); } catch (e) {} }
-    const voice = TTS_VOICES[guideLanguage] || NEURAL_VOICE;
     const sep = TTS_ENDPOINT.indexOf('?') < 0 ? '?' : '&';
-    const resp = await fetch(TTS_ENDPOINT + sep + 'voice=' + encodeURIComponent(voice) + '&text=' + encodeURIComponent(text));
+    const resp = await fetch(TTS_ENDPOINT + sep + 'voice=' + encodeURIComponent(NEURAL_VOICE) + '&text=' + encodeURIComponent(text));
     if (seq !== speakSeq) return;                       // 抓回來時已被新點擊取代 → 放棄（避免重疊）
     if (!resp.ok) throw new Error('http ' + resp.status);
     const arr = await resp.arrayBuffer();
@@ -1048,34 +1035,6 @@
       box.appendChild(b);
     });
   })();
-  const translationCache = new Map();
-  async function translateText(text, target) {
-    if (!text || target === 'zh-Hant') return text;
-    const key = target + '|' + text;
-    if (translationCache.has(key)) return translationCache.get(key);
-    try {
-      const r=await fetch('https://wongming-ai.vercel.app/api/translate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target,items:[String(text).slice(0,900)]})});
-      const j=await r.json(); const out=(j.translations&&j.translations[0])?String(j.translations[0]):text;
-      translationCache.set(key,out); return out;
-    } catch(e){ return text; }
-  }
-  async function detectVisitorLocale(){
-    try{
-      const r=await fetch('https://wongming-ai.vercel.app/api/locale',{cache:'no-store'}); const j=await r.json();
-      guideLanguage=LANGUAGE_NAMES[j.language]?j.language:'en'; visitorCountry=String(j.country||'');
-    }catch(e){
-      const l=String(navigator.language||'').toLowerCase();
-      guideLanguage=l.startsWith('zh-tw')||l.startsWith('zh-hant')?'zh-Hant':l.startsWith('zh')?'zh-Hans':l.startsWith('ja')?'ja':l.startsWith('ko')?'ko':'en';
-    }
-    document.documentElement.lang=guideLanguage;
-  }
-  function localizedSpeak(text){
-    if(guideLanguage==='zh-Hant') return speak(text);
-    translateText(text,guideLanguage).then(function(out){ speak(out); });
-  }
-
-  detectVisitorLocale();
-
   // 打字輸入：Enter 或 ➤ 送出。組字中（注音/拼音選字）按的 Enter 不送，避免誤發半成品
   (function bindTyping() {
     const ti = document.getElementById('type-input');
@@ -1086,15 +1045,6 @@
     });
   })();
   document.getElementById('btn-mic').onclick   = () => startListening();
-  document.getElementById('btn-translate').onclick = () => {
-    const box=document.getElementById('suggestions'); if(!box) return;
-    box.innerHTML='';
-    [['English','en'],['日本語','ja'],['한국어','ko'],['繁體中文','zh-Hant']].forEach(function(pair){
-      const b=document.createElement('button'); b.className='sugg'; b.textContent=pair[0];
-      b.onclick=function(){ box.innerHTML=''; sendHostAction({action:'translate',target:pair[1]}); showBubble(pair[1]==='zh-Hant'?'已恢復中文原文。':'正在翻譯目前頁面成 '+pair[0]+'……'); };
-      box.appendChild(b);
-    });
-  };
   document.getElementById('btn-mute').onclick  = () => {
     ttsMuted = !ttsMuted;
     const mb = document.getElementById('btn-mute');
@@ -1109,7 +1059,27 @@
     document.getElementById('btn-speed').textContent = ttsRate.toFixed(1) + '×';
     showBubble('語速：' + ttsRate.toFixed(1) + '×');
   };
-  // 舊版 AI 大腦按鈕已由翻譯取代，保留 LLM 引擎供內部相容性。
+  document.getElementById('btn-llm').onclick = async () => {
+    const btn = document.getElementById('btn-llm');
+    // 啟用本機 Ollama 模式時：🧠 用來顯示狀態 / 重新連線，不下載 WebLLM
+    if (window.OLLAMA && window.OLLAMA.enabled) {
+      const ok = window.OLLAMA.ready || await window.OLLAMA.ping();
+      btn.textContent = ok ? '🧠本機' : '🧠✗'; btn.classList.toggle('llm-on', ok);
+      btn.setAttribute('aria-pressed', String(ok));
+      showBubble(ok ? ('本機 AI 大腦運作中（' + window.OLLAMA.model + '）🧠') : '本機 Ollama 連不上：確認 Ollama 在跑、且 OLLAMA_ORIGINS 已允許這個網站。');
+      return;
+    }
+    if (!window.LLM || !window.LLM.supported) { showBubble('這個裝置不支援 WebGPU，先用知識庫模式就好（功能一樣可用）。'); return; }
+    if (window.LLM.state === 'ready')   { showBubble('AI 大腦已啟用，問我問題吧 🧠'); return; }
+    if (window.LLM.state === 'loading') { showBubble('AI 大腦載入中… ' + Math.round(window.LLM.progress * 100) + '%'); return; }
+    showBubble('開始下載 AI 大腦（約 1GB，只需第一次）…');
+    try {
+      await window.LLM.load((p) => { btn.textContent = '🧠 ' + Math.round((p.progress || 0) * 100) + '%'; });
+      btn.textContent = '🧠✓'; btn.classList.add('llm-on');
+      speak('AI 大腦啟用完成，現在我可以聊得更自然囉！');
+    } catch (e) { btn.textContent = '🧠✗'; showBubble('AI 大腦載入失敗：' + (e && e.message || e)); }
+  };
+
   // 啟用本機 Ollama 時：開機 ping 一下，連上就把 🧠 切成「本機大腦」狀態
   (async function initOllama() {
     if (!window.OLLAMA || !window.OLLAMA.enabled) return;
