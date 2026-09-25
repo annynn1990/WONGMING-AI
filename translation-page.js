@@ -1,117 +1,16 @@
 (function(){
 'use strict';
-
-var API='https://wongming-ai.vercel.app';
-var originals=new Map();
-var active='';
-var manualKey='wm_site_language_manual';
-
-function getManual(){
-  try{
-    var v=localStorage.getItem(manualKey)||'';
-    return ['zh-Hant','zh-Hans','en','ja','ko'].indexOf(v)>=0?v:'';
-  }catch(e){return '';}
-}
-function saveManual(v){
-  try{
-    localStorage.setItem(manualKey,v);
-    localStorage.removeItem('wm_site_language');
-  }catch(e){}
-}
-function mapCountry(country){
-  country=String(country||'').toUpperCase();
-  if(country==='TW'||country==='HK'||country==='MO') return 'zh-Hant';
-  if(country==='CN'||country==='SG') return 'zh-Hans';
-  if(country==='JP') return 'ja';
-  if(country==='KR') return 'ko';
-  if(country) return 'en';
-  return '';
-}
-async function detectAuto(){
-  try{
-    var r=await fetch(API+'/api/locale',{cache:'no-store'});
-    if(r.ok){
-      var j=await r.json();
-      if(['zh-Hant','zh-Hans','en','ja','ko'].indexOf(j.language)>=0)return j.language;
-    }
-  }catch(e){}
-  try{
-    var r2=await fetch('https://ipapi.co/json/',{cache:'no-store'});
-    if(r2.ok){
-      var j2=await r2.json();
-      var byCountry=mapCountry(j2.country_code||j2.country);
-      if(byCountry)return byCountry;
-    }
-  }catch(e){}
-  var l=(navigator.language||'').toLowerCase();
-  return l.indexOf('zh-tw')===0||l.indexOf('zh-hk')===0||l.indexOf('zh-mo')===0||l.indexOf('zh-hant')===0?'zh-Hant':
-    l.indexOf('zh')===0?'zh-Hans':
-    l.indexOf('ja')===0?'ja':
-    l.indexOf('ko')===0?'ko':'en';
-}
-function collect(){
-  var a=[],w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
-  while(w.nextNode()){
-    var n=w.currentNode,p=n.parentElement;
-    if(!p||p.closest('#avatar-widget-root,script,style,noscript,textarea,input,select,option,button'))continue;
-    var t=(n.nodeValue||'').replace(/\s+/g,' ').trim();
-    if(t.length>1&&/[\u3400-\u9fff]/.test(t))a.push({n:n,t:t});
-  }
-  return a;
-}
-function restore(){
-  originals.forEach(function(v,n){try{n.nodeValue=v;}catch(e){}});
-  originals.clear();
-  active='';
-}
-async function translatePage(target,manual){
-  if(['zh-Hant','zh-Hans','en','ja','ko'].indexOf(target)<0)return;
-  if(manual)saveManual(target);
-  if(target==='zh-Hant'){restore();return;}
-  if(active===target)return;
-
-  restore();
-  var nodes=collect();
-  if(!nodes.length)return;
-  nodes.forEach(function(x){originals.set(x.n,x.n.nodeValue);});
-
-  try{
-    for(var i=0;i<nodes.length;i+=25){
-      var r=await fetch(API+'/api/translate',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          target:target,
-          items:nodes.slice(i,i+25).map(function(x){return x.t;})
-        })
-      });
-      if(!r.ok)throw new Error('translation '+r.status);
-      var j=await r.json();
-      var a=Array.isArray(j.translations)?j.translations:[];
-      if(a.length!==Math.min(25,nodes.length-i))throw new Error('translation length mismatch');
-      a.forEach(function(v,k){
-        if(nodes[i+k])nodes[i+k].n.nodeValue=String(v);
-      });
-    }
-    active=target;
-  }catch(e){
-    restore();
-    console.warn('[Wongming translation]',e);
-  }
-}
-
-window.__WM_TRANSLATE_PAGE__=function(target){
-  return translatePage(String(target||'en'),true);
-};
-
-async function autoApply(){
-  if(getManual())return;
-  var target=await detectAuto();
-  if(target&&target!=='zh-Hant')await translatePage(target,false);
-}
-
-function boot(){setTimeout(autoApply,700);}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);
-else boot();
-
+var API='https://wongming-ai.vercel.app',originals=new Map(),active='',manualKey='wm_site_language_manual',toast;
+function getManual(){try{var v=localStorage.getItem(manualKey)||'';return ['zh-Hant','zh-Hans','en','ja','ko'].indexOf(v)>=0?v:'';}catch(e){return '';}}
+function saveManual(v){try{localStorage.setItem(manualKey,v);localStorage.removeItem('wm_site_language');}catch(e){}}
+function mapCountry(c){c=String(c||'').toUpperCase();if(c==='TW'||c==='HK'||c==='MO')return 'zh-Hant';if(c==='CN'||c==='SG')return 'zh-Hans';if(c==='JP')return 'ja';if(c==='KR')return 'ko';return c?'en':'';}
+async function detectAuto(){try{var r=await fetch(API+'/api/locale',{cache:'no-store'});if(r.ok){var j=await r.json();if(['zh-Hant','zh-Hans','en','ja','ko'].indexOf(j.language)>=0)return j.language;}}catch(e){}try{var r2=await fetch('https://ipapi.co/json/',{cache:'no-store'});if(r2.ok){var j2=await r2.json(),x=mapCountry(j2.country_code||j2.country);if(x)return x;}}catch(e){}var l=(navigator.language||'').toLowerCase();return l.indexOf('zh-tw')===0||l.indexOf('zh-hk')===0||l.indexOf('zh-mo')===0||l.indexOf('zh-hant')===0?'zh-Hant':l.indexOf('zh')===0?'zh-Hans':l.indexOf('ja')===0?'ja':l.indexOf('ko')===0?'ko':'en';}
+function collect(){var a=[],w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);while(w.nextNode()){var n=w.currentNode,p=n.parentElement;if(!p||p.closest('#avatar-widget-root,script,style,noscript,textarea,input,select,option,button'))continue;var t=(n.nodeValue||'').replace(/\s+/g,' ').trim();if(t.length>1&&/[\u3400-\u9fff]/.test(t))a.push({n:n,t:t});}return a;}
+function restore(){originals.forEach(function(v,n){try{n.nodeValue=v;}catch(e){}});originals.clear();active='';}
+function showStatus(text,visible){if(!toast){toast=document.createElement('div');toast.id='wm-translation-status';toast.style.cssText='position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:2147482999;padding:10px 16px;border-radius:999px;background:rgba(26,28,46,.94);color:#fff;font:600 13px/1.3 system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25);pointer-events:none;max-width:calc(100vw - 40px);text-align:center;';(document.body||document.documentElement).appendChild(toast);}toast.textContent=text;toast.style.display=visible?'block':'none';}
+async function batch(target,items){var r=await fetch(API+'/api/translate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target:target,items:items})});if(!r.ok)throw new Error('HTTP '+r.status);var j=await r.json(),a=Array.isArray(j.translations)?j.translations:[];if(a.length!==items.length)throw new Error('回傳數量不符');return a;}
+async function translatePage(target,manual){if(['zh-Hant','zh-Hans','en','ja','ko'].indexOf(target)<0)return;if(manual)saveManual(target);if(target==='zh-Hant'){restore();showStatus('已恢復繁體中文',true);setTimeout(function(){showStatus('',false);},1500);return;}if(active===target)return;restore();var nodes=collect();if(!nodes.length){showStatus('沒有可翻譯的中文內容',true);setTimeout(function(){showStatus('',false);},1800);return;}nodes.forEach(function(x){originals.set(x.n,x.n.nodeValue);});var size=25,batches=[];for(var i=0;i<nodes.length;i+=size)batches.push({start:i,items:nodes.slice(i,i+size).map(function(x){return x.t;})});var next=0,done=0,failed=null,total=batches.length;showStatus('翻譯已開始… 0%（共 '+nodes.length+' 段）',true);async function worker(){while(next<batches.length&&!failed){var idx=next++,b=batches[idx];try{var out=await batch(target,b.items);out.forEach(function(v,k){if(nodes[b.start+k])nodes[b.start+k].n.nodeValue=String(v);});done++;showStatus('翻譯中… '+Math.round(done/total*100)+'%（'+done+'/'+total+'）',true);}catch(e){failed=e;}}}try{await Promise.all([worker(),worker(),worker()]);if(failed)throw failed;active=target;showStatus('翻譯完成 ✓',true);setTimeout(function(){showStatus('',false);},1800);}catch(e){restore();showStatus('翻譯失敗：'+(e.message||e),true);setTimeout(function(){showStatus('',false);},5000);console.warn('[Wongming translation]',e);}}
+window.__WM_TRANSLATE_PAGE__=function(target){return translatePage(String(target||'en'),true);};
+async function autoApply(){if(getManual())return;var target=await detectAuto();if(target&&target!=='zh-Hant')await translatePage(target,false);}
+function boot(){setTimeout(autoApply,700);}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
