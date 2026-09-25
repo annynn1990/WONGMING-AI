@@ -290,7 +290,6 @@
   }
 
   function getForumFid() {
-  function getForumFid() {
     var search = location.search || '';
     var m = search.match(/[?&]fid=(\d+)/i);
     if (m) {
