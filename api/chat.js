@@ -33,7 +33,7 @@ export default async function handler(req, res) {
         'Authorization': 'Bearer ' + key
       },
       body: JSON.stringify({
-        model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
+        model: process.env.GROQ_MODEL || 'openai/gpt-oss-120b',
         messages: safeMessages,
         temperature: 0.2,
         max_completion_tokens: 1400,
