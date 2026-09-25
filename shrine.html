@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>黃名虛擬人｜燈牆管理</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#120303;color:#fff;font-family:"DFKai-SB","標楷體","KaiTi",serif}
+#app{max-width:1000px;margin:20px auto;background:#1a0505;border-radius:6px;overflow:hidden;box-shadow:0 8px 40px #000}
+header{padding:18px 24px 8px;display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap}
+.stats{font-size:18px;text-shadow:2px 2px 4px #000;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.gold{color:#d4af37;font-weight:bold}.yellow{color:#fffb00}.green{color:#00ffaa}
+.dot{width:9px;height:9px;background:#ffaa00;border-radius:50%;display:inline-block;margin-right:7px;animation:breathe 2s infinite ease-in-out}
+@keyframes breathe{0%,100%{box-shadow:0 0 5px #ff8800;opacity:.5}50%{box-shadow:0 0 15px #ffcc00;opacity:1}}
+button{font-family:inherit;cursor:pointer}
+.admin-btn{background:rgba(128,0,0,.5);border:1px solid #d4af37;padding:5px 15px;color:#ffd700;font-weight:bold}
+.status{font-size:13px;color:#ffd700;background:#0008;padding:3px 8px}
+.hero{position:relative;padding:0 20px 20px}.hero img{width:100%;display:block}
+#grid{position:absolute;top:11%;left:38%;width:59%;height:82%;display:flex;flex-wrap:wrap;align-content:flex-start;z-index:5}
+.slot{width:11.5%;height:9.5%;margin:.4%;cursor:pointer;box-sizing:border-box;position:relative}
+.slot.empty{background:transparent;border:1.5px solid rgba(212,175,55,.4)}
+.slot.lit{background:radial-gradient(circle at 50% 30%,#fff 0%,rgba(255,250,150,.8) 15%,rgba(255,100,0,.3) 60%,transparent 90%);mix-blend-mode:screen;border:1px solid #ffd700}
+.modal{display:none;position:fixed;inset:0;background:#000e;z-index:9999;align-items:center;justify-content:center;padding:20px}
+.panel{background:#fffcf0;color:#800;border:3px solid #800;padding:25px;width:min(380px,95vw);border-radius:4px}
+.panel h3{margin-top:0}.panel input,.panel textarea{width:100%;padding:9px;margin:6px 0 12px;border:1px solid #800;font-family:inherit;font-size:17px}.panel textarea{height:90px}
+.row{display:flex;gap:10px;justify-content:flex-end}.primary{background:#800;color:#fff;border:0;padding:9px 18px}.secondary{background:#666;color:#fff;border:0;padding:9px 18px}.danger{background:#922;color:#fff;border:0;padding:9px 18px}
+.viewer{width:320px;height:520px;background:#1a0505;border:1px solid #d4af37;overflow:hidden;color:#fff;position:relative;display:flex;flex-direction:column}
+.viewer .art{height:72%;position:relative;overflow:hidden;background:linear-gradient(#4a3500,#1a0505)}
+.viewer .art:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 0,rgba(255,255,255,.45),rgba(255,215,0,.15) 20%,transparent 70%);z-index:2;pointer-events:none}
+.viewer .art img{position:absolute;bottom:0;left:0;width:100%;height:90%;object-fit:contain;transform:scale(1.05)}
+.card{width:80%;height:65px;margin:-28px auto 0;perspective:1000px;cursor:pointer;z-index:10}.inner{width:100%;height:100%;position:relative;transition:.6s;transform-style:preserve-3d}.inner.flip{transform:rotateY(180deg)}.face{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;backface-visibility:hidden;border:1px solid #fffa;background:rgba(255,230,235,.85);color:#a00;border-radius:2px}.back{transform:rotateY(180deg);color:#333;padding:8px;text-align:center}.viewer-close{margin:35px auto 0;background:none;border:1px solid #d4af37;color:#d4af37;padding:5px 50px;border-radius:15px}
+.help{padding:0 24px 20px;color:#d9b;text-align:center;font-family:system-ui,sans-serif;font-size:13px}
+@media(max-width:600px){header{padding:14px}.stats{font-size:15px}.hero{padding:0 8px 12px}#app{margin:0;border-radius:0}}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+<div class="stats"><span class="gold">燈牆概況</span><span>總位 80</span><span class="yellow"><span class="dot"></span>已安 <b id="lit">0</b></span><span class="green">空位 <b id="empty">80</b></span><span class="status" id="status">讀取中...</span></div>
+<button class="admin-btn" id="adminBtn">安置管理</button>
+</header>
+<div class="hero">
+<img src="https://www.wongmingempire.com/bbswm/data/attachment/forum/202602/19/152122ld17ngzordoi7irp.png" alt="燈牆">
+<div id="grid"></div>
+</div>
+<div class="help">一般訪客可查看燈位；管理模式使用 GitHub Fine-grained Token 直接儲存至本專案的 JSON 資料檔。</div>
+</div>
+
+<div class="modal" id="authModal"><div class="panel">
+<h3>GitHub 管理驗證</h3>
+<p style="font-family:system-ui;font-size:13px">請輸入只允許此 Repository「Contents: Read and write」的 Fine-grained Token。Token 僅保留在本次瀏覽器工作階段，不寫入網站。</p>
+<input type="password" id="token" placeholder="github_pat_...">
+<div class="row"><button class="secondary" onclick="closeModal('authModal')">取消</button><button class="primary" onclick="login()">進入管理</button></div>
+</div></div>
+
+<div class="modal" id="editModal"><div class="panel">
+<h3>安置燈位內容</h3>
+<label>姓名</label><input id="name">
+<label>祈願</label><textarea id="wish"></textarea>
+<div class="row"><button class="danger" onclick="removeLamp()">撤下</button><button class="secondary" onclick="closeModal('editModal')">取消</button><button class="primary" onclick="saveLamp()">儲存到 GitHub</button></div>
+</div></div>
+
+<div class="modal" id="viewModal"><div class="viewer">
+<div class="art"><img src="https://www.wongmingempire.com/bbswm/data/attachment/forum/202602/19/170823uup4dupdimdccdtd.png" alt=""></div>
+<div class="card" onclick="document.getElementById('inner').classList.toggle('flip')"><div class="inner" id="inner">
+<div class="face" id="vname" style="font-size:30px;font-weight:bold;letter-spacing:5px"></div>
+<div class="face back" id="vwish"></div>
+</div></div>
+<button class="viewer-close" onclick="closeModal('viewModal')">合十離開</button>
+</div></div>
+
+<script>
+const REPO="annynn1990/WONGMING-AI",BRANCH="main",DATA_PATH="data/shrine-lamps.json",MAX=80,RAW="https://raw.githubusercontent.com/"+REPO+"/"+BRANCH+"/"+DATA_PATH;
+let db=Array(MAX).fill(null),sha=null,idx=null,admin=false,token=sessionStorage.getItem("wm_github_token")||"";
+
+function setStatus(s){document.getElementById("status").textContent=s}
+function expired(d){return d&&d.ts&&(Date.now()-d.ts)>30*86400000}
+async function load(){
+ setStatus("雲端讀取中...");
+ try{
+  const r=await fetch(RAW+"?t="+Date.now(),{cache:"no-store"});
+  if(!r.ok)throw Error("HTTP "+r.status);
+  db=await r.json();if(!Array.isArray(db))throw Error("資料格式錯誤");
+  if(db.length<MAX)db.length=MAX;
+  setStatus("GitHub 已同步");draw();
+ }catch(e){setStatus("讀取失敗");alert("無法讀取 GitHub 資料："+e.message)}
+}
+async function getSha(){
+ const r=await fetch("https://api.github.com/repos/"+REPO+"/contents/"+DATA_PATH+"?ref="+BRANCH);
+ if(!r.ok)throw Error("GitHub API "+r.status);
+ const j=await r.json();return j.sha
+}
+function draw(){
+ const g=document.getElementById("grid");g.innerHTML="";let n=0;
+ for(let i=0;i<MAX;i++){
+  const d=db[i],lit=!!(d&&d.name&&!expired(d));if(lit)n++;
+  const s=document.createElement("div");s.className="slot "+(lit?"lit":"empty");s.title=lit?d.name:"空位";s.onclick=()=>select(i);g.appendChild(s);
+ }
+ document.getElementById("lit").textContent=n;document.getElementById("empty").textContent=MAX-n
+}
+function select(i){
+ idx=i;const d=db[i],active=d&&d.name&&!expired(d);
+ if(admin){
+  document.getElementById("name").value=active?d.name:"";
+  document.getElementById("wish").value=active?(d.wish||""):"";
+  document.getElementById("editModal").style.display="flex";
+ }else if(active){
+  document.getElementById("vname").textContent=d.name;document.getElementById("vwish").textContent=d.wish||"";
+  document.getElementById("inner").classList.remove("flip");document.getElementById("viewModal").style.display="flex";
+ }
+}
+async function login(){
+ const t=document.getElementById("token").value.trim();if(!t)return alert("請輸入 GitHub Token");
+ try{
+  const r=await fetch("https://api.github.com/repos/"+REPO,{headers:{Authorization:"Bearer "+t,Accept:"application/vnd.github+json"}});
+  if(!r.ok)throw Error("Token 無法存取此 Repository");
+  const j=await r.json();if(!j.permissions||!j.permissions.push)throw Error("此 Token 沒有寫入權限");
+  token=t;sessionStorage.setItem("wm_github_token",t);admin=true;closeModal("authModal");document.getElementById("adminBtn").textContent="退出管理";draw();alert("已進入管理模式");
+ }catch(e){alert(e.message)}
+}
+document.getElementById("adminBtn").onclick=()=>{if(admin){admin=false;document.getElementById("adminBtn").textContent="安置管理";draw()}else document.getElementById("authModal").style.display="flex"}
+async function githubSave(){
+ if(!token)throw Error("尚未登入 GitHub 管理模式");
+ sha=await getSha();
+ const content=JSON.stringify(db,null,2)+"\n";
+ const r=await fetch("https://api.github.com/repos/"+REPO+"/contents/"+DATA_PATH,{
+  method:"PUT",headers:{Authorization:"Bearer "+token,Accept:"application/vnd.github+json","Content-Type":"application/json"},
+  body:JSON.stringify({message:"更新燈牆資料",content:btoa(unescape(encodeURIComponent(content))),sha,branch:BRANCH})
+ });
+ if(!r.ok){let x=await r.text();throw Error("GitHub 儲存失敗 "+r.status+"："+x)}
+}
+async function saveLamp(){
+ const n=document.getElementById("name").value.trim();if(!n)return alert("請輸入姓名");
+ const old=db[idx];db[idx]={name:n,wish:document.getElementById("wish").value.trim(),ts:Date.now()};
+ setStatus("正在寫入 GitHub...");
+ try{await githubSave();draw();closeModal("editModal");setStatus("GitHub 已同步")}catch(e){db[idx]=old;draw();setStatus("同步失敗");alert(e.message)}
+}
+async function removeLamp(){
+ if(!confirm("確定撤下這個燈位？"))return;
+ const old=db[idx];db[idx]=null;setStatus("正在寫入 GitHub...");
+ try{await githubSave();draw();closeModal("editModal");setStatus("GitHub 已同步")}catch(e){db[idx]=old;draw();setStatus("同步失敗");alert(e.message)}
+}
+function closeModal(id){document.getElementById(id).style.display="none"}
+load();
+</script>
+</body></html>
