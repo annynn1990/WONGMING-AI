@@ -2,119 +2,151 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<title>Wongming Holiday Source</title>
-<style>html,body{margin:0;padding:0;background:transparent;width:1px;height:1px;overflow:hidden}</style>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>黃名帝國國家假期列表</title>
+<style>
+html,body{margin:0;padding:0;background:transparent;color:#333;font-family:Arial,sans-serif}
+.national-day-announcement-container{display:flex;justify-content:center;width:100%}
+.national-day-announcement{padding:15px;width:100%;margin:20px auto;box-sizing:border-box;font-size:1em}
+.national-day-announcement h1{text-align:center;color:#2c3e50;font-size:2em;margin-bottom:15px}
+.content-container{display:flex;flex-direction:column;align-items:center;gap:10px}
+.time-travel{text-align:left;padding:15px;background:rgba(245,245,245,.95);border-radius:10px;width:100%;box-sizing:border-box;box-shadow:0 0 10px rgba(0,0,0,.1)}
+.divider-long{border:0;border-top:1px solid #ddd;margin:4px 0 10px}
+.section-container{display:flex;flex-wrap:wrap;justify-content:space-between;width:100%}
+.column{flex:1 1 30%;box-sizing:border-box;padding:10px}
+.section{display:flex;justify-content:space-between;padding:10px;margin:10px 0;border-radius:10px;background:rgba(255,255,255,.9);transition:background .3s;box-shadow:0 0 5px rgba(0,0,0,.1)}
+.section:hover{background:rgba(230,230,230,.9)}
+.date-info{display:flex;justify-content:space-between;align-items:center;width:100%}
+.date{font-size:1em;color:#34495e;margin:0;font-weight:bold;flex:1}
+.location{text-align:right;flex-grow:1;margin:0;color:#660000}
+.footer-info{display:flex;align-items:center;margin-top:20px;background-color:rgba(245,245,245,.95);padding:10px;border-radius:10px;box-shadow:0 0 10px rgba(0,0,0,.1)}
+.footer-image{width:60px;height:60px;margin-right:15px}
+.footer-info p{margin:0;font-size:1.2em;color:#333}
+.upcoming-holiday-effect{background:linear-gradient(135deg,#fffdf0 0%,#fff9d6 100%)!important;border:2px solid #ffcc00!important;position:relative;animation:holidayPulse 2s infinite ease-in-out;box-shadow:0 0 12px rgba(255,204,0,.6)!important}
+.upcoming-holiday-effect .date{color:#b38600!important}
+.upcoming-holiday-effect .location{color:#cc2424!important;font-weight:bold}
+@keyframes holidayPulse{0%{transform:scale(1);box-shadow:0 0 8px rgba(255,204,0,.5)}50%{transform:scale(1.02);box-shadow:0 0 18px rgba(255,204,0,.9);border-color:#ff9900}100%{transform:scale(1);box-shadow:0 0 8px rgba(255,204,0,.5)}}
+.holiday-modal{display:none;position:fixed;z-index:9999;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.6);backdrop-filter:blur(5px);align-items:center;justify-content:center;opacity:0;transition:opacity .4s}
+.holiday-modal.show{display:flex;opacity:1}
+.holiday-modal-content{background:linear-gradient(135deg,#fff 0%,#fffcf0 100%);padding:30px;border:3px solid #8b4513;width:80%;max-width:450px;border-radius:15px;text-align:center;box-shadow:0 5px 25px rgba(0,0,0,.3);position:relative;transform:scale(.7);transition:transform .4s cubic-bezier(.175,.885,.32,1.275)}
+.holiday-modal.show .holiday-modal-content{transform:scale(1)}
+.holiday-modal-close{color:#aaa;position:absolute;top:10px;right:20px;font-size:28px;font-weight:bold;cursor:pointer}
+.holiday-modal-close:hover{color:#660000}
+.holiday-modal-badge{background:#c00;color:#fff;display:inline-block;padding:3px 12px;border-radius:20px;font-weight:bold;font-size:12px;margin-bottom:15px;letter-spacing:1px}
+#holiday-modal-title{color:#660000;font-size:24px;margin:10px 0;font-weight:bold}
+.holiday-modal-content p{color:#555;font-size:16px;margin-bottom:0}
+@media(max-width:768px){.section-container{flex-direction:column}.column{width:100%}}
+</style>
 </head>
 <body>
+<div id="wongming-holiday-page">
+  <div class="national-day-announcement-container">
+    <div class="national-day-announcement">
+      <h1 id="holiday-page-title">黃名帝國國家假期列表</h1>
+      <div class="content-container">
+        <div class="time-travel">
+          <hr class="divider-long">
+          <div class="section-container" id="holiday-sections"></div>
+          <div class="footer-info">
+            <img src="https://www.wongmingempire.com/bbswm/static/image/smiley/os/p.jpg" class="footer-image" alt="">
+            <p>內閣總理大臣<br>李君羨<br><span id="footer-current-date"></span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="holiday-modal" class="holiday-modal">
+    <div class="holiday-modal-content">
+      <span class="holiday-modal-close">&times;</span>
+      <div class="holiday-modal-badge">TODAY</div>
+      <h2 id="holiday-modal-title">節日快樂</h2>
+      <p>今天是黃名帝國國家假期</p>
+    </div>
+  </div>
+</div>
+
 <script>
-(function () {
-  'use strict';
+(function(){
+'use strict';
 
-  const lunarInfo = [
-    0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,
-    0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,
-    0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,
-    0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,
-    0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,
-    0x06ca0,0x0b550,0x15355,0x04da0,0x0a5b0,0x14573,0x052b0,0x0a9a8,0x0e950,0x06aa0,
-    0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,
-    0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b5a0,
-    0x195a6,0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,
-    0x09570,0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x05ac0,0x0ab60,0x096d5,
-    0x092e0,0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,
-    0x0cab5,0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,
-    0x0a930,0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,
-    0x0d530,0x05aa0,0x076a3,0x096d0,0x04bd7,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,
-    0x0dd45,0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,
-    0x0ada0,0x14b63,0x09370,0x049f8,0x04970,0x064b0,0x168a6,0x0ea50,0x06b20,0x1a6c4,
-    0x0aae0,0x092e0,0x0d2e3,0x0c960,0x0d550,0x0d559,0x0b540,0x0b5a0,0x195a6,0x095b0,
-    0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570,0x04af5,
-    0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x05ac0,0x0ab60,0x096d5,0x092e0,0x0c960,
-    0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,0x0a950,
-    0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,0x07954,
-    0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,0x05aa0,
-    0x076a3,0x096d0,0x04bd7,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,0x0b5a0,
-    0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0
-  ];
+const now=new Date();
+const currentYear=now.getFullYear();
+const currentMonth=now.getMonth()+1;
+const currentDay=now.getDate();
 
-  function leapMonth(y){return lunarInfo[y-1900]&0xf;}
-  function leapDays(y){return leapMonth(y)?((lunarInfo[y-1900]&0x10000)?30:29):0;}
-  function monthDays(y,m){return(lunarInfo[y-1900]&(0x10000>>m))?30:29;}
-  function yearDays(y){
-    let s=348;
-    for(let mask=0x8000;mask>0x8;mask>>=1)if(lunarInfo[y-1900]&mask)s++;
-    return s+leapDays(y);
-  }
-  function lunarToSolar(y,m,d){
-    if(y<1900||y>2100)return null;
-    const base=new Date(1900,0,31);let offset=0;
-    for(let yy=1900;yy<y;yy++)offset+=yearDays(yy);
-    const leap=leapMonth(y);
-    for(let mm=1;mm<m;mm++){
-      offset+=monthDays(y,mm);
-      if(leap===mm)offset+=leapDays(y);
-    }
-    offset+=d-1;
-    const out=new Date(base);out.setDate(out.getDate()+offset);return out;
-  }
-  function qingming(y){
-    const ex={2008:4,2012:4,2015:5,2016:4,2019:5,2020:4,2021:4,2024:4,2025:4,2026:5,2027:5,2028:4,2029:4,2030:5,2031:5,2032:4,2033:4,2034:5,2035:5,2036:4,2037:5,2038:4,2039:5,2040:4,2041:4,2042:5,2043:5,2044:4,2045:4,2046:5,2047:5,2048:4,2049:4,2050:5};
-    if(ex[y])return new Date(y,3,ex[y]);
-    const yy=y%100,dd=Math.floor(yy*0.2422+4.81)-Math.floor(yy/4);
-    return new Date(y,3,dd);
-  }
-  const now=new Date(), year=now.getFullYear(), month=now.getMonth()+1, day=now.getDate();
-  const holidays=[];
-  const addFixed=(m,d,name)=>holidays.push({name,date:new Date(year,m-1,d)});
-  const addLunar=(m,d,name)=>{const x=lunarToSolar(year,m,d);if(x)holidays.push({name,date:x});};
-  const addRangeLunar=(m,d1,d2,name)=>{const s=lunarToSolar(year,m,d1),e=lunarToSolar(year,m,d2);if(s&&e)holidays.push({name,startDate:s,endDate:e,date:s});};
+document.getElementById('holiday-page-title').textContent=currentYear+'年黃名帝國國家假期列表';
+document.getElementById('footer-current-date').textContent=currentYear+'年'+String(currentMonth).padStart(2,'0')+'月'+String(currentDay).padStart(2,'0')+'日';
 
-  addFixed(1,1,'元旦');
-  addFixed(1,8,'廣播紀念日');
-  addFixed(4,26,'外務日');
-  addFixed(5,5,'府尹紀念日');
-  addFixed(5,23,'五二三紀念日');
-  addFixed(6,1,'即位日');
-  addFixed(7,11,'仲夏改革紀念日');
-  addFixed(7,20,'太平節');
-  addFixed(8,26,'國慶日');
-  addFixed(9,30,'皇壽日');
-  addFixed(10,17,'黃統紀念日');
-  addFixed(10,20,'復興日');
-  addFixed(11,1,'國會紀念日');
-  addFixed(11,10,'宗教崇敬日');
-  addFixed(12,25,'聖誕節');
+const lunarInfo=[0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,0x06ca0,0x0b550,0x15355,0x04da0,0x0a5b0,0x14573,0x052b0,0x0a9a8,0x0e950,0x06aa0,0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b5a0,0x195a6,0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570,0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x05ac0,0x0ab60,0x096d5,0x092e0,0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,0x05aa0,0x076a3,0x096d0,0x04bd7,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0,0x14b63,0x09370,0x049f8,0x04970,0x064b0,0x168a6,0x0ea50,0x06b20,0x1a6c4,0x0aae0,0x092e0,0x0d2e3,0x0c960,0x0d550,0x0d559,0x0b540,0x0b5a0,0x195a6,0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570,0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x05ac0,0x0ab60,0x096d5,0x092e0,0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,0x05aa0,0x076a3,0x096d0,0x04bd7,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,0x0b5a0,0x056d0,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0];
+function leapMonth(y){return lunarInfo[y-1900]&0xf}
+function leapDays(y){return leapMonth(y)?((lunarInfo[y-1900]&0x10000)?30:29):0}
+function monthDays(y,m){return(lunarInfo[y-1900]&(0x10000>>m))?30:29}
+function yearDays(y){let s=348;for(let mask=0x8000;mask>0x8;mask>>=1)if(lunarInfo[y-1900]&mask)s++;return s+leapDays(y)}
+function lunarToSolar(y,m,d){if(y<1900||y>2100)return null;const base=new Date(1900,0,31);let offset=0;for(let yy=1900;yy<y;yy++)offset+=yearDays(yy);const leap=leapMonth(y);for(let mm=1;mm<m;mm++){offset+=monthDays(y,mm);if(leap===mm)offset+=leapDays(y)}offset+=d-1;const out=new Date(base);out.setDate(out.getDate()+offset);return out}
+function fmt(d){return String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0')}
+function qingming(y){const ex={2025:4,2026:5,2027:5,2028:4,2029:4,2030:5,2031:5,2032:4,2033:4,2034:5,2035:5,2036:4,2037:5,2038:4,2039:5,2040:4,2041:4,2042:5,2043:5,2044:4,2045:4,2046:5,2047:5,2048:4,2049:4,2050:5};if(ex[y])return new Date(y,3,ex[y]);const yy=y%100,dd=Math.floor(yy*.2422+4.81)-Math.floor(yy/4);return new Date(y,3,dd)}
+function addFixed(a,m,d,name){const x=new Date(currentYear,m-1,d);a.push({name,date:x,startDate:x,endDate:x})}
+function addLunar(a,m,d,name){const x=lunarToSolar(currentYear,m,d);if(x)a.push({name,date:x,startDate:x,endDate:x})}
+function addRangeLunar(a,m,d1,d2,name){const st=lunarToSolar(currentYear,m,d1),en=lunarToSolar(currentYear,m,d2);if(st&&en)a.push({name,date:st,startDate:st,endDate:en})}
 
-  const spring=lunarToSolar(year,1,1);
-  if(spring){
-    holidays.push({name:'春節',date:spring});
-    const open=new Date(spring);open.setDate(open.getDate()+1);holidays.push({name:'開年日',date:open});
-    const chi=new Date(spring);chi.setDate(chi.getDate()+2);holidays.push({name:'赤口',date:chi});
-  }
-  addLunar(1,15,'元宵');
-  const qm=qingming(year);holidays.push({name:'清明節',date:qm});
-  const qh=new Date(qm);qh.setDate(qh.getDate()+1);holidays.push({name:'慶和節',date:qh});
-  addRangeLunar(7,14,16,'盂蘭典祭');
-  addLunar(8,15,'中秋節');
+function buildHolidays(){
+  const a=[];
+  addFixed(a,1,1,'元旦');addFixed(a,1,8,'廣播紀念日');addFixed(a,4,26,'外務日');addFixed(a,5,5,'府尹紀念日');addFixed(a,5,23,'五二三紀念日');addFixed(a,6,1,'即位日');addFixed(a,7,11,'仲夏改革紀念日');addFixed(a,7,20,'太平節');addFixed(a,8,26,'國慶日');addFixed(a,9,30,'皇壽日');addFixed(a,10,17,'黃統紀念日');addFixed(a,10,20,'復興日');addFixed(a,11,1,'國會紀念日');addFixed(a,11,10,'宗教崇敬日');addFixed(a,12,25,'聖誕節');
+  const spring=lunarToSolar(currentYear,1,1);
+  if(spring){a.push({name:'春節',date:spring,startDate:spring,endDate:spring});const d1=new Date(spring);d1.setDate(d1.getDate()+1);a.push({name:'開年日',date:d1,startDate:d1,endDate:d1});const d2=new Date(spring);d2.setDate(d2.getDate()+2);a.push({name:'赤口',date:d2,startDate:d2,endDate:d2})}
+  addLunar(a,1,15,'元宵');
+  const qm=qingming(currentYear);a.push({name:'清明節',date:qm,startDate:qm,endDate:qm});const qh=new Date(qm);qh.setDate(qh.getDate()+1);a.push({name:'慶和節',date:qh,startDate:qh,endDate:qh});
+  addRangeLunar(a,7,14,16,'盂蘭典祭');addLunar(a,8,15,'中秋節');
+  return a.sort((x,y)=>x.startDate-y.startDate);
+}
 
-  const today=[];
-  holidays.forEach(function(h){
-    const s=h.startDate||h.date,e=h.endDate||h.date;
-    if(new Date(year,month-1,day)>=s&&new Date(year,month-1,day)<=e)
-      today.push({name:h.name,date:String((h.date||s).getMonth()+1).padStart(2,'0')+'/'+String((h.date||s).getDate()).padStart(2,'0')});
+const holidays=buildHolidays();
+const todayDate=new Date(currentYear,currentMonth-1,currentDay);
+const today=holidays.filter(h=>todayDate>=h.startDate&&todayDate<=h.endDate);
+const sections=document.getElementById('holiday-sections');
+const columns=[[],[],[]], per=Math.ceil(holidays.length/3);
+holidays.forEach((h,i)=>columns[Math.min(Math.floor(i/per),2)].push(h));
+
+function showModal(names){
+  if(!names.length)return;
+  const modal=document.getElementById('holiday-modal');
+  document.getElementById('holiday-modal-title').textContent='今天是：'+names.join('、');
+  modal.classList.add('show');
+  modal.querySelector('.holiday-modal-close').onclick=()=>modal.classList.remove('show');
+  modal.onclick=e=>{if(e.target===modal)modal.classList.remove('show')};
+}
+
+columns.forEach(col=>{
+  const c=document.createElement('div');c.className='column';
+  col.forEach(h=>{
+    const div=document.createElement('div');div.className='section';
+    const isToday=today.includes(h);
+    const diff=Math.ceil((h.startDate-todayDate)/(1000*60*60*24));
+    if(isToday || (diff>=0&&diff<=3) || (todayDate>=h.startDate&&todayDate<=h.endDate)) div.classList.add('upcoming-holiday-effect');
+    const dateText=h.startDate.getTime()===h.endDate.getTime()
+      ? h.date.toLocaleDateString('zh-TW',{month:'numeric',day:'numeric'})
+      : h.startDate.toLocaleDateString('zh-TW',{month:'numeric',day:'numeric'})+' - '+h.endDate.toLocaleDateString('zh-TW',{month:'numeric',day:'numeric'});
+    div.innerHTML='<div class="date-info"><h3 class="date">'+dateText+'</h3><h4 class="location">'+h.name+'</h4></div>';
+    c.appendChild(div);
   });
+  sections.appendChild(c);
+});
 
-  const data={
-    source:'wongming-ai/holiday-source',
-    date:year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0'),
-    today:today,
-    holidays:holidays.map(function(h){return{name:h.name,date:String((h.date||h.startDate).getMonth()+1).padStart(2,'0')+'/'+String((h.date||h.startDate).getDate()).padStart(2,'0')};})
-  };
-  data.greeting=today.length?'今天是「'+today.map(x=>x.name).join('、')+'」，祝您節日愉快！':'';
+showModal(today.map(h=>h.name));
 
-  try { window.parent.postMessage({ns:'wongming-holiday',type:'holiday-data',data:data},'https://www.wongmingempire.com'); } catch(e) {}
-  try { window.parent.postMessage({ns:'wongming-holiday',type:'holiday-data',data:data},'*'); } catch(e) {}
-  window.WM_HOLIDAY_SOURCE=data;
+const data={
+  source:'wongming-ai/holiday-source',
+  date:currentYear+'-'+String(currentMonth).padStart(2,'0')+'-'+String(currentDay).padStart(2,'0'),
+  today:today.map(h=>({name:h.name,date:fmt(h.startDate)})),
+  holidays:holidays.map(h=>({name:h.name,date:fmt(h.startDate),endDate:fmt(h.endDate)}))
+};
+data.greeting=today.length?'今天是「'+today.map(h=>h.name).join('、')+'」，祝您節日愉快！':'';
+
+window.WM_HOLIDAY_SOURCE=data;
+try{localStorage.setItem('wm_holiday_source_v3',JSON.stringify(data))}catch(e){}
+try{window.parent.postMessage({ns:'wongming-holiday',type:'holiday-data',data:data},'https://www.wongmingempire.com')}catch(e){}
+try{window.parent.postMessage({ns:'wongming-holiday',type:'holiday-data',data:data},'*')}catch(e){}
 })();
 </script>
 </body>
