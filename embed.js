@@ -470,7 +470,9 @@
     var fid = getForumFid();
     var area = detectForumArea();
     var areaState = getForumAreaState(fid, area);
-    var shouldGreet = !!(widgetOpen && areaState.pending);
+    // 首頁每天只要有今天的節日資料，就在本次頁面載入時自動介紹；
+    // 不讓 sessionStorage 裡「已介紹過」的狀態阻止首頁節日提醒。
+    var shouldGreet = !!(widgetOpen && (areaState.pending || (area === '論壇首頁' && wmTodayHolidayGreeting)));
     if (shouldGreet) {
       try { sessionStorage.removeItem('wm_pending_forum_greeting'); } catch (e) {}
     }
