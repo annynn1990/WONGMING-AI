@@ -15,7 +15,7 @@ async function lib() { if (!_mod) _mod = await import('msedge-tts'); return _mod
 // 允許的聲線白名單（避免被拿去合成任意語言/聲音）
 const VOICES = new Set([
   'zh-TW-HsiaoChenNeural', 'zh-TW-HsiaoYuNeural', 'zh-TW-YunJheNeural',
-  'zh-CN-XiaoxiaoNeural', 'en-US-AriaNeural',
+  'zh-CN-XiaoxiaoNeural', 'en-US-AriaNeural', 'ja-JP-NanamiNeural', 'ko-KR-SunHiNeural',
 ]);
 
 function escapeXml(s) {
