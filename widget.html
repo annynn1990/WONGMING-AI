@@ -321,31 +321,26 @@
   }
 
   // 對外入口：先試 edge-tts 神經語音(真人感 + 精準對嘴)，失敗自動退回瀏覽器語音
-  function speak(text) {
+  async function speak(text) {
     const myseq = ++speakSeq;
     showBubble(text);
     postToParent('speaking', { text });
-    if (window.WM_I18N && typeof window.WM_I18N.localize === 'function') {
-      window.WM_I18N.localize(String(text)).then(function(localized) {
+    try {
+      if (window.WM_I18N && typeof window.WM_I18N.ready === 'function') {
+        await window.WM_I18N.ready();
+      }
+      if (myseq !== speakSeq) return;
+      if (window.WM_I18N && typeof window.WM_I18N.localize === 'function') {
+        const localized = await window.WM_I18N.localize(String(text));
         if (myseq !== speakSeq) return;
         if (localized && localized !== text) showBubble(localized);
         if (ttsMuted) return;
         stopSpeaking();
-        speakNeural(localized || text, myseq).catch(function(e) {
-          if (myseq !== speakSeq) return;
-          console.warn('神經語音失敗：', e && e.message || e);
-          useAudioMouth = false;
-        });
-      }).catch(function() {
-        if (myseq !== speakSeq || ttsMuted) return;
-        stopSpeaking();
-        speakNeural(text, myseq).catch(function(e) {
-          if (myseq !== speakSeq) return;
-          console.warn('神經語音失敗：', e && e.message || e);
-          useAudioMouth = false;
-        });
-      });
-      return;
+        await speakNeural(localized || text, myseq);
+        return;
+      }
+    } catch (e) {
+      console.warn('導覽語言初始化／翻譯失敗：', e && e.message || e);
     }
     if (ttsMuted) return;
     stopSpeaking();
@@ -355,46 +350,6 @@
       useAudioMouth = false;
     });
   }
-
-  // edge-tts 神經語音：抓 /api/tts 的 MP3，用 Web Audio 播放並以「實際音量」驅動嘴型
-  async function speakNeural(text, seq) {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') { try { await audioCtx.resume(); } catch (e) {} }
-    const voice = (window.WM_I18N && typeof window.WM_I18N.getVoice === 'function') ? window.WM_I18N.getVoice() : NEURAL_VOICE;
-    const sep = TTS_ENDPOINT.indexOf('?') < 0 ? '?' : '&';
-    const resp = await fetch(TTS_ENDPOINT + sep + 'voice=' + encodeURIComponent(voice) + '&text=' + encodeURIComponent(text));
-    if (seq !== speakSeq) return;                       // 抓回來時已被新點擊取代 → 放棄（避免重疊）
-    if (!resp.ok) throw new Error('http ' + resp.status);
-    const arr = await resp.arrayBuffer();
-    if (seq !== speakSeq) return;
-    if (arr.byteLength < 800) throw new Error('audio too small');
-    const audioBuf = await audioCtx.decodeAudioData(arr);
-    if (seq !== speakSeq) return;                       // 解碼後最後確認，舊音檔不搶播
-    const src = audioCtx.createBufferSource(); src.buffer = audioBuf;
-    const analyser = audioCtx.createAnalyser(); analyser.fftSize = 256;
-    src.connect(analyser); analyser.connect(audioCtx.destination);
-    const data = new Uint8Array(analyser.fftSize);
-    currentSource = src;
-    useAudioMouth = true; isSpeaking = true;
-    if (model) try { model.motion('Tap'); } catch (e) {}
-    const loop = () => {
-      if (currentSource !== src) return;                // 不是我在播了就停
-      analyser.getByteTimeDomainData(data);
-      let sum = 0; for (let i = 0; i < data.length; i++) { const v = (data[i] - 128) / 128; sum += v * v; }
-      audioMouth = Math.min(1, Math.sqrt(sum / data.length) * 3.4); // RMS 音量 → 開口
-      currentRaf = requestAnimationFrame(loop);
-    };
-    currentRaf = requestAnimationFrame(loop);
-    src.onended = () => {                               // 自然播完才收尾；被打斷時 onended 已被清掉
-      if (currentSource !== src) return;
-      if (currentRaf) { cancelAnimationFrame(currentRaf); currentRaf = 0; }
-      isSpeaking = false; useAudioMouth = false; audioMouth = 0;
-      currentSource = null;
-    };
-    src.start(0);
-  }
-
-  // 後備：瀏覽器內建語音(Yating)。對嘴綁「實際是否在發聲」，不依賴各語音不一致的事件
   function speakBrowser(text) {
     if (ttsMuted || !('speechSynthesis' in window)) return;
     const u = new SpeechSynthesisUtterance(text);
