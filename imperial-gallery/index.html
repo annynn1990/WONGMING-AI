@@ -1,1 +1,158 @@
-<!-- placeholder: move the current imperial gallery here -->
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>全國榮職貴族名錄｜Wongming Empire</title>
+<style>
+:root{--paper:#f5f1e9;--ink:#292825;--muted:#77736b;--line:#d8d0c3;--red:#6f2528}
+*{box-sizing:border-box}html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:Georgia,"Noto Serif TC","Times New Roman",serif}
+body{padding:52px 28px 80px}
+.wrap{max-width:1180px;margin:auto}
+header{text-align:center;margin-bottom:62px}
+.kicker{font:11px/1.6 Arial,sans-serif;letter-spacing:.28em;color:#8a8176;text-transform:uppercase}
+h1{font-weight:400;font-size:clamp(30px,4vw,48px);letter-spacing:.08em;margin:12px 0 10px}
+.sub{font-size:13px;color:var(--muted);letter-spacing:.14em}
+.section{margin:0 0 72px}
+.section-head{display:flex;align-items:end;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:30px}
+.section-head h2{font-size:22px;font-weight:400;letter-spacing:.12em;margin:0}
+.section-head span{font:10px Arial,sans-serif;color:#999;letter-spacing:.16em}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:42px 28px}
+.card{min-width:0}
+.portrait{position:relative;background:#e8e1d6;aspect-ratio:3/4;overflow:hidden;cursor:pointer}
+.portrait img{width:100%;height:100%;display:block;object-fit:cover;transition:transform .45s ease}
+.card:hover .portrait img{transform:scale(1.018)}
+.portrait:after{content:"";position:absolute;inset:7px;border:1px solid rgba(255,255,255,.35);pointer-events:none}
+.sovereign .portrait{box-shadow:inset 0 0 0 2px #d7c39b}
+.royal .portrait{box-shadow:inset 0 0 0 2px #b9c2ca}
+.noble .portrait{box-shadow:inset 0 0 0 2px #a9957d}
+.label{padding:15px 2px 0}
+.rank{font:10px/1.5 Arial,sans-serif;letter-spacing:.16em;color:#777;text-transform:uppercase}
+.name{font-size:20px;line-height:1.35;margin:4px 0}
+.en{font-size:11px;line-height:1.55;color:#777;letter-spacing:.02em}
+.back{font-size:12px;line-height:1.7;color:#8b8479;margin-top:9px;white-space:pre-line}
+.sovereign-card{max-width:420px;margin:0 auto}
+.sovereign-card .portrait{aspect-ratio:3/4}
+.sovereign-card .name{font-size:25px}
+.sovereign-card .en{font-size:12px;line-height:1.7}
+.divider{width:34px;height:1px;background:var(--red);margin:0 auto 34px}
+.note{text-align:center;color:#8d887f;font-size:11px;letter-spacing:.08em;margin-top:75px}
+.gear{position:fixed;right:18px;top:16px;width:28px;height:28px;border:0;background:transparent;color:#aaa;font-size:17px;cursor:pointer;opacity:.18;z-index:10}.gear:hover{opacity:.8}
+.modal{display:none;position:fixed;inset:0;background:rgba(35,31,27,.45);z-index:20;padding:25px;overflow:auto}.modal.show{display:block}
+.panel{max-width:620px;margin:6vh auto;background:#f8f5ee;padding:28px;border:1px solid #d5ccbd;box-shadow:0 15px 50px rgba(0,0,0,.15)}
+.panel h3{margin:0 0 20px;font-weight:400}.panel label{display:block;font:11px Arial,sans-serif;color:#777;margin:13px 0 5px}.panel input,.panel textarea{width:100%;padding:10px;border:1px solid #d6cec1;background:#fffdf9;font:13px inherit}.panel textarea{min-height:105px;resize:vertical}.actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}.actions button{padding:9px 16px;border:1px solid #bbb0a1;background:#f8f5ee;cursor:pointer}.actions .save{background:#292825;color:white;border-color:#292825}
+@media(max-width:900px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:650px){body{padding:35px 16px 60px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:32px 16px}.section{margin-bottom:55px}.name{font-size:17px}.section-head{margin-bottom:22px}}
+@media(max-width:430px){.grid{grid-template-columns:1fr 1fr}.portrait{aspect-ratio:3/4}}
+</style>
+</head>
+<body>
+<button class="gear" aria-label="編輯">⚙</button>
+<div class="wrap">
+<header><div class="kicker">Wongming Empire · National Register</div><h1>全國榮職貴族名錄</h1><div class="sub">國家榮譽頭銜與皇室貴族肖像展</div></header>
+
+<section class="section">
+<div class="section-head"><h2>女皇陛下</h2><span>SOVEREIGN</span></div>
+<div id="sovereign" class="sovereign-card"></div>
+</section>
+
+<section class="section">
+<div class="section-head"><h2>皇室</h2><span>ROYAL HOUSE</span></div>
+<div id="royal" class="grid"></div>
+</section>
+
+<section class="section">
+<div class="section-head"><h2>貴族</h2><span>NOBILITY</span></div>
+<div id="noble" class="grid"></div>
+</section>
+<div class="note">WONGMING EMPIRE · NATIONAL REGISTER OF HONORARY TITLES</div>
+</div>
+
+<div id="modal" class="modal"><div class="panel">
+<h3>編輯肖像資料</h3>
+<label>圖片 URL</label><input id="fimg">
+<label>中文頭銜</label><input id="frank">
+<label>姓名</label><input id="fname">
+<label>English title / name</label><input id="fen">
+<label>背面展覽文字</label><textarea id="fback"></textarea>
+<div class="actions"><button id="cancel">取消</button><button class="save" id="save">儲存</button></div>
+</div></div>
+
+<script>
+const original={
+sovereign:[{img:"https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/193440ophyqmqwmdxhahwq.jpg",rank:"女皇",name:"仁宗慶寧皇帝 胡仔",en:"The Sole Legitimate Empress of the Wongming Empire and its Territories and Dependencies, Queen of the Nizi, the Primal Kin, and the Wongming Forerunners, Lady of the Myriad Acres, The Firstborn of the Dawn, The Protector of the Entire Imperial Domain, The Protector of the Dharma, The Sarvottama, The Emperor Over All Monarchs, The Astrocrator, The Sun-Clad Sovereign, The Empress of the Thousand Suns, The Deified Coronet, The Heiress to the Frigid Poles and the Endless Sands, The Lioness of the Golden Harvest, The Sovereign of the Four Winds, The Mother of Victory and Conquest, The Dragon-Rider of the Eastern Realms, Mahendra.",back:"2013年5月24日\n登基"}],
+royal:[
+["https://i.meee.com.tw/zEDD7vz.jpg","敬親王","李迎希","Prince Ching"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/193936t6ag3a1og6x637hx.jpeg","顯親王","李君羨","Prince Hsien"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","寶親王","路德維希","Prince Po"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194001al7zxpjuekkxkieo.jpg","孝親王","仲尼","Prince Hsiao"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194008u8kmij80a5b33kaj.jpg","宣親王","夏侯昜","Prince Hsuan"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","泰親王","白敖","Prince Tai"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","樂親王","達爾文","Prince Lo"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","和親王","關二哥","Prince Ho"],
+["https://i.meee.com.tw/JvfaSRl.png","理親王","橋尚良","Prince Li"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","康親王","黃庭浩","Prince K'ang"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","景親王","雨框眼鏡","Prince Ching"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","熙郡王","黃祺恩","Prince Hsi"]
+],
+noble:[
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","莫斯科大公","關二哥","Grand Duke of Moscow"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","勤業公爵","金恆贊","Duke of Chin-yeh"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","貞賢侯爵","小琪琪","Marquis Chen-hsien"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","平安侯爵","何正","Marquis Ping-an"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","威德侯爵","雲鵬天","Marquis Wei-te"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","榮仁侯爵","Andy","Marquis Jung-jen"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","嘉祥伯爵","何壽","Count Chia-hsiang"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","洛晴子爵","紀文思","Viscount Lo-ching"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","洛德子爵","R_Chun","Viscount Lo-te"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","洛聲子爵","將臣嵐","Viscount Lo-sheng"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","謙順男爵","單一愛戀","Baron Chien-shun"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","謙誠男爵","伊安","Baron Chien-cheng"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","謙泰男爵","Lingyuye","Baron Chien-t'ai"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","謙平男爵","青山杏仁","Baron Chien-p'ing"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","崇佑男爵","Walden","Baron Chung-yu"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","崇勉男爵","old8woman","Baron Chung-mien"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","崇暉男爵","仲屋喜丈","Baron Chung-hui"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","崇銘男爵","Koreafish","Baron Chung-ming"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","允德男爵","麥塊","Baron Yun-te"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","仁德男爵","阿祖","Baron Jen-te"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194031w7vfyy50ly0y9vs5.jpg","安民男爵","唐吉坷德","Baron An-min"],
+["https://www.wongmingempire.com/bbswm/data/attachment/forum/202512/21/194521feelujm0fnim88np.jpg","恩澤港男爵","福靈","Baron En-tse Harbour"]
+]};
+const key="wm-imperial-gallery-v1";
+let data=JSON.parse(localStorage.getItem(key)||"null")||original;
+let editing=null;
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]))}
+function card(item,type,i){
+ const [img,rank,name,en,back]=Array.isArray(item)?item:[item.img,item.rank,item.name,item.en,item.back];
+ return '<article class="card '+type+'"><div class="portrait" data-type="'+type+'" data-i="'+i+'"><img src="'+esc(img)+'" alt="'+esc(name)+'" loading="lazy"></div><div class="label"><div class="rank">'+esc(rank)+'</div><div class="name">'+esc(name)+'</div><div class="en">'+esc(en)+'</div>'+(back?'<div class="back">'+esc(back)+'</div>':'')+'</div></article>';
+}
+function render(){
+ document.getElementById("sovereign").innerHTML=card(data.sovereign[0],"sovereign",0);
+ document.getElementById("royal").innerHTML=data.royal.map((x,i)=>card(x,"royal",i)).join("");
+ document.getElementById("noble").innerHTML=data.noble.map((x,i)=>card(x,"noble",i)).join("");
+ document.querySelectorAll(".portrait").forEach(el=>el.onclick=()=>edit(el.dataset.type,+el.dataset.i));
+ sendHeight();
+}
+function edit(type,i){
+ editing={type,i};let x=Array.isArray(data[type][i])?data[type][i]:[data[type][i].img,data[type][i].rank,data[type][i].name,data[type][i].en,data[type][i].back];
+ ["fimg","frank","fname","fen","fback"].forEach((id,j)=>document.getElementById(id).value=x[j]||"");
+ document.getElementById("modal").classList.add("show");
+}
+document.querySelector(".gear").onclick=()=>{
+ const p=prompt("請輸入編輯密碼");
+ if(p==="1111"||p==="9999") document.getElementById("modal").classList.add("show");
+};
+document.getElementById("cancel").onclick=()=>{document.getElementById("modal").classList.remove("show");editing=null};
+document.getElementById("save").onclick=()=>{
+ if(!editing)return;
+ const x=["fimg","frank","fname","fen","fback"].map(id=>document.getElementById(id).value);
+ data[editing.type][editing.i]=x;localStorage.setItem(key,JSON.stringify(data));document.getElementById("modal").classList.remove("show");editing=null;render();
+};
+window.addEventListener("resize",sendHeight);
+function sendHeight(){window.parent.postMessage({type:"wm-gallery-height",height:document.documentElement.scrollHeight},"*")}
+if(window.ResizeObserver)new ResizeObserver(sendHeight).observe(document.documentElement);
+window.addEventListener("load",()=>{document.querySelectorAll("img").forEach(im=>im.addEventListener("load",sendHeight));setTimeout(sendHeight,300)});
+render();
+</script>
+</body></html>
