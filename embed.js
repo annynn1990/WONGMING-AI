@@ -524,6 +524,52 @@
     if (type === 'scroll') { scrollHost(String(action.direction || 'down').toLowerCase(), action.amount); return; }
     if (type === 'top') { scrollHost('top'); return; }
     if (type === 'bottom') { scrollHost('bottom'); return; }
+    if (type === 'translate') { translateHostPage(String(action.target || 'en')); return; }
+  }
+
+  var wmTranslationState = { active: false, target: '', originals: new Map() };
+  async function translateHostPage(target) {
+    var allowed = { 'zh-Hant':1, 'zh-Hans':1, 'en':1, 'ja':1, 'ko':1 };
+    if (!allowed[target]) target = 'en';
+    var root = document.querySelector('#wp, #ct, #threadlist, #forumlist, #fwin_content') || document.body;
+    var nodes = [];
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      var n = walker.currentNode, p = n.parentElement;
+      if (!p || p.closest('#avatar-widget-root,script,style,noscript,textarea,input,select,option,button')) continue;
+      var s = String(n.nodeValue || '').replace(/\\s+/g,' ').trim();
+      if (!s || s.length < 2 || /^https?:\\/\\//i.test(s)) continue;
+      if (!/[\\u3400-\\u9fff]/.test(s) && target !== 'zh-Hant' && target !== 'zh-Hans') continue;
+      nodes.push({ node:n, text:s });
+    }
+    if (!nodes.length) {
+      iframe.contentWindow && iframe.contentWindow.postMessage({ns:NS_OUT,type:'translation-status',ok:true,target:target,count:0},widgetOrigin);
+      return;
+    }
+    if (wmTranslationState.active && wmTranslationState.target === target) return;
+    if (target === 'zh-Hant' || target === 'zh-Hans') {
+      wmTranslationState.originals.forEach(function (v,n) { try { n.nodeValue = v; } catch(e){} });
+      wmTranslationState = { active:false,target:'',originals:new Map() };
+      if (target === 'zh-Hant') return;
+    }
+    var originals = new Map();
+    nodes.forEach(function(x){ if(!originals.has(x.node)) originals.set(x.node, x.node.nodeValue); });
+    var texts = nodes.map(function(x){ return x.text; });
+    iframe.contentWindow && iframe.contentWindow.postMessage({ns:NS_OUT,type:'translation-status',ok:false,target:target,count:nodes.length},widgetOrigin);
+    try {
+      for (var i=0;i<texts.length;i+=25) {
+        var batch=texts.slice(i,i+25);
+        var resp=await fetch('https://wongming-ai.vercel.app/api/translate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target:target,items:batch})});
+        if(!resp.ok) throw new Error('translate http '+resp.status);
+        var data=await resp.json(), out=Array.isArray(data.translations)?data.translations:[];
+        out.forEach(function(x,j){ if(nodes[i+j]) nodes[i+j].node.nodeValue=String(x); });
+      }
+      wmTranslationState={active:true,target:target,originals:originals};
+      iframe.contentWindow && iframe.contentWindow.postMessage({ns:NS_OUT,type:'translation-status',ok:true,target:target,count:nodes.length},widgetOrigin);
+    } catch(err) {
+      originals.forEach(function(v,n){ try{n.nodeValue=v;}catch(e){} });
+      iframe.contentWindow && iframe.contentWindow.postMessage({ns:NS_OUT,type:'translation-status',ok:false,target:target,error:String(err.message||err)},widgetOrigin);
+    }
   }
   window.addEventListener('message', function (e) {
     var d = e.data || {};
