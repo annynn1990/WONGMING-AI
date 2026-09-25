@@ -457,8 +457,28 @@
     if (type === 'bottom') { scrollHost('bottom'); return; }
   }
   window.addEventListener('message', function (e) {
-    if (widgetOrigin !== '*' && e.origin !== widgetOrigin) return;
     var d = e.data || {};
+
+    // 節日資料源是獨立的 holiday-source.html，不屬於虛擬人的 widgetOrigin。
+    // 先接收它，再做 widgetOrigin 的安全檢查。
+    if (d.ns === 'wongming-holiday' && d.type === 'holiday-data' && d.data) {
+      try {
+        var today = Array.isArray(d.data.today) ? d.data.today : [];
+        wmTodayHolidayGreeting = d.data.greeting ||
+          (today.length ? '今天是「' + today.map(function (x) { return x.name; }).join('、') + '」，祝您節日愉快！' : '');
+        localStorage.setItem('wm_holiday_source_v3', JSON.stringify(d.data));
+      } catch (err) {}
+      if (detectForumArea() === '論壇首頁' && widgetReady && wmTodayHolidayGreeting) {
+        iframe.contentWindow && iframe.contentWindow.postMessage({
+          ns: NS_OUT,
+          type: 'holiday-greeting',
+          text: wmTodayHolidayGreeting
+        }, widgetOrigin);
+      }
+      return;
+    }
+
+    if (widgetOrigin !== '*' && e.origin !== widgetOrigin) return;
     if (d.ns !== NS_IN) return;
     if (d.type === 'close') setOpen(false);
     if (d.type === 'ready') {
