@@ -330,49 +330,123 @@
         await window.WM_I18N.ready();
       }
       if (myseq !== speakSeq) return;
-      if (window.WM_I18N && typeof window.WM_I18N.localize === 'function') {
-        const localized = await window.WM_I18N.localize(String(text));
-        if (myseq !== speakSeq) return;
-        if (localized && localized !== text) showBubble(localized);
-        if (ttsMuted) return;
-        stopSpeaking();
-        await speakNeural(localized || text, myseq);
-        return;
-      }
-    } catch (e) {
-      console.warn('導覽語言初始化／翻譯失敗：', e && e.message || e);
-    }
-    if (ttsMuted) return;
-    stopSpeaking();
-    speakNeural(text, myseq).catch(function(e) {
+      const localized = (window.WM_I18N && typeof window.WM_I18N.localize === 'function')
+        ? await window.WM_I18N.localize(String(text))
+        : text;
       if (myseq !== speakSeq) return;
-      console.warn('神經語音失敗：', e && e.message || e);
+      if (localized && localized !== text) showBubble(localized);
+      if (ttsMuted) return;
+      stopSpeaking();
+      await speakNeural(localized || text, myseq);
+    } catch (e) {
+      if (myseq !== speakSeq || ttsMuted) return;
+      console.warn('[Wongming TTS] neural failed, using browser voice:', e && e.message || e);
       useAudioMouth = false;
-    });
+      speakBrowser(text);
+    }
   }
+
+  // edge-tts 神經語音：抓 /api/tts 的 MP3，用 Web Audio 播放並以實際音量驅動嘴型
+  async function speakNeural(text, seq) {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') { try { await audioCtx.resume(); } catch (e) {} }
+
+    const voice = (window.WM_I18N && typeof window.WM_I18N.getVoice === 'function')
+      ? window.WM_I18N.getVoice() : NEURAL_VOICE;
+    const sep = TTS_ENDPOINT.indexOf('?') < 0 ? '?' : '&';
+    const resp = await fetch(
+      TTS_ENDPOINT + sep +
+      'voice=' + encodeURIComponent(voice) +
+      '&text=' + encodeURIComponent(String(text).slice(0, 600)),
+      { cache:'no-store' }
+    );
+
+    if (seq !== speakSeq) return;
+    if (!resp.ok) throw new Error('http ' + resp.status);
+
+    const arr = await resp.arrayBuffer();
+    if (seq !== speakSeq) return;
+    if (arr.byteLength < 800) throw new Error('audio too small');
+
+    const audioBuf = await audioCtx.decodeAudioData(arr);
+    if (seq !== speakSeq) return;
+
+    const src = audioCtx.createBufferSource();
+    src.buffer = audioBuf;
+
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    src.connect(analyser);
+    analyser.connect(audioCtx.destination);
+
+    const data = new Uint8Array(analyser.fftSize);
+    currentSource = src;
+    useAudioMouth = true;
+    isSpeaking = true;
+    if (model) try { model.motion('Tap'); } catch (e) {}
+
+    const loop = () => {
+      if (currentSource !== src) return;
+      analyser.getByteTimeDomainData(data);
+      let sum = 0;
+      for (let i = 0; i < data.length; i++) {
+        const v = (data[i] - 128) / 128;
+        sum += v * v;
+      }
+      audioMouth = Math.min(1, Math.sqrt(sum / data.length) * 3.4);
+      currentRaf = requestAnimationFrame(loop);
+    };
+
+    currentRaf = requestAnimationFrame(loop);
+
+    src.onended = () => {
+      if (currentSource !== src) return;
+      if (currentRaf) { cancelAnimationFrame(currentRaf); currentRaf = 0; }
+      isSpeaking = false;
+      useAudioMouth = false;
+      audioMouth = 0;
+      currentSource = null;
+    };
+
+    src.start(0);
+  }
+
   function speakBrowser(text) {
     if (ttsMuted || !('speechSynthesis' in window)) return;
+    const  function speakBrowser(text) {
+    if (ttsMuted) return;
+    if (!('speechSynthesis' in window)) {
+      showBubble('此瀏覽器沒有可用的語音播放功能。');
+      return;
+    }
     const u = new SpeechSynthesisUtterance(text);
     if (!ttVoice) loadVoice();
     if (ttVoice) u.voice = ttVoice;
-    u.lang = (ttVoice && ttVoice.lang) || 'zh-TW';
+    const guideLang = (window.WM_I18N && typeof window.WM_I18N.getLanguage === 'function')
+      ? window.WM_I18N.getLanguage() : 'zh-Hant';
+    u.lang = ({'zh-Hant':'zh-TW','zh-Hans':'zh-CN','en':'en-US','ja':'ja-JP','ko':'ko-KR'}[guideLang]) || ((ttVoice && ttVoice.lang) || 'zh-TW');
     u.rate = ttsRate; u.pitch = 1.0;
     u.onboundary = () => { mouthTarget = 0.5 + Math.random() * 0.5; };
     const stopLip = () => { isSpeaking = false; };
     u.onend = stopLip;
-    // 嘴型用「估時長」驅動，不靠 speechSynthesis.speaking 輪詢
-    // （Chrome 在 cancel 後常回報失準 → 第二次說話嘴巴就不動了）
     const estMs = Math.min(16000, Math.max(1500, (text.length * 130) / (ttsRate || 1)));
     const fire = () => {
-      try { speechSynthesis.resume(); } catch (e) {}             // 解 Chrome cancel 後卡住的 bug
+      try { speechSynthesis.resume(); } catch (e) {}
       speechSynthesis.speak(u);
-      isSpeaking = true; mouthTarget = 0.7; if (model) try { model.motion('Tap'); } catch (e) {}
+      isSpeaking = true;
+      mouthTarget = 0.7;
+      if (model) try { model.motion('Tap'); } catch (e) {}
       clearTimeout(speakBrowser._t);
-      speakBrowser._t = setTimeout(stopLip, estMs);              // 保底：時間到閉嘴，不依賴事件
+      speakBrowser._t = setTimeout(stopLip, estMs);
     };
-    if (speechSynthesis.speaking || speechSynthesis.pending) { speechSynthesis.cancel(); setTimeout(fire, 120); }
-    else fire();
+    if (speechSynthesis.speaking || speechSynthesis.pending) {
+      speechSynthesis.cancel();
+      setTimeout(fire, 120);
+    } else {
+      fire();
+    }
   }
+
 
   // ===== 大腦：M4 檢索 + M4b（WebLLM）生成 =====
   // 中文不好斷詞，改用「字元 bigram（相鄰兩字）」相似度，對中文很有效、又不用任何函式庫。
