@@ -30,7 +30,6 @@ button{font-family:inherit;cursor:pointer}
 .viewer .art:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 0,rgba(255,255,255,.45),rgba(255,215,0,.15) 20%,transparent 70%);z-index:2;pointer-events:none}
 .viewer .art img{position:absolute;bottom:0;left:0;width:100%;height:90%;object-fit:contain;transform:scale(1.05)}
 .card{width:80%;height:65px;margin:-28px auto 0;perspective:1000px;cursor:pointer;z-index:10}.inner{width:100%;height:100%;position:relative;transition:.6s;transform-style:preserve-3d}.inner.flip{transform:rotateY(180deg)}.face{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;backface-visibility:hidden;border:1px solid #fffa;background:rgba(255,230,235,.85);color:#a00;border-radius:2px}.back{transform:rotateY(180deg);color:#333;padding:8px;text-align:center}.viewer-close{margin:35px auto 0;background:none;border:1px solid #d4af37;color:#d4af37;padding:5px 50px;border-radius:15px}
-.help{padding:0 24px 20px;color:#d9b;text-align:center;font-family:system-ui,sans-serif;font-size:13px}
 @media(max-width:600px){header{padding:14px}.stats{font-size:15px}.hero{padding:0 8px 12px}#app{margin:0;border-radius:0}}
 </style>
 </head>
@@ -47,8 +46,8 @@ button{font-family:inherit;cursor:pointer}
 </div>
 
 <div class="modal" id="authModal"><div class="panel">
-<h3>安置驗證</h3>
-<input type="password" id="token" inputmode="numeric" maxlength="4" placeholder="">
+<h3 id="authTitle">安置驗證</h3>
+<input type="password" id="authCode" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="請輸入驗證碼">
 <div class="row"><button class="secondary" onclick="closeModal('authModal')">取消</button><button class="primary" onclick="login()">進入</button></div>
 </div></div>
 
@@ -56,7 +55,7 @@ button{font-family:inherit;cursor:pointer}
 <h3>安置燈位內容</h3>
 <label>姓名</label><input id="name">
 <label>祈願</label><textarea id="wish"></textarea>
-<div class="row"><button class="danger" onclick="removeLamp()">撤下</button><button class="secondary" onclick="closeModal('editModal')">取消</button><button class="primary" onclick="saveLamp()">儲存到 GitHub</button></div>
+<div class="row"><button class="danger" onclick="removeLamp()">撤下</button><button class="secondary" onclick="closeModal('editModal')">取消</button><button class="primary" onclick="saveLamp()">儲存</button></div>
 </div></div>
 
 <div class="modal" id="viewModal"><div class="viewer">
@@ -69,26 +68,22 @@ button{font-family:inherit;cursor:pointer}
 </div></div>
 
 <script>
-const REPO="annynn1990/WONGMING-AI",BRANCH="main",DATA_PATH="data/shrine-lamps.json",MAX=80,RAW="https://raw.githubusercontent.com/"+REPO+"/"+BRANCH+"/"+DATA_PATH;
-let db=Array(MAX).fill(null),sha=null,idx=null,admin=false,token=sessionStorage.getItem("wm_github_token")||"";
+const API="https://wongming-ai.vercel.app/api/shrine",MAX=80;
+let db=Array(MAX).fill(null),idx=null,admin=false,authStep=1;
 
 function setStatus(s){document.getElementById("status").textContent=s}
 function expired(d){return d&&d.ts&&(Date.now()-d.ts)>30*86400000}
+
 async function load(){
- 
  try{
-  const r=await fetch(RAW+"?t="+Date.now(),{cache:"no-store"});
+  const r=await fetch(API+"?t="+Date.now(),{cache:"no-store"});
   if(!r.ok)throw Error("HTTP "+r.status);
   db=await r.json();if(!Array.isArray(db))throw Error("資料格式錯誤");
   if(db.length<MAX)db.length=MAX;
   setStatus("已同步");draw();
  }catch(e){setStatus("同步失敗");alert("無法讀取資料："+e.message)}
 }
-async function getSha(){
- const r=await fetch("https://api.github.com/repos/"+REPO+"/contents/"+DATA_PATH+"?ref="+BRANCH);
- if(!r.ok)throw Error("GitHub API "+r.status);
- const j=await r.json();return j.sha
-}
+
 function draw(){
  const g=document.getElementById("grid");g.innerHTML="";let n=0;
  for(let i=0;i<MAX;i++){
@@ -97,6 +92,7 @@ function draw(){
  }
  document.getElementById("lit").textContent=n;document.getElementById("empty").textContent=MAX-n
 }
+
 function select(i){
  idx=i;const d=db[i],active=d&&d.name&&!expired(d);
  if(admin){
@@ -108,39 +104,54 @@ function select(i){
   document.getElementById("inner").classList.remove("flip");document.getElementById("viewModal").style.display="flex";
  }
 }
-async function login(){
- const t=document.getElementById("token").value.trim();
- if(t!=="1111")return alert("驗證碼錯誤");
- token=prompt("GitHub Token")||"";if(!token)return;
- try{
-  const r=await fetch("https://api.github.com/repos/"+REPO,{headers:{Authorization:"Bearer "+token,Accept:"application/vnd.github+json"}});
-  if(!r.ok)throw Error("GitHub 驗證失敗");
-  const j=await r.json();if(!j.permissions||!j.permissions.push)throw Error("沒有寫入權限");
-  admin=true;closeModal("authModal");document.getElementById("adminBtn").textContent="退出管理";draw();
- }catch(e){token="";alert(e.message)}
+
+function openAuth(){
+ authStep=1;
+ document.getElementById("authTitle").textContent="安置驗證";
+ document.getElementById("authCode").value="";
+ document.getElementById("authCode").placeholder="請輸入第一組驗證碼";
+ document.getElementById("authModal").style.display="flex";
+ document.getElementById("authCode").focus();
 }
-document.getElementById("adminBtn").onclick=()=>{if(admin){admin=false;document.getElementById("adminBtn").textContent="安置管理";draw()}else document.getElementById("authModal").style.display="flex"}
-async function githubSave(){
- if(!token)throw Error("尚未登入 GitHub 管理模式");
- sha=await getSha();
- const content=JSON.stringify(db,null,2)+"\n";
- const r=await fetch("https://api.github.com/repos/"+REPO+"/contents/"+DATA_PATH,{
-  method:"PUT",headers:{Authorization:"Bearer "+token,Accept:"application/vnd.github+json","Content-Type":"application/json"},
-  body:JSON.stringify({message:"更新燈牆資料",content:btoa(unescape(encodeURIComponent(content))),sha,branch:BRANCH})
- });
- if(!r.ok){let x=await r.text();throw Error("GitHub 儲存失敗 "+r.status+"："+x)}
+
+function login(){
+ const t=document.getElementById("authCode").value.trim();
+ if(authStep===1){
+  if(t!=="1111")return alert("驗證碼錯誤");
+  authStep=2;
+  document.getElementById("authTitle").textContent="第二重驗證";
+  document.getElementById("authCode").value="";
+  document.getElementById("authCode").placeholder="請輸入第二組驗證碼";
+  document.getElementById("authCode").focus();
+  return;
+ }
+ if(t!=="9999")return alert("驗證碼錯誤");
+ admin=true;authStep=1;closeModal("authModal");
+ document.getElementById("adminBtn").textContent="退出管理";draw();
 }
+
+document.getElementById("adminBtn").onclick=()=>{if(admin){admin=false;document.getElementById("adminBtn").textContent="安置管理";draw()}else openAuth()}
+
+async function syncSave(){
+ const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(db)});
+ if(!r.ok){const x=await r.json().catch(()=>({}));throw Error(x.message||("HTTP "+r.status))}
+}
+
 async function saveLamp(){
  const n=document.getElementById("name").value.trim();if(!n)return alert("請輸入姓名");
  const old=db[idx];db[idx]={name:n,wish:document.getElementById("wish").value.trim(),ts:Date.now()};
  setStatus("同步中...");
- try{await githubSave();draw();closeModal("editModal");setStatus("已同步")}catch(e){db[idx]=old;draw();setStatus("同步失敗");alert(e.message)}
+ try{await syncSave();draw();closeModal("editModal");setStatus("已同步")}
+ catch(e){db[idx]=old;draw();setStatus("同步失敗");alert("儲存失敗："+e.message)}
 }
+
 async function removeLamp(){
  if(!confirm("確定撤下這個燈位？"))return;
- const old=db[idx];db[idx]=null;setStatus("正在寫入 GitHub...");
- try{await githubSave();draw();closeModal("editModal");setStatus("GitHub 已同步")}catch(e){db[idx]=old;draw();setStatus("同步失敗");alert(e.message)}
+ const old=db[idx];db[idx]=null;setStatus("同步中...");
+ try{await syncSave();draw();closeModal("editModal");setStatus("已同步")}
+ catch(e){db[idx]=old;draw();setStatus("同步失敗");alert("儲存失敗："+e.message)}
 }
+
 function closeModal(id){document.getElementById(id).style.display="none"}
 load();
 </script>
