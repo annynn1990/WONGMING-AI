@@ -1,23 +1,20 @@
+import { getToken } from '@vercel/connect';
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.setHeader('Cache-Control', 'no-store');
-
   if (req.method === 'OPTIONS') return res.status(204).end();
 
   if (req.query && req.query.shrine === '1') {
     const REPO = 'annynn1990/WONGMING-AI';
     const PATH = 'data/shrine-lamps.json';
     const GH = 'https://api.github.com';
-    const headers = {
-      Authorization: 'Bearer ' + (process.env.GITHUB_TOKEN || ''),
-      Accept: 'application/vnd.github+json',
-      'Content-Type': 'application/json',
-      'X-GitHub-Api-Version': '2022-11-28'
-    };
-    if (!process.env.GITHUB_TOKEN) return res.status(500).json({ok:false,message:'服務尚未完成設定'});
     try {
+      const token = await getToken('github/wongming-github');
+      if (!token) return res.status(500).json({ok:false,message:'服務尚未完成設定'});
+      const headers = {Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json', 'X-GitHub-Api-Version': '2022-11-28'};
       const url = GH + '/repos/' + REPO + '/contents/' + PATH + '?ref=main';
       if (req.method === 'GET') {
         const r = await fetch(url, {headers});
@@ -32,17 +29,12 @@ export default async function handler(req, res) {
         if (!current.ok) throw new Error('讀取版本失敗');
         const f = await current.json();
         const content = Buffer.from(JSON.stringify(data,null,2)+'\n').toString('base64');
-        const r = await fetch(GH + '/repos/' + REPO + '/contents/' + PATH,{
-          method:'PUT',headers,body:JSON.stringify({message:'更新燈牆資料',content,sha:f.sha,branch:'main'})
-        });
+        const r = await fetch(GH + '/repos/' + REPO + '/contents/' + PATH,{method:'PUT',headers,body:JSON.stringify({message:'更新燈牆資料',content,sha:f.sha,branch:'main'})});
         if (!r.ok) throw new Error('儲存失敗');
         return res.status(200).json({ok:true});
       }
       return res.status(405).json({ok:false,message:'不支援的操作'});
-    } catch(e) {
-      console.error(e);
-      return res.status(500).json({ok:false,message:'同步服務發生錯誤'});
-    }
+    } catch(e) { console.error(e); return res.status(500).json({ok:false,message:'同步服務發生錯誤'}); }
   }
 
   const country = String(req.headers['x-vercel-ip-country'] || req.headers['x-country-code'] || '').toUpperCase();
