@@ -17,6 +17,15 @@ function normalizeNoble(x){
 let storedR=JSON.parse(localStorage.wm_r||'null');
 let storedN=JSON.parse(localStorage.wm_n||'null');
 let r=storedR ? storedR.map(normalizeRoyal) : R.map(normalizeRoyal);
+// 修正既有 localStorage 舊資料：樂親王固定保留完整中文爵位、中文姓名與英文爵位
+r=r.map(function(x){
+  if(x[3]==='Prince Lo'||x[1]==='Prince Lo'||x[2]==='Prince Lo'){
+    x[1]='樂親王';
+    x[2]='達爾文';
+    x[3]='Prince Lo';
+  }
+  return x;
+});
 let n;
 if(!storedN || localStorage.wm_gallery_version!=='3'){
   n=N.map(normalizeNoble);
