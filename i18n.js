@@ -92,6 +92,7 @@ window.WM_I18N={
       b.type='button';b.className='sugg';b.textContent=x[0];
       b.onclick=function(){
         box.innerHTML='';
+        window.WM_I18N.setLanguage(x[1]);
         try{
           window.parent.postMessage({
             ns:'avatar-widget',
