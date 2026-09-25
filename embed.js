@@ -120,8 +120,17 @@
 
   try {
     var translationPageScript = document.createElement('script');
-    translationPageScript.src = 'https://wongming-ai.vercel.app/translation-page.js?v=20260925c';
+    translationPageScript.src = 'https://wongming-ai.vercel.app/translation-page.js?v=20260925e';
     translationPageScript.async = true;
+    translationPageScript.onload = function () {
+      try {
+        if (window.__WM_TRANSLATE_PENDING__ && window.__WM_TRANSLATE_PAGE__) {
+          var pendingTarget = window.__WM_TRANSLATE_PENDING__;
+          window.__WM_TRANSLATE_PENDING__ = '';
+          window.__WM_TRANSLATE_PAGE__(pendingTarget);
+        }
+      } catch (e) {}
+    };
     document.head.appendChild(translationPageScript);
   } catch (e) {}
 
@@ -546,8 +555,12 @@
     // 國際化模組：只處理翻譯，不介入導覽員核心。
     if (d.ns === 'avatar-widget' && d.type === 'action' && d.action && d.action.action === 'translate') {
       var target = String(d.action.target || 'en');
-      if (['zh-Hant','zh-Hans','en','ja','ko'].indexOf(target) >= 0 && window.__WM_TRANSLATE_PAGE__) {
-        window.__WM_TRANSLATE_PAGE__(target);
+      if (['zh-Hant','zh-Hans','en','ja','ko'].indexOf(target) >= 0) {
+        if (window.__WM_TRANSLATE_PAGE__) {
+          window.__WM_TRANSLATE_PAGE__(target);
+        } else {
+          window.__WM_TRANSLATE_PENDING__ = target;
+        }
       }
       return;
     }
