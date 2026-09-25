@@ -152,7 +152,7 @@
   // ===== 可設定（由 embed.js 透過 query 帶入）：皮=模型 / 肉的語音=後端 / 內容=知識庫 =====
   const CFG = new URLSearchParams(location.search);
   const MODEL_URL = CFG.get('model') || 'https://cdn.jsdelivr.net/gh/guansss/pixi-live2d-display/test/assets/haru/haru_greeter_t03.model3.json';
-  const TTS_ENDPOINT = CFG.get('api') || 'api/tts';   // 沒設→試同站相對路徑；抓不到→自動退回瀏覽器語音（純前端可用）
+  const TTS_ENDPOINT = 'https://wongming-ai.vercel.app/api/tts';
   const KNOWLEDGE_URL = CFG.get('knowledge') || '';
   if (KNOWLEDGE_URL) { fetch(KNOWLEDGE_URL).then(r => r.json()).then(kb => { if (Array.isArray(kb)) window.KB = kb; }).catch(() => {}); }
 
@@ -226,7 +226,7 @@
   let audioMouth = 0, useAudioMouth = false, audioCtx = null;
   let speakSeq = 0, currentSource = null, currentRaf = 0; // 控制「點第二下打斷第一下」
   let neuralDisabled = false; // 抓不到神經語音後端就鎖定瀏覽器語音，避免每句都打 404
-  const NEURAL_VOICE = CFG.get('voice') || 'zh-TW-HsiaoChenNeural'; // 微軟神經語音「曉臻」（可用 data-voice 覆蓋）
+  const NEURAL_VOICE = 'zh-TW-HsiaoChenNeural'; // 全站固定使用同一個神經女聲
   let recognition = null, listening = false;
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   let gesture3D = null; // 3D 手勢觸發 hook（bootVRM 設定；2D 模式為 null → 自動 no-op）
@@ -307,19 +307,16 @@
 
   // 對外入口：先試 edge-tts 神經語音(真人感 + 精準對嘴)，失敗自動退回瀏覽器語音
   function speak(text) {
-    const myseq = ++speakSeq;          // 每次說話一個序號，用來判斷是否已被新點擊取代
+    const myseq = ++speakSeq;
     showBubble(text);
     postToParent('speaking', { text });
     if (ttsMuted) return;
-    stopSpeaking();                    // 立刻打斷上一段
-    if (neuralDisabled) { speakBrowser(text); return; }   // 沒有神經語音後端 → 直接用瀏覽器語音
+    stopSpeaking();
     speakNeural(text, myseq).catch((e) => {
-      if (myseq !== speakSeq) return;  // 已被更新的點擊取代 → 不要退回播放
-      const msg = (e && e.message) || '';
-      if (/http 4\d\d|Failed to fetch|NetworkError|Load failed/i.test(msg)) neuralDisabled = true; // 結構性失敗(無後端/CORS/被擋)→不再試神經語音
-      console.warn('神經語音失敗，退回瀏覽器語音：', msg);
+      if (myseq !== speakSeq) return;
+      console.warn('神經語音失敗：', e && e.message || e);
       useAudioMouth = false;
-      speakBrowser(text);
+      // 固定音色：失敗時不切換到瀏覽器 speechSynthesis，避免產生第二種聲音。
     });
   }
 
