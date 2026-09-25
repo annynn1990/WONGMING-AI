@@ -95,7 +95,7 @@
       <div class="dock-row" role="toolbar" aria-label="虛擬人控制列">
       <button class="ctrl primary" id="btn-mic"   aria-label="開始語音對話"><span aria-hidden="true">🎤</span> 說話</button>
       <button class="ctrl" id="btn-engine" aria-label="切換 2D / 3D 角色" style="display:none">2D／3D</button>
-      <button class="ctrl" id="btn-llm"   aria-label="啟用瀏覽器內 AI 大腦（首次需下載模型）" aria-pressed="false"><span aria-hidden="true">🧠</span></button>
+      <button class="ctrl" id="btn-llm" aria-label="翻譯目前頁面" title="翻譯目前頁面"><span aria-hidden="true">🌐</span></button>
       <button class="ctrl" id="btn-mute"  aria-label="靜音" aria-pressed="false"><span aria-hidden="true">🔊</span></button>
       <button class="ctrl" id="btn-speed" aria-label="調整語速">1.0×</button>
       <button class="ctrl" id="btn-close" aria-label="收起助理"><span aria-hidden="true">✕</span></button>
@@ -1081,25 +1081,12 @@
     document.getElementById('btn-speed').textContent = ttsRate.toFixed(1) + '×';
     showBubble('語速：' + ttsRate.toFixed(1) + '×');
   };
-  document.getElementById('btn-llm').onclick = async () => {
-    const btn = document.getElementById('btn-llm');
-    // 啟用本機 Ollama 模式時：🧠 用來顯示狀態 / 重新連線，不下載 WebLLM
-    if (window.OLLAMA && window.OLLAMA.enabled) {
-      const ok = window.OLLAMA.ready || await window.OLLAMA.ping();
-      btn.textContent = ok ? '🧠本機' : '🧠✗'; btn.classList.toggle('llm-on', ok);
-      btn.setAttribute('aria-pressed', String(ok));
-      showBubble(ok ? ('本機 AI 大腦運作中（' + window.OLLAMA.model + '）🧠') : '本機 Ollama 連不上：確認 Ollama 在跑、且 OLLAMA_ORIGINS 已允許這個網站。');
-      return;
+  document.getElementById('btn-llm').onclick = () => {
+    if (window.WM_I18N && typeof window.WM_I18N.openMenu === 'function') {
+      window.WM_I18N.openMenu();
+    } else {
+      showBubble('翻譯功能載入中，請稍候再按一次。');
     }
-    if (!window.LLM || !window.LLM.supported) { showBubble('這個裝置不支援 WebGPU，先用知識庫模式就好（功能一樣可用）。'); return; }
-    if (window.LLM.state === 'ready')   { showBubble('AI 大腦已啟用，問我問題吧 🧠'); return; }
-    if (window.LLM.state === 'loading') { showBubble('AI 大腦載入中… ' + Math.round(window.LLM.progress * 100) + '%'); return; }
-    showBubble('開始下載 AI 大腦（約 1GB，只需第一次）…');
-    try {
-      await window.LLM.load((p) => { btn.textContent = '🧠 ' + Math.round((p.progress || 0) * 100) + '%'; });
-      btn.textContent = '🧠✓'; btn.classList.add('llm-on');
-      speak('AI 大腦啟用完成，現在我可以聊得更自然囉！');
-    } catch (e) { btn.textContent = '🧠✗'; showBubble('AI 大腦載入失敗：' + (e && e.message || e)); }
   };
 
   // 啟用本機 Ollama 時：開機 ping 一下，連上就把 🧠 切成「本機大腦」狀態
