@@ -25,7 +25,7 @@ async function translate(text){
   }catch(e){return text;}
 }
 window.WM_I18N={
-  getLanguage:function(){return state.language;},
+  getLanguage:function(){return state.language;},getVoice:function(){return {'zh-Hant':'zh-TW-HsiaoChenNeural','zh-Hans':'zh-CN-XiaoxiaoNeural','en':'en-US-AriaNeural','ja':'ja-JP-NanamiNeural','ko':'ko-KR-SunHiNeural'}[state.language]||'zh-TW-HsiaoChenNeural';},
   localize:translate,
   openMenu:function(){
     var box=document.getElementById('suggestions');if(!box)return;
