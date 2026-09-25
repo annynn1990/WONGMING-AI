@@ -1,46 +1,20 @@
 <!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>黃名帝國 皇室重臣名錄</title><style>
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=IM+Fell+English:ital@0;1&family=Noto+Serif+TC:wght@400;500;600;700&display=swap');
-:root{--ink:#292016;--muted:#75634d;--line:#9a8060;--paper:#eadcc1;--dark:#3b2a1b;--red:#6e2d24}
-*{box-sizing:border-box}
-html{background:#b9a17c}
-body{margin:0;color:var(--ink);font-family:'Noto Serif TC',serif;background-color:#eadcc1;background-image:radial-gradient(ellipse at 50% 20%,rgba(255,249,226,.82),transparent 62%),radial-gradient(ellipse at 50% 100%,rgba(78,49,25,.22),transparent 70%),repeating-linear-gradient(0deg,rgba(75,51,29,.025) 0,rgba(75,51,29,.025) 1px,transparent 1px,transparent 3px),repeating-linear-gradient(90deg,rgba(75,51,29,.018) 0,rgba(75,51,29,.018) 1px,transparent 1px,transparent 5px);background-attachment:fixed}
+:root{--ink:#292016;--paper:#eadcc1;--line:#8e7353}
+*{box-sizing:border-box}html{background:#b9a17c}
+body{margin:0;color:var(--ink);font-family:'Noto Serif TC',serif;background:#eadcc1;background-image:radial-gradient(ellipse at 50% 15%,rgba(255,249,226,.85),transparent 58%),radial-gradient(ellipse at 50% 100%,rgba(78,49,25,.2),transparent 70%),repeating-linear-gradient(0deg,rgba(75,51,29,.025) 0,rgba(75,51,29,.025) 1px,transparent 1px,transparent 3px),repeating-linear-gradient(90deg,rgba(75,51,29,.018) 0,rgba(75,51,29,.018) 1px,transparent 1px,transparent 5px);background-attachment:fixed}
 body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.3;background:radial-gradient(circle at 8% 8%,transparent 0 18%,rgba(91,62,31,.14) 38%,transparent 60%),radial-gradient(circle at 92% 88%,transparent 0 20%,rgba(91,62,31,.12) 42%,transparent 65%);mix-blend-mode:multiply}
-.wrap{max-width:1120px;margin:auto;padding:54px 34px 70px}
-header{text-align:center;margin-bottom:62px;position:relative}
-header:after{content:"✦  ✦  ✦";display:block;margin-top:20px;color:#7d6243;font:18px 'IM Fell English',serif;letter-spacing:9px}
-.kicker{font:italic 18px 'IM Fell English',serif;letter-spacing:3px;color:#725b40}
-h1{margin:10px 0 6px;font:600 clamp(38px,6vw,67px)/1.05 'Cormorant Garamond',serif;letter-spacing:2px}
-.sub{font:italic 16px 'IM Fell English',serif;color:#806a50;letter-spacing:1px}
-.level{margin:0 0 52px}
-.head{display:flex;align-items:baseline;gap:18px;border-bottom:1px solid #8e7353;padding-bottom:11px;margin-bottom:22px}
-.num{font:italic 22px 'IM Fell English',serif;color:#876c4a}
-.head h2{margin:0;font:600 32px/1.1 'Cormorant Garamond',serif;letter-spacing:1px}
-.desc{color:#806b51;font:italic 16px 'IM Fell English',serif}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:18px}
-.card{position:relative;min-height:164px;padding:25px 23px 21px;background:rgba(246,235,209,.47);border:1px solid #a58b68;box-shadow:inset 0 0 0 4px rgba(111,78,42,.045),0 5px 14px rgba(55,36,18,.08);cursor:default}
-.card:before,.card:after{content:"";position:absolute;width:18px;height:18px;opacity:.7}
-.card:before{left:-1px;top:-1px;border-left:1px solid #72583a;border-top:1px solid #72583a}
-.card:after{right:-1px;bottom:-1px;border-right:1px solid #72583a;border-bottom:1px solid #72583a}
-.card.special{border-color:#9d835b}.card.high{border-color:#8c8b82}.card.general{border-color:#9a7656}
-.card .en{font:italic 14px 'IM Fell English',serif;letter-spacing:1.2px;color:#806b50}
-.card h3{margin:10px 0 3px;display:flex;align-items:center;gap:9px;font:600 29px/1.15 'Noto Serif TC',serif}
-.mini-badge{width:31px;height:31px;object-fit:contain;flex:0 0 31px;filter:sepia(.18)}
-.avatar{width:62px;height:62px;border-radius:50%;object-fit:cover;border:1px solid #8e704c;box-shadow:0 2px 8px rgba(54,34,15,.22);float:right;margin-left:12px;filter:sepia(.12)}
-.holder{margin-top:22px;padding-top:10px;border-top:1px dotted #a58b68;font:500 18px 'Noto Serif TC',serif}
-.vacant{color:#8b7961;font-style:italic;font-family:'IM Fell English','Noto Serif TC',serif}
-.edit{position:fixed;right:15px;top:15px;width:34px;height:34px;border:0;background:transparent;color:#66513a;opacity:.15;cursor:pointer}
-.edit:hover{opacity:.75}
-.modal{position:fixed;inset:0;background:rgba(48,31,16,.58);display:none;align-items:center;justify-content:center;z-index:10;padding:20px}
-.panel{width:min(540px,100%);background:#eadcc1;border:1px solid #8d704d;box-shadow:0 18px 50px rgba(0,0,0,.28);padding:27px}
-.panel h3{margin-top:0;font:600 27px 'Cormorant Garamond',serif}
-.panel label{display:block;margin:11px 0 5px;font-size:14px;color:#68533b}
-.panel input,.panel select{width:100%;padding:10px;border:1px solid #aa916d;background:#f5ead3;font:15px 'Noto Serif TC',serif}
-.actions{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
-.btn{border:1px solid #806344;background:transparent;color:#4e3b26;padding:8px 13px;font:14px 'Noto Serif TC',serif;cursor:pointer}
-.btn:hover{background:rgba(112,76,39,.08)}
-.close{float:right;border:0;background:none;font-size:22px;cursor:pointer;color:#5d4933}
-@media(max-width:650px){.wrap{padding:38px 17px}.head{gap:10px}.head h2{font-size:26px}.grid{grid-template-columns:1fr}}
-.card{overflow:visible!important;padding-top:58px!important}.card .titleline{display:flex;align-items:center;gap:10px;min-height:38px}.mini-badge{width:40px!important;height:40px!important;object-fit:contain!important;flex:0 0 40px!important}.avatar{position:absolute!important;left:22px!important;top:-34px!important;width:88px!important;height:88px!important;border-radius:50%!important;object-fit:cover!important;border:4px solid #eadcc1!important;outline:1px solid #8e704c!important;box-shadow:0 5px 13px rgba(49,31,14,.28)!important;float:none!important;margin:0!important;background:#eadcc1!important;filter:sepia(.1)}.card:has(.avatar){padding-top:66px!important}.card{position:relative;overflow:visible!important;min-height:164px;padding:25px 23px 21px}.titleline{display:flex;align-items:center;gap:10px}.titleline h3{margin:10px 0 3px}.avatar{width:72px!important;height:72px!important;border-radius:50%!important;object-fit:cover!important;border:4px solid #eadcc1!important;outline:1px solid #8e704c!important;box-shadow:0 4px 12px rgba(49,31,14,.28)!important;position:absolute!important;right:20px!important;top:-28px!important;margin:0!important;float:none!important;background:#eadcc1!important;z-index:2}.card.has-avatar h3{padding-right:68px}.mini-badge{width:34px!important;height:34px!important;object-fit:contain!important;flex:0 0 34px!important}</style></head><body>
+.wrap{max-width:980px;margin:auto;padding:54px 34px 70px}header{text-align:center;margin-bottom:48px}header:after{content:"✦  ✦  ✦";display:block;margin-top:20px;color:#7d6243;font:18px 'IM Fell English',serif;letter-spacing:9px}
+.kicker{font:italic 18px 'IM Fell English',serif;letter-spacing:3px;color:#725b40}h1{margin:10px 0 6px;font:600 clamp(38px,6vw,67px)/1.05 'Cormorant Garamond',serif;letter-spacing:2px}.sub{font:italic 16px 'IM Fell English',serif;color:#806a50}
+.intro{max-width:820px;margin:0 auto 46px;text-align:center;color:#6d5941;line-height:1.9;font-size:15px}.level{margin:0 0 48px}.head{display:flex;align-items:baseline;gap:18px;border-bottom:1px solid var(--line);padding-bottom:11px;margin-bottom:14px}.num{font:italic 22px 'IM Fell English',serif;color:#876c4a}.head h2{margin:0;font:600 32px/1.1 'Cormorant Garamond',serif}.desc{color:#806b51;font:italic 16px 'IM Fell English',serif}
+.grid{display:flex;flex-direction:column}.card{position:relative;display:grid;grid-template-columns:220px 90px minmax(180px,1fr) 100px;align-items:center;min-height:108px;padding:14px 18px 14px 26px;background:rgba(246,235,209,.43);border-top:1px solid rgba(142,115,83,.72);border-bottom:1px solid rgba(142,115,83,.32);box-shadow:inset 0 0 18px rgba(111,78,42,.035)}
+.card:before{content:"";position:absolute;left:9px;top:13px;bottom:13px;width:1px;background:rgba(111,78,42,.32)}.card.special{background:rgba(246,235,209,.5)}.card.high{background:rgba(235,231,218,.36)}.card.general{background:rgba(242,226,205,.38)}
+.col-label{font:italic 12px 'IM Fell English',serif;letter-spacing:1.4px;color:#806b50;text-transform:uppercase;margin-bottom:4px}.title{font:600 25px/1.15 'Noto Serif TC',serif}.english{font:italic 14px/1.35 'IM Fell English',serif;color:#806b50}
+.badge-cell{display:flex;justify-content:center;align-items:center}.mini-badge{width:58px;height:58px;object-fit:contain;filter:sepia(.12)}.name-cell{padding-left:12px}.name{font:600 23px/1.3 'Noto Serif TC',serif}.avatar-cell{display:flex;justify-content:flex-end;align-items:center}.avatar{width:72px;height:72px;border-radius:50%;object-fit:cover;border:4px solid #eadcc1;outline:1px solid #8e704c;box-shadow:0 4px 12px rgba(49,31,14,.28);background:#eadcc1}
+.gear{position:fixed;right:15px;top:15px;width:34px;height:34px;border:0;background:transparent;color:#66513a;opacity:.15;cursor:pointer;z-index:5}.gear:hover{opacity:.75}
+.modal{position:fixed;inset:0;background:rgba(48,31,16,.58);display:none;align-items:center;justify-content:center;z-index:10;padding:20px}.box,.panel{width:min(540px,100%);background:#eadcc1;border:1px solid #8d704d;box-shadow:0 18px 50px rgba(0,0,0,.28);padding:27px}.panel h3,.box h2{margin-top:0;font:600 27px 'Cormorant Garamond',serif}.panel label,.box label{display:block;margin:11px 0 5px;font-size:14px;color:#68533b}.panel input,.box input{width:100%;padding:10px;border:1px solid #aa916d;background:#f5ead3;font:15px 'Noto Serif TC',serif}.actions{display:flex;gap:8px;margin-top:18px;justify-content:flex-end}.btn{border:1px solid #806344;background:transparent;color:#4e3b26;padding:8px 13px;font:14px 'Noto Serif TC',serif;cursor:pointer}.close{float:right;border:0;background:none;font-size:22px;cursor:pointer;color:#5d4933}
+@media(max-width:700px){.wrap{padding:38px 15px}.head{gap:10px}.head h2{font-size:26px}.card{grid-template-columns:1fr 65px 1fr 70px;min-height:94px;padding:12px 10px 12px 18px}.title{font-size:19px}.name{font-size:18px}.english{font-size:12px}.mini-badge{width:48px;height:48px}.avatar{width:58px;height:58px}.name-cell{padding-left:4px}}
+</style></head><body>
 <button class="gear" onclick="login()">✦</button><div class="page"><header class="mast"><div class="kicker">WONGMING EMPIRE · COURT REGISTER</div><h1>黃名帝國 皇室重臣名錄</h1><div class="subtitle">Imperial Register of Royal Ministers</div></header>
 <p class="intro">皇室重臣為帝國的榮譽職銜，並無實際職權，但擁有極高的榮譽地位。共設三個級別，並有相應的級別勳章。</p><main id="levels"></main>
 </div>
@@ -50,13 +24,16 @@ h1{margin:10px 0 6px;font:600 clamp(38px,6vw,67px)/1.05 'Cormorant Garamond',ser
 const D=[
 ["宮廷大臣","Minister of the Court","special","李迎希"],["掌璽大臣","Lord Keeper of the Seal","special","仲尼"],["典禮大臣","Minister of Ceremonies","special",""],
 ["參謀大臣","Chief of the General Staff","high","夏侯昜"],["戰爭大臣","Minister of War","high","李君羨"],["陸軍大臣","Minister of the Army","high","白敖"],["海軍大臣","Minister of the Navy","high",""],["情報大臣","Minister of Intelligence","high",""],
-["御前大臣","Minister of the Privy","general",""],["御前大臣","Minister of the Privy","general",""],["御前大臣","Minister of the Privy","general",""],["御前大臣","Minister of the Privy","general",""],["御前大臣","Minister of the Privy","general",""],["御前大臣","Minister of the Privy","general",""],["御前大臣","Minister of the Privy","general",""]];
-const B=[
-["https://www.wongmingempire.com/bbswm/data/attachment/forum/202507/27/032817cpwc6zbcbbrruvwu.png","一等皇室重臣勳章","特級皇室重臣佩戴。"],
-["https://www.wongmingempire.com/bbswm/data/attachment/forum/202507/27/032817rjjv1cj614emq140.png","二等皇室重臣勳章","高級皇室重臣佩戴。"],
-["https://www.wongmingempire.com/bbswm/data/attachment/forum/202507/27/032817ws8o44osb40o3u2u.png","三等皇室重臣勳章","御前大臣佩戴。"]];
-let data=JSON.parse(localStorage.getItem("wm_ministers")||"null")||D.map(x=>({t:x[0],e:x[1],l:x[2],h:x[3],n:"",a:""}));data=data.map(x=>({...x,a:x.a||""}));let cur=-1,edit=false;
+["御前大臣","Minister of the Privy","general",""],["御前大臣","Minister of the Privy","general",""],["御前大臣","Minister of the Privy","general",""],["御前大臣","Minister of the Privy","general",""],["御前大臣","Minister of the Privy","general",""],["御前大臣","Minister of the Privy","general",""]];
+const B=[["https://www.wongmingempire.com/bbswm/data/attachment/forum/202507/27/032817cpwc6zbcbbrruvwu.png"],["https://www.wongmingempire.com/bbswm/data/attachment/forum/202507/27/032817rjjv1cj614emq140.png"],["https://www.wongmingempire.com/bbswm/data/attachment/forum/202507/27/032817ws8o44osb40o3u2u.png"]];
+let data=JSON.parse(localStorage.getItem("wm_ministers")||"null")||D.map(x=>({t:x[0],e:x[1],l:x[2],h:x[3],a:""}));data=data.map(x=>({...x,a:x.a||""}));let cur=-1,edit=false;
 function esc(s){return String(s||"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]))}
-function render(){let G=[["special","特級皇室重臣","總額三名"],["high","高級皇室重臣","總額五名"],["general","一般皇室重臣","總額七名"]];levels.innerHTML=G.map((g,z)=>'<section class="level"><div class="head"><span class="num">0'+(z+1)+'</span><h2>'+g[1]+'</h2><span class="desc">'+g[2]+'</span></div><div class="grid">'+data.map((x,i)=>x.l===g[0]?'<article class="card '+x.l+(x.a?' has-avatar':'')+'" onclick="openEdit('+i+')">'+(x.a?'<img class="avatar" src="'+esc(x.a)+'" alt="">':'')+'<div class="en">ROYAL MINISTER</div><div class="titleline"><h3>'+esc(x.t)+'</h3>'+(x.l==="special"?'<img class="mini-badge" src="'+B[0][0]+'">':x.l==="high"?'<img class="mini-badge" src="'+B[1][0]+'">':'<img class="mini-badge" src="'+B[2][0]+'">')+'</div><div class="en">'+esc(x.e)+'</div><div class="holder">'+(x.h?'<b>'+esc(x.h)+'</b>':'<span class="vacant">目前從缺 · Vacant</span>')+'</div></article>':'').join('')+'</div></section>').join('')}
-function login(){document.getElementById("login").style.display="flex";pw.value="";pw.focus()}function auth(){if(pw.value==="1111"||pw.value==="9999"){edit=true;document.body.classList.add("editmode");closeM("login");render()}else pw.value=""}function closeM(id){document.getElementById(id).style.display="none"}function openEdit(i){if(!edit)return;cur=i;let x=data[i];ft.value=x.t;fe.value=x.e;fl.value=x.l;fh.value=x.h;fn.value=x.n;fa.value=x.a||"";editor.style.display="flex"}function save(){let x=data[cur];x.t=ft.value.trim();x.e=fe.value.trim();x.l=fl.value;x.h=fh.value.trim();x.n=fn.value.trim();x.a=fa.value.trim();persist();closeM("editor");render()}function del(){if(cur<0||!confirm("確定刪除此職銜？"))return;data.splice(cur,1);persist();closeM("editor");render()}function addItem(l){data.push({t:"新增皇室重臣職銜",e:"New Royal Minister",l:l,h:"",n:""});persist();render();openEdit(data.length-1)}function persist(){localStorage.setItem("wm_ministers",JSON.stringify(data))}render();
+function render(){const G=[["special","特級皇室重臣","總額三名"],["high","高級皇室重臣","總額五名"],["general","一般皇室重臣","總額六名"]];levels.innerHTML=G.map((g,z)=>'<section class="level"><div class="head"><span class="num">0'+(z+1)+'</span><h2>'+g[1]+'</h2><span class="desc">'+g[2]+'</span></div><div class="grid">'+data.map((x,i)=>x.l===g[0]?'<article class="card" onclick="openEdit('+i+')"><div><div class="col-label">Royal Minister</div><div class="title">'+esc(x.t)+'</div><div class="english">'+esc(x.e)+'</div></div><div class="badge-cell"><img class="mini-badge" src="'+B[x.l==="special"?0:x.l==="high"?1:2][0]+'" alt=""></div><div class="name-cell"><div class="col-label">Name</div><div class="name">'+(x.h?esc(x.h):'<span class="vacant">目前從缺</span>')+'</div></div><div class="avatar-cell">'+(x.a?'<img class="avatar" src="'+esc(x.a)+'" alt="">':'')+'</div></article>':'').join('')+'</div></section>').join('')}
+function login(){document.getElementById("login").style.display="flex";pw.value="";pw.focus()}
+function auth(){if(pw.value==="1111"||pw.value==="9999"){edit=true;closeM("login")}else{pw.value="";pw.placeholder="密碼錯誤"}}
+function closeM(id){document.getElementById(id).style.display="none"}
+function openEdit(i){if(!edit)return;cur=i;let x=data[i];ft.value=x.t;fh.value=x.h;fa.value=x.a||"";editor.style.display="flex"}
+function save(){let x=data[cur];x.t=ft.value.trim();x.h=fh.value.trim();x.a=fa.value.trim();persist();closeM("editor");render()}
+function persist(){localStorage.setItem("wm_ministers",JSON.stringify(data))}
+render();
 </script></body></html>
