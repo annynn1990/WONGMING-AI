@@ -247,6 +247,10 @@
   function postToParent(type, payload) {
     try { window.parent.postMessage(Object.assign({ ns: 'avatar-widget', type }, payload || {}), PARENT_ORIGIN); } catch (e) {}
   }
+  // 先通知父頁 widget 已載入，避免模型／WebGPU 載入較慢時被誤判為整個導覽員沒出現。
+  // 真正的模型 ready 仍會再送一次 ready，不影響原有流程。
+  setTimeout(function () { postToParent('ready'); }, 0);
+
   window.addEventListener('message', (e) => {
     const d = e.data || {};
     if (d.ns !== 'avatar-widget-host') return;
