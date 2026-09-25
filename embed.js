@@ -62,7 +62,7 @@
     return null;
   })();
   var base = me ? me.src.replace(/[^/]*$/, '') : '';
-  var widgetUrl = (me && me.getAttribute('data-widget')) || (base + 'widget.html?v=20260924');
+  var widgetUrl = (me && me.getAttribute('data-widget')) || (base + 'widget.html?v=20260925');
   var savedOpen = null;
   try { savedOpen = localStorage.getItem('wm_ai_open'); } catch (e) {}
   var attrOpen = me ? me.getAttribute('data-open') : null;
@@ -75,10 +75,13 @@
 
   // 把可設定項帶進 widget：皮=model / 肉的語音後端=api / 內容=knowledge / 聲線=voice
   var cfg = new URLSearchParams();
-  ['model', 'api', 'knowledge', 'voice'].forEach(function (k) {
+  ['model', 'api', 'knowledge'].forEach(function (k) {
     var v = me && me.getAttribute('data-' + k);
     if (v) cfg.set(k, v);
   });
+  // 所有論壇頁統一使用同一個神經語音端點與聲線，避免首頁/版面音色不一致。
+  cfg.set('api', 'https://wongming-ai.vercel.app/api/tts');
+  cfg.set('voice', 'zh-TW-HsiaoChenNeural');
   var cfgQs = cfg.toString();
   var iframeSrc = widgetUrl + (cfgQs ? (widgetUrl.indexOf('?') < 0 ? '?' : '&') + cfgQs : '');
 
