@@ -9,4 +9,27 @@ let r=JSON.parse(localStorage.wm_r||JSON.stringify(R)),n=JSON.parse(localStorage
 function card(x,k,i,c){return '<article class="item '+c+'" onclick="editItem(\''+k+'\','+i+')"><div class="frame"><img src="'+(x[4]||x[0]||img)+'"></div><div class="meta"><div class="rank">'+x[1]+'</div><div class="name">'+x[2]+'</div><div class="en">'+(x[3]||'')+'</div></div></article>'}
 function render(){royal.innerHTML=r.map((x,i)=>card(x,'r',i,'royal')).join('');noble.innerHTML=n.map((x,i)=>card([x[0],x[0],x[1],x[2],x[4]],'n',i,'noble')).join('')}
 function login(){loginModal.style.display='flex';pw.value='';pw.focus()}function auth(){if(pw.value==='1111'||pw.value==='9999'){editing=true;document.body.classList.add('editmode');loginModal.style.display='none'}else{pw.value='';pw.placeholder='密碼錯誤'}}function editItem(k,i){if(!editing)return;t={k,i};let x=k==='r'?r[i]:n[i];url.value=x[4]||x[0]||img;rank.value=x[1]||x[0];name.value=x[2]||x[1];en.value=x[3]||x[2]||'';back.value=x[5]||'';editModal.style.display='flex'}function save(){let x=t.k==='r'?r[t.i]:n[t.i];if(t.k==='r'){x[0]=url.value.trim()||img;x[1]=rank.value;x[2]=name.value;x[3]=en.value;x[4]=x[0];x[5]=back.value}else{x[4]=url.value.trim()||img;x[0]=rank.value;x[1]=name.value;x[2]=en.value;x[5]=back.value}localStorage.setItem(t.k==='r'?'wm_r':'wm_n',JSON.stringify(t.k==='r'?r:n));editModal.style.display='none';render()}render();
+
+function sendHeight(){
+  var h=document.documentElement.scrollHeight;
+  window.parent.postMessage({type:'wm-gallery-height',height:h},'*');
+}
+function setupHeightObserver(){
+  document.querySelectorAll('img').forEach(function(im){
+    if(!im.dataset.wmHeightBound){
+      im.dataset.wmHeightBound='1';
+      im.addEventListener('load',sendHeight);
+    }
+  });
+  sendHeight();
+}
+window.addEventListener('load',function(){
+  setupHeightObserver();
+  setTimeout(sendHeight,300);
+  setTimeout(sendHeight,1000);
+});
+window.addEventListener('resize',sendHeight);
+if(window.ResizeObserver){
+  new ResizeObserver(sendHeight).observe(document.documentElement);
+}
 </script></body></html>
