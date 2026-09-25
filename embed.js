@@ -334,9 +334,77 @@
       return { key: key, pending: true };
     }
   }
-  function getForumGreeting() {
-    if (detectForumArea() === '論壇首頁' && wmTodayHolidayGreeting) return wmTodayHolidayGreeting;
+  function wmGetTodayHolidayNamesFromDoc(doc) {
+    try {
+      var sections = doc.querySelectorAll('#holiday-sections .section');
+      var names = [];
+      for (var i = 0; i < sections.length; i++) {
+        var section = sections[i];
+        var dateEl = section.querySelector('.date');
+        var nameEl = section.querySelector('.location');
+        var dateText = dateEl ? (dateEl.textContent || '').trim() : '';
+        var name = nameEl ? (nameEl.textContent || '').trim() : '';
+        if (!name || !dateText || !wmHolidayContainsToday(dateText)) continue;
+        if (names.indexOf(name) < 0) names.push(name);
+      }
+      return names;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function wmGetAnnouncementInfo() {
     var fid = getForumFid();
+    if (fid !== '36') return { count: 0, titles: [] };
+
+    var selectors = [
+      '#forumannouncements li',
+      '#forum_announcements li',
+      '#announcements li',
+      '.forumannouncements li',
+      '.announcementlist li',
+      '[id*="announcement"] li',
+      '[class*="announcement"] li'
+    ];
+    var nodes = [];
+    var seen = [];
+
+    try {
+      for (var i = 0; i < selectors.length; i++) {
+        var found = document.querySelectorAll(selectors[i]);
+        for (var j = 0; j < found.length; j++) {
+          if (seen.indexOf(found[j]) >= 0) continue;
+          seen.push(found[j]);
+          var text = (found[j].innerText || found[j].textContent || '').replace(/\\s+/g, ' ').trim();
+          if (!text || /^公告$|^論壇公告$|^站務公告$/.test(text)) continue;
+          nodes.push(found[j]);
+        }
+      }
+    } catch (e) {}
+
+    var titles = nodes.map(function (node) {
+      var link = node.querySelector('a');
+      return ((link ? link.innerText || link.textContent : node.innerText || node.textContent) || '')
+        .replace(/\\s+/g, ' ').trim();
+    }).filter(function (title, idx, arr) {
+      return title && arr.indexOf(title) === idx;
+    });
+
+    return { count: titles.length, titles: titles.slice(0, 8) };
+  }
+
+  function getForumGreeting() {
+    var fid = getForumFid();
+    if (fid === '36') {
+      var names = wmGetTodayHolidayNamesFromDoc(document);
+      var info = wmGetAnnouncementInfo();
+      var parts = [];
+      if (names.length) parts.push('今天是「' + names.join('、') + '」，祝您節日愉快！');
+      else parts.push('現在我們在國家假期列表。');
+      if (info.count > 0) parts.push('另外，目前有 ' + info.count + ' 則公告要留意。');
+      return parts.join(' ');
+    }
+    if (detectForumArea() === '論壇首頁' && wmTodayHolidayGreeting) return wmTodayHolidayGreeting;
     if (fid && WM_FORUM_GREETINGS[fid]) return WM_FORUM_GREETINGS[fid];
     var title = (document.title || '').replace(/[-|｜].*$/, '').trim();
     if (fid && title) return '現在我們來到「' + title + '」，這裡有自己的主題與特色。你可以先看看目前的討論，也可以直接問我這個版面是做什麼的。';
@@ -379,6 +447,8 @@
       area: area,
       fid: fid,
       greeting: getForumGreeting(),
+      announcementCount: wmGetAnnouncementInfo().count,
+      announcementTitles: wmGetAnnouncementInfo().titles,
       isOpen: widgetOpen,
       shouldGreet: shouldGreet
     };
