@@ -359,8 +359,9 @@
   async function speakNeural(text, seq) {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') { try { await audioCtx.resume(); } catch (e) {} }
+    const voice = (window.WM_I18N && typeof window.WM_I18N.getVoice === 'function') ? window.WM_I18N.getVoice() : NEURAL_VOICE;
     const sep = TTS_ENDPOINT.indexOf('?') < 0 ? '?' : '&';
-    const resp = await fetch(TTS_ENDPOINT + sep + 'voice=' + encodeURIComponent(NEURAL_VOICE) + '&text=' + encodeURIComponent(text));
+    const resp = await fetch(TTS_ENDPOINT + sep + 'voice=' + encodeURIComponent(voice) + '&text=' + encodeURIComponent(text));
     if (seq !== speakSeq) return;                       // 抓回來時已被新點擊取代 → 放棄（避免重疊）
     if (!resp.ok) throw new Error('http ' + resp.status);
     const arr = await resp.arrayBuffer();
