@@ -325,6 +325,15 @@
 
   // 對外入口：先試 edge-tts 神經語音(真人感 + 精準對嘴)，失敗自動退回瀏覽器語音
   function speak(text) {
+    const raw = String(text || '');
+    if (!raw) return;
+    if (guideLanguage !== 'zh-Hant') {
+      translateText(raw, guideLanguage).then(function(out){ speakRaw(out); });
+      return;
+    }
+    speakRaw(raw);
+  }
+  function speakRaw(text) {
     const myseq = ++speakSeq;
     showBubble(text);
     postToParent('speaking', { text });
@@ -334,7 +343,6 @@
       if (myseq !== speakSeq) return;
       console.warn('神經語音失敗：', e && e.message || e);
       useAudioMouth = false;
-      // 固定音色：失敗時不切換到瀏覽器 speechSynthesis，避免產生第二種聲音。
     });
   }
 
