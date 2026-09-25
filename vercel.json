@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "builds": [
+    {"src":"api/tts.js","use":"@vercel/node"},
+    {"src":"api/chat.js","use":"@vercel/node"},
+    {"src":"*.html","use":"@vercel/static"},
+    {"src":"embed.js","use":"@vercel/static"},
+    {"src":"knowledge.js","use":"@vercel/static"},
+    {"src":"api/locale.js","use":"@vercel/node"},
+    {"src":"api/translate.js","use":"@vercel/node"},
+    {"src":"i18n.js","use":"@vercel/static"},
+    {"src":"translation-page.js","use":"@vercel/static"}
+  ],
+  "routes": [
+    {"src":"/api/tts","dest":"/api/tts.js"},
+    {"src":"/api/locale","dest":"/api/locale.js"},
+    {"src":"/api/translate","dest":"/api/translate.js"},
+    {"src":"/","dest":"/index.html"},
+    {"handle":"filesystem"}
+  ]
+}
