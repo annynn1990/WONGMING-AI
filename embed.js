@@ -536,6 +536,15 @@
   window.addEventListener('message', function (e) {
     var d = e.data || {};
 
+    // 國際化模組：只處理翻譯，不介入導覽員核心。
+    if (d.ns === 'avatar-widget' && d.type === 'action' && d.action && d.action.action === 'translate') {
+      var target = String(d.action.target || 'en');
+      if (['zh-Hant','zh-Hans','en','ja','ko'].indexOf(target) >= 0 && window.__WM_TRANSLATE_PAGE__) {
+        window.__WM_TRANSLATE_PAGE__(target);
+      }
+      return;
+    }
+
     // 節日資料源是獨立的 holiday-source.html，不屬於虛擬人的 widgetOrigin。
     // 先接收它，再做 widgetOrigin 的安全檢查。
     if (d.ns === 'wongming-holiday' && d.type === 'holiday-data' && d.data) {
