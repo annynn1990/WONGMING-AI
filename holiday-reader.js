@@ -60,6 +60,10 @@
     };
 
     try {
+      localStorage.setItem('wm_holiday_source_v2', JSON.stringify(window.WM_HOLIDAY_SOURCE));
+    } catch (e) {}
+
+    try {
       window.dispatchEvent(new CustomEvent('wm-holiday-ready', {
         detail: window.WM_HOLIDAY_SOURCE
       }));
