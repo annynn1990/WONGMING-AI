@@ -36,12 +36,12 @@ const D=[
 ["參謀大臣","Chief of the General Staff","high","夏侯昜"],["戰爭大臣","Minister of War","high","李君羨"],["陸軍大臣","Minister of the Army","high","白敖"],["海軍大臣","Minister of the Navy","high",""],["情報大臣","Minister of Intelligence","high",""],
 ["御前大臣","Minister of the Privy","general",""],["御前大臣","Minister of the Privy","general",""],["御前大臣","Minister of the Privy","general",""],["御前大臣","Minister of the Privy","general",""],["御前大臣","Minister of the Privy","general",""],["御前大臣","Minister of the Privy","general",""],["御前大臣","Minister of the Privy","general",""]];
 const B=[["https://www.wongmingempire.com/bbswm/data/attachment/forum/202507/27/032817cpwc6zbcbbrruvwu.png"],["https://www.wongmingempire.com/bbswm/data/attachment/forum/202507/27/032817rjjv1cj614emq140.png"],["https://www.wongmingempire.com/bbswm/data/attachment/forum/202507/27/032817ws8o44osb40o3u2u.png"]];
-let data=JSON.parse(localStorage.getItem("wm_ministers")||"null")||D.map(x=>({t:x[0],e:x[1],l:x[2],h:x[3],a:""}));
+let data=D.map(x=>({t:x[0],e:x[1],l:x[2],h:x[3],a:""}));
 data=data.map(x=>({...x,a:x.a||""}));
 const limits={special:3,high:5,general:7};
 ["special","high","general"].forEach(function(l){data=data.filter((x,i)=>x.l!==l||data.filter(y=>y.l===l).indexOf(x)<limits[l]);});
 if(data.filter(x=>x.l==="special"&&x.t==="典禮大臣").length){data.find(x=>x.l==="special"&&x.t==="典禮大臣").h="關二哥";}
-localStorage.setItem("wm_ministers",JSON.stringify(data));let cur=-1,edit=false;
+let cur=-1,edit=false;
 function esc(s){return String(s||"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]))}
 function render(){const G=[["special","特級皇室重臣","總額三名"],["high","高級皇室重臣","總額五名"],["general","一般皇室重臣","總額七名"]];levels.innerHTML=G.map((g,z)=>'<section class="level"><div class="head"><span class="num">0'+(z+1)+'</span><h2>'+g[1]+'</h2><span class="desc">'+g[2]+'</span></div><div class="grid">'+data.map((x,i)=>x.l===g[0]?'<article class="card" onclick="openEdit('+i+')"><div><div class="col-label">Royal Minister</div><div class="title">'+esc(x.t)+'</div><div class="english">'+esc(x.e)+'</div></div><div class="badge-cell"><img class="mini-badge" src="'+B[x.l==="special"?0:x.l==="high"?1:2][0]+'" alt=""></div><div class="name-cell"><div class="col-label">Name</div><div class="name">'+(x.h?esc(x.h):'<span class="vacant">目前從缺</span>')+'</div></div><div class="avatar-cell">'+(x.a?'<img class="avatar" src="'+esc(x.a)+'" alt="">':'')+'</div></article>':'').join('')+'</div></section>').join('')}
 function login(){document.getElementById("login").style.display="flex";pw.value="";pw.focus()}
@@ -49,6 +49,6 @@ function auth(){if(pw.value==="1111"||pw.value==="9999"){edit=true;closeM("login
 function closeM(id){document.getElementById(id).style.display="none"}
 function openEdit(i){if(!edit)return;cur=i;let x=data[i];ft.value=x.t;fh.value=x.h;fa.value=x.a||"";editor.style.display="flex"}
 function save(){let x=data[cur];x.t=ft.value.trim();x.h=fh.value.trim();x.a=fa.value.trim();persist();closeM("editor");render()}
-function persist(){localStorage.setItem("wm_ministers",JSON.stringify(data))}
+function persist(){}
 render();
 </script></body></html>
