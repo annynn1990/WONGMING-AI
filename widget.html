@@ -412,8 +412,6 @@
   }
 
   function speakBrowser(text) {
-    if (ttsMuted || !('speechSynthesis' in window)) return;
-    const  function speakBrowser(text) {
     if (ttsMuted) return;
     if (!('speechSynthesis' in window)) {
       showBubble('此瀏覽器沒有可用的語音播放功能。');
