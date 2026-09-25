@@ -324,13 +324,34 @@
     const myseq = ++speakSeq;
     showBubble(text);
     postToParent('speaking', { text });
+    if (window.WM_I18N && typeof window.WM_I18N.localize === 'function') {
+      window.WM_I18N.localize(String(text)).then(function(localized) {
+        if (myseq !== speakSeq) return;
+        if (localized && localized !== text) showBubble(localized);
+        if (ttsMuted) return;
+        stopSpeaking();
+        speakNeural(localized || text, myseq).catch(function(e) {
+          if (myseq !== speakSeq) return;
+          console.warn('神經語音失敗：', e && e.message || e);
+          useAudioMouth = false;
+        });
+      }).catch(function() {
+        if (myseq !== speakSeq || ttsMuted) return;
+        stopSpeaking();
+        speakNeural(text, myseq).catch(function(e) {
+          if (myseq !== speakSeq) return;
+          console.warn('神經語音失敗：', e && e.message || e);
+          useAudioMouth = false;
+        });
+      });
+      return;
+    }
     if (ttsMuted) return;
     stopSpeaking();
-    speakNeural(text, myseq).catch((e) => {
+    speakNeural(text, myseq).catch(function(e) {
       if (myseq !== speakSeq) return;
       console.warn('神經語音失敗：', e && e.message || e);
       useAudioMouth = false;
-      // 固定音色：失敗時不切換到瀏覽器 speechSynthesis，避免產生第二種聲音。
     });
   }
 
