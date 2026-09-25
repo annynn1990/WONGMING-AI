@@ -65,7 +65,7 @@
     return null;
   })();
   var base = me ? me.src.replace(/[^/]*$/, '') : '';
-  var widgetUrl = (me && me.getAttribute('data-widget')) || (base + 'widget.html?v=20260925');
+  var widgetUrl = (me && me.getAttribute('data-widget')) || (base + 'widget.html?v=20260925b');
   var savedOpen = null;
   try { savedOpen = localStorage.getItem('wm_ai_open'); } catch (e) {}
   var attrOpen = me ? me.getAttribute('data-open') : null;
@@ -74,6 +74,8 @@
     : (savedOpen === '1' ? true : (savedOpen === '0' ? false : attrOpen !== 'false')); // 預設展開，可跨頁保留狀態
   var widgetOpen = startOpen;
   var widgetReady = false;
+  var widgetReadyHandled = false;
+  var widgetHandshakeTimers = [];
   var widgetOrigin = (function () { try { return new URL(widgetUrl, location.href).origin; } catch (e) { return '*'; } })();
 
   // 把可設定項帶進 widget：皮=model / 肉的語音後端=api / 內容=knowledge / 聲線=voice
@@ -151,6 +153,24 @@
     }
   };
   setOpen(startOpen);
+
+  function pingWidget() {
+    try {
+      if (iframe.contentWindow) {
+        iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'ping' }, widgetOrigin);
+      }
+    } catch (e) {}
+  }
+
+  iframe.addEventListener('load', function () {
+    pingWidget();
+    [120, 600, 1600, 3200].forEach(function (delay) {
+      var t = setTimeout(function () {
+        if (!widgetReady) pingWidget();
+      }, delay);
+      widgetHandshakeTimers.push(t);
+    });
+  });
 
   // 6) 接收 iframe 的訊息（驗證來源 origin）
   // ===== 黃名論壇網站操作層 =====
@@ -530,6 +550,9 @@
     if (d.type === 'close') setOpen(false);
     if (d.type === 'ready') {
       widgetReady = true;
+      widgetHandshakeTimers.forEach(function (t) { try { clearTimeout(t); } catch (err) {} });
+      if (widgetReadyHandled) return;
+      widgetReadyHandled = true;
       var blockedGreeting = WM_BLOCKED_FORUMS[getForumFid()];
       if (blockedGreeting) {
         try { sessionStorage.setItem('wm_fid55_blocked', '1'); } catch (e) {}
