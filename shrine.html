@@ -68,7 +68,7 @@ button{font-family:inherit;cursor:pointer}
 </div></div>
 
 <script>
-const API="https://wongming-ai.vercel.app/api/shrine",MAX=80;
+const API="https://wongming-ai.vercel.app/api/locale?shrine=1",MAX=80;
 let db=Array(MAX).fill(null),idx=null,admin=false,authStep=1;
 
 function setStatus(s){document.getElementById("status").textContent=s}
