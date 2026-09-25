@@ -19,7 +19,13 @@ function addControls(){document.getElementById('addRoyal').style.display='inline
 render();
 
 function sendHeight(){
-  var h=Math.max(document.documentElement.scrollHeight,document.body?document.body.scrollHeight:0,document.documentElement.offsetHeight,document.body?document.body.offsetHeight:0);
+  var h=Math.max(
+    document.documentElement.scrollHeight,
+    document.body ? document.body.scrollHeight : 0,
+    document.documentElement.offsetHeight,
+    document.body ? document.body.offsetHeight : 0
+  );
+  if(h<300) h=300;
   window.parent.postMessage({type:'wm-gallery-height',height:h},'*');
 }
 window.addEventListener('message',function(e){if(e.data&&e.data.type==='wm-gallery-request-height')sendHeight()});
