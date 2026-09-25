@@ -9,7 +9,10 @@ function normalizeRoyal(x){
   return [x[4]||x[0]||'',x[1]||'',x[2]||'',x[3]||'',x[5]||''];
 }
 function normalizeNoble(x){
-  return [x[4]||img,x[1]||x[0]||'',x[2]||x[1]||'',x[3]||x[2]||'',x[5]||''];
+  if(x.length===3){
+    return [img,x[0]||'',x[1]||'',x[2]||'', ''];
+  }
+  return [x[0]||img,x[1]||'',x[2]||'',x[3]||'',x[4]||''];
 }
 let r=JSON.parse(localStorage.wm_r||JSON.stringify(R)).map(normalizeRoyal);
 let n=JSON.parse(localStorage.wm_n||JSON.stringify(N)).map(normalizeNoble);
