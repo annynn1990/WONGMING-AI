@@ -11,13 +11,19 @@ export default async function handler(req, res) {
     const GH = 'https://api.github.com';
     try {
       const { getToken } = await import('@vercel/connect');
-      const token = await getToken('github/wongming-github', { subject: { type: 'app' } });
-      if (!token) return res.status(500).json({ok:false,message:'服務尚未完成設定'});
+      let token;
+      try {
+        token = await getToken('github/wongming-github', { subject: { type: 'app' } });
+      } catch (e) {
+        console.error('CONNECT_TOKEN_ERROR', e);
+        return res.status(500).json({ok:false,message:'連線授權失敗',code:e?.name||'TOKEN_ERROR'});
+      }
+      if (!token) return res.status(500).json({ok:false,message:'服務尚未完成設定',code:'NO_TOKEN'});
       const headers = {Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json', 'X-GitHub-Api-Version': '2022-11-28'};
       const url = GH + '/repos/' + REPO + '/contents/' + PATH + '?ref=main';
       if (req.method === 'GET') {
         const r = await fetch(url, {headers});
-        if (!r.ok) throw new Error('讀取失敗');
+        if (!r.ok) return res.status(502).json({ok:false,message:'GitHub 讀取失敗',code:'GITHUB_GET_'+r.status});
         const f = await r.json();
         return res.status(200).json(JSON.parse(Buffer.from(f.content,'base64').toString('utf8')));
       }
@@ -25,15 +31,18 @@ export default async function handler(req, res) {
         const data = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
         if (!Array.isArray(data) || data.length !== 80) return res.status(400).json({ok:false,message:'資料格式錯誤'});
         const current = await fetch(url,{headers});
-        if (!current.ok) throw new Error('讀取版本失敗');
+        if (!current.ok) return res.status(502).json({ok:false,message:'GitHub 版本讀取失敗',code:'GITHUB_SHA_'+current.status});
         const f = await current.json();
-        const content = Buffer.from(JSON.stringify(data,null,2)+'\n').toString('base64');
+        const content = Buffer.from(JSON.stringify(data,null,2)+'\\n').toString('base64');
         const r = await fetch(GH + '/repos/' + REPO + '/contents/' + PATH,{method:'PUT',headers,body:JSON.stringify({message:'更新燈牆資料',content,sha:f.sha,branch:'main'})});
-        if (!r.ok) throw new Error('儲存失敗');
+        if (!r.ok) return res.status(502).json({ok:false,message:'GitHub 儲存失敗',code:'GITHUB_PUT_'+r.status});
         return res.status(200).json({ok:true});
       }
       return res.status(405).json({ok:false,message:'不支援的操作'});
-    } catch(e) { console.error(e); return res.status(500).json({ok:false,message:'同步服務發生錯誤'}); }
+    } catch(e) {
+      console.error('SHRINE_API_ERROR', e);
+      return res.status(500).json({ok:false,message:'同步服務發生錯誤',code:e?.name||'UNKNOWN'});
+    }
   }
 
   const country = String(req.headers['x-vercel-ip-country'] || req.headers['x-country-code'] || '').toUpperCase();
