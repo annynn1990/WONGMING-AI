@@ -14,8 +14,17 @@ function normalizeNoble(x){
   }
   return [x[0]||img,x[1]||'',x[2]||'',x[3]||'',x[4]||''];
 }
-let r=JSON.parse(localStorage.wm_r||JSON.stringify(R)).map(normalizeRoyal);
-let n=JSON.parse(localStorage.wm_n||JSON.stringify(N)).map(normalizeNoble);
+let storedR=JSON.parse(localStorage.wm_r||'null');
+let storedN=JSON.parse(localStorage.wm_n||'null');
+let r=storedR ? storedR.map(normalizeRoyal) : R.map(normalizeRoyal);
+let n;
+if(!storedN || localStorage.wm_gallery_version!=='3'){
+  n=N.map(normalizeNoble);
+  localStorage.setItem('wm_n',JSON.stringify(n));
+  localStorage.setItem('wm_gallery_version','3');
+}else{
+  n=storedN.map(normalizeNoble);
+}
 let editing=false,t=null;
 function card(x,k,i,c){
   return '<article class="item '+c+'" onclick="editItem(\''+k+'\','+i+')"><div class="frame"><img src="'+(x[0]||img)+'"></div><div class="meta"><div class="rank">'+(x[1]||'')+'</div><div class="name">'+(x[2]||'')+'</div><div class="en">'+(x[3]||'')+'</div></div></article>'
