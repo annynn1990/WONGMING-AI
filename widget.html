@@ -787,9 +787,21 @@
       'https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0/dist/cubism4.min.js'
     ];
     _umd = urls.reduce((p, u) => p.then(() => new Promise((res, rej) => {
-      const s = document.createElement('script'); s.src = u; s.onload = res; s.onerror = rej; document.head.appendChild(s);
-    })), Promise.resolve());
+      const s = document.createElement('script');
+      s.src = u;
+      s.onload = res;
+      s.onerror = () => rej(new Error('Live2D CDN load failed: ' + u));
+      document.head.appendChild(s);
+    })), Promise.resolve()).catch((err) => {
+      // 不把失敗的 Promise 永久快取；下一次啟動可以重新嘗試 CDN。
+      _umd = null;
+      throw err;
+    });
     return _umd;
+  }
+
+  function waitForAvatarRetry(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   // ===== 引擎切換外殼：每個引擎建自己的 canvas、回傳 dispose；切換＝dispose 舊的再 boot 新的 =====
@@ -980,7 +992,9 @@
 
   // ===== 2D 皮：Live2D 載入 + 對嘴 =====
   async function bootAvatar() {
-    try {
+    const MAX_ATTEMPTS = 3;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
       await loadUMD();                       // 用到才載 pixi + live2d
       const Live2DModel = PIXI.live2d.Live2DModel;
       try { Live2DModel.registerTicker(PIXI.Ticker); } catch (e) {}
@@ -1049,11 +1063,30 @@
         try { app && app.destroy(true, { children: true, texture: true, baseTexture: true }); } catch (e) {}
         app = null; model = null; canvas.remove();
       } };
-    } catch (err) {
-      console.error(err);
-      const w = document.getElementById('direct-warn'); if (w) { w.textContent = '2D 啟動失敗：' + (err && err.message || err); w.style.display = 'flex'; }
-      postToParent('error', { message: err.message });
+      } catch (err) {
+        console.warn('[Wongming Avatar] 2D 啟動失敗，第 ' + attempt + '/' + MAX_ATTEMPTS + ' 次：', err && err.message || err);
+        try { if (app) app.destroy(true, { children: true, texture: true, baseTexture: true }); } catch (e) {}
+        app = null;
+        model = null;
+        try {
+          document.querySelectorAll('#stage canvas.avatar-canvas').forEach((c) => c.remove());
+        } catch (e) {}
+        _umd = null;
+        if (attempt < MAX_ATTEMPTS) {
+          await waitForAvatarRetry(attempt * 900);
+          continue;
+        }
+        console.error(err);
+        const warn = document.getElementById('direct-warn');
+        if (warn) {
+          warn.textContent = '2D 啟動失敗，正在等待重新載入；請稍候再試。';
+          warn.style.display = 'flex';
+        }
+        postToParent('error', { message: err && err.message || String(err) });
+        return null;
+      }
     }
+    return null;
   }
 
   function onTap() {
