@@ -37,21 +37,19 @@ button{font-family:inherit;cursor:pointer}
 <body>
 <div id="app">
 <header>
-<div class="stats"><span class="gold">燈牆概況</span><span>總位 80</span><span class="yellow"><span class="dot"></span>已安 <b id="lit">0</b></span><span class="green">空位 <b id="empty">80</b></span><span class="status" id="status">讀取中...</span></div>
+<div class="stats"><span class="gold">燈牆概況</span><span>總位 80</span><span class="yellow"><span class="dot"></span>已安 <b id="lit">0</b></span><span class="green">空位 <b id="empty">80</b></span><span class="status" id="status">已同步</span></div>
 <button class="admin-btn" id="adminBtn">安置管理</button>
 </header>
 <div class="hero">
 <img src="https://www.wongmingempire.com/bbswm/data/attachment/forum/202602/19/152122ld17ngzordoi7irp.png" alt="燈牆">
 <div id="grid"></div>
 </div>
-<div class="help">一般訪客可查看燈位；管理模式使用 GitHub Fine-grained Token 直接儲存至本專案的 JSON 資料檔。</div>
 </div>
 
 <div class="modal" id="authModal"><div class="panel">
-<h3>GitHub 管理驗證</h3>
-<p style="font-family:system-ui;font-size:13px">請輸入只允許此 Repository「Contents: Read and write」的 Fine-grained Token。Token 僅保留在本次瀏覽器工作階段，不寫入網站。</p>
-<input type="password" id="token" placeholder="github_pat_...">
-<div class="row"><button class="secondary" onclick="closeModal('authModal')">取消</button><button class="primary" onclick="login()">進入管理</button></div>
+<h3>安置驗證</h3>
+<input type="password" id="token" inputmode="numeric" maxlength="4" placeholder="">
+<div class="row"><button class="secondary" onclick="closeModal('authModal')">取消</button><button class="primary" onclick="login()">進入</button></div>
 </div></div>
 
 <div class="modal" id="editModal"><div class="panel">
@@ -77,14 +75,14 @@ let db=Array(MAX).fill(null),sha=null,idx=null,admin=false,token=sessionStorage.
 function setStatus(s){document.getElementById("status").textContent=s}
 function expired(d){return d&&d.ts&&(Date.now()-d.ts)>30*86400000}
 async function load(){
- setStatus("雲端讀取中...");
+ 
  try{
   const r=await fetch(RAW+"?t="+Date.now(),{cache:"no-store"});
   if(!r.ok)throw Error("HTTP "+r.status);
   db=await r.json();if(!Array.isArray(db))throw Error("資料格式錯誤");
   if(db.length<MAX)db.length=MAX;
-  setStatus("GitHub 已同步");draw();
- }catch(e){setStatus("讀取失敗");alert("無法讀取 GitHub 資料："+e.message)}
+  setStatus("已同步");draw();
+ }catch(e){setStatus("同步失敗");alert("無法讀取資料："+e.message)}
 }
 async function getSha(){
  const r=await fetch("https://api.github.com/repos/"+REPO+"/contents/"+DATA_PATH+"?ref="+BRANCH);
@@ -111,13 +109,15 @@ function select(i){
  }
 }
 async function login(){
- const t=document.getElementById("token").value.trim();if(!t)return alert("請輸入 GitHub Token");
+ const t=document.getElementById("token").value.trim();
+ if(t!=="1111")return alert("驗證碼錯誤");
+ token=prompt("GitHub Token")||"";if(!token)return;
  try{
-  const r=await fetch("https://api.github.com/repos/"+REPO,{headers:{Authorization:"Bearer "+t,Accept:"application/vnd.github+json"}});
-  if(!r.ok)throw Error("Token 無法存取此 Repository");
-  const j=await r.json();if(!j.permissions||!j.permissions.push)throw Error("此 Token 沒有寫入權限");
-  token=t;sessionStorage.setItem("wm_github_token",t);admin=true;closeModal("authModal");document.getElementById("adminBtn").textContent="退出管理";draw();alert("已進入管理模式");
- }catch(e){alert(e.message)}
+  const r=await fetch("https://api.github.com/repos/"+REPO,{headers:{Authorization:"Bearer "+token,Accept:"application/vnd.github+json"}});
+  if(!r.ok)throw Error("GitHub 驗證失敗");
+  const j=await r.json();if(!j.permissions||!j.permissions.push)throw Error("沒有寫入權限");
+  admin=true;closeModal("authModal");document.getElementById("adminBtn").textContent="退出管理";draw();
+ }catch(e){token="";alert(e.message)}
 }
 document.getElementById("adminBtn").onclick=()=>{if(admin){admin=false;document.getElementById("adminBtn").textContent="安置管理";draw()}else document.getElementById("authModal").style.display="flex"}
 async function githubSave(){
@@ -133,8 +133,8 @@ async function githubSave(){
 async function saveLamp(){
  const n=document.getElementById("name").value.trim();if(!n)return alert("請輸入姓名");
  const old=db[idx];db[idx]={name:n,wish:document.getElementById("wish").value.trim(),ts:Date.now()};
- setStatus("正在寫入 GitHub...");
- try{await githubSave();draw();closeModal("editModal");setStatus("GitHub 已同步")}catch(e){db[idx]=old;draw();setStatus("同步失敗");alert(e.message)}
+ setStatus("同步中...");
+ try{await githubSave();draw();closeModal("editModal");setStatus("已同步")}catch(e){db[idx]=old;draw();setStatus("同步失敗");alert(e.message)}
 }
 async function removeLamp(){
  if(!confirm("確定撤下這個燈位？"))return;
