@@ -28,6 +28,14 @@
     {
       "src": "api/translate.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "i18n.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "translation-page.js",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
