@@ -76,7 +76,7 @@ function expired(d){return d&&d.ts&&(Date.now()-d.ts)>30*86400000}
 
 async function load(){
  try{
-  const r=await fetch(API+"?t="+Date.now(),{cache:"no-store"});
+  const r=await fetch(API+"&t="+Date.now(),{cache:"no-store"});
   if(!r.ok)throw Error("HTTP "+r.status);
   db=await r.json();if(!Array.isArray(db))throw Error("資料格式錯誤");
   if(db.length<MAX)db.length=MAX;
