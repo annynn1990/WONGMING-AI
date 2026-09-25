@@ -65,7 +65,7 @@
     return null;
   })();
   var base = me ? me.src.replace(/[^/]*$/, '') : '';
-  var widgetUrl = (me && me.getAttribute('data-widget')) || (base + 'widget.html?v=20260925b');
+  var widgetUrl = (me && me.getAttribute('data-widget')) || (base + 'widget.html?v=20260925c');
   var savedOpen = null;
   try { savedOpen = localStorage.getItem('wm_ai_open'); } catch (e) {}
   var attrOpen = me ? me.getAttribute('data-open') : null;
@@ -113,14 +113,14 @@
   // 獨立國際化模組：翻譯層失效時不影響虛擬人本體。
   try {
     var i18nScript = document.createElement('script');
-    i18nScript.src = 'https://wongming-ai.vercel.app/i18n.js?v=20260925';
+    i18nScript.src = 'https://wongming-ai.vercel.app/i18n.js?v=20260925a';
     i18nScript.async = true;
     document.head.appendChild(i18nScript);
   } catch (e) {}
 
   try {
     var translationPageScript = document.createElement('script');
-    translationPageScript.src = 'https://wongming-ai.vercel.app/translation-page.js?v=20260925';
+    translationPageScript.src = 'https://wongming-ai.vercel.app/translation-page.js?v=20260925a';
     translationPageScript.async = true;
     document.head.appendChild(translationPageScript);
   } catch (e) {}
