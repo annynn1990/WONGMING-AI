@@ -166,7 +166,17 @@
     laws: WM_FORUM_BASE + 'forum.php?fid=45&mod=forumdisplay',
     structure: WM_FORUM_BASE + 'forum.php?extra=page%3D1&mod=viewthread&tid=22468',
     intro: WM_FORUM_BASE + 'forum.php?mod=viewthread&tid=23066',
-    register: WM_FORUM_BASE + 'member.php?mod=welcomewongmingempire'
+    register: WM_FORUM_BASE + 'member.php?mod=welcomewongmingempire',
+    tour0: WM_FORUM_BASE + 'forum.php?mod=forumdisplay&fid=36',
+    tour1: WM_FORUM_BASE + 'forum.php?mod=forumdisplay&fid=72',
+    tour2: WM_FORUM_BASE + 'forum.php?mod=forumdisplay&fid=357',
+    tour3: WM_FORUM_BASE + 'forum.php?mod=forumdisplay&fid=461',
+    tour4: WM_FORUM_BASE + 'forum.php?mod=forumdisplay&fid=273',
+    tour5: WM_FORUM_BASE + 'forum.php?mod=forumdisplay&fid=92',
+    tour6: WM_FORUM_BASE + 'forum.php?mod=forumdisplay&fid=90',
+    tour7: WM_FORUM_BASE + 'forum.php?mod=forumdisplay&fid=91',
+    tour8: WM_FORUM_BASE + 'forum.php?mod=forumdisplay&fid=88',
+    tour9: WM_FORUM_BASE + 'forum.php?mod=forumdisplay&fid=89'
   };
   var WM_BLOCKED_FORUMS = {
     '55': '嗚嗚嗚，這裡我不方便帶你導覽喔，再見。'
