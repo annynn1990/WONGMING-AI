@@ -132,7 +132,14 @@
       bubble.style.display = 'flex';
     }
   }
-  bubble.onclick = function () { setOpen(true); if (widgetReady && iframe.contentWindow) iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'host-context', context: pageContext() }, widgetOrigin); };
+  bubble.onclick = function () {
+    setOpen(true);
+    if (widgetReady && iframe.contentWindow) {
+      preparePageContext().then(function (ctx) {
+        if (iframe.contentWindow) iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'host-context', context: ctx }, widgetOrigin);
+      });
+    }
+  };
   setOpen(startOpen);
 
   // 6) 接收 iframe 的訊息（驗證來源 origin）
@@ -162,6 +169,115 @@
     '45': '現在我們在法律資源中心，這裡可以查閱帝國法律、法規與相關討論。',
     '129': '現在我們在外交相關區域，這裡可以看看帝國與友邦之間的交流與外交資訊。'
   };
+
+  var wmTodayHolidayGreeting = '';
+  var wmTodayHolidayPromise = null;
+
+  function wmTodayDateVariants() {
+    var d = new Date();
+    var y = d.getFullYear();
+    var roc = y - 1911;
+    var m = d.getMonth() + 1;
+    var day = d.getDate();
+    var mm = String(m).padStart(2, '0');
+    var dd = String(day).padStart(2, '0');
+    return [
+      y + '-' + mm + '-' + dd,
+      y + '/' + mm + '/' + dd,
+      y + '.' + mm + '.' + dd,
+      y + '年' + m + '月' + day + '日',
+      y + '年' + mm + '月' + dd + '日',
+      roc + '年' + m + '月' + day + '日',
+      m + '月' + day + '日',
+      mm + '月' + dd + '日',
+      m + '/' + day,
+      mm + '/' + dd,
+      m + '-' + day,
+      mm + '-' + dd
+    ];
+  }
+
+  function wmHolidayContainsToday(text) {
+    var t = String(text || '').replace(/\\s+/g, ' ');
+    return wmTodayDateVariants().some(function (v) { return t.indexOf(v) >= 0; });
+  }
+
+  function wmCleanHolidayTitle(title) {
+    var t = String(title || '').replace(/\\s+/g, ' ').trim();
+    t = t.replace(/^(?:西元)?\\d{4}[年\\/.-]\\s*\\d{1,2}[月\\/.-]\\s*\\d{1,2}日?[：:、,，\\-－\\s]*/,'');
+    t = t.replace(/^\\d{1,2}月\\s*\\d{1,2}日?[：:、,，\\-－\\s]*/,'');
+    t = t.replace(/^\\d{1,2}[\\/.-]\\d{1,2}[：:、,，\\-－\\s]*/,'');
+    t = t.replace(/^今天[：:、,，\\-－\\s]*/,'').replace(/^今日[：:、,，\\-－\\s]*/,'');
+    return t.trim();
+  }
+
+  function wmExtractTodayHolidayGreeting(html) {
+    try {
+      var doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
+      var candidates = [];
+      doc.querySelectorAll('a[href*="mod=viewthread"]').forEach(function (a) {
+        var title = (a.textContent || '').replace(/\\s+/g, ' ').trim();
+        if (!title) return;
+        var row = a.closest('tr,li,div') || a.parentElement;
+        var nearby = row ? (row.innerText || row.textContent || '') : title;
+        var score = 0;
+        if (wmHolidayContainsToday(title)) score += 10;
+        if (wmHolidayContainsToday(nearby)) score += 4;
+        if (/節日|紀念日|假日|慶祝|今日|今天/.test(nearby)) score += 3;
+        if (score > 0) candidates.push({ title: title, score: score });
+      });
+
+      candidates.sort(function (a, b) { return b.score - a.score; });
+      if (candidates.length) {
+        var best = wmCleanHolidayTitle(candidates[0].title);
+        if (best) return '今天是「' + best + '」，祝您節日愉快！';
+      }
+
+      var body = (doc.body && (doc.body.innerText || doc.body.textContent)) || '';
+      var lines = body.split(/\\n+/).map(function (x) { return x.replace(/\\s+/g, ' ').trim(); }).filter(Boolean);
+      for (var i = 0; i < lines.length; i++) {
+        if (wmHolidayContainsToday(lines[i]) && /節日|紀念日|假日|慶祝/.test(lines[i])) {
+          var line = wmCleanHolidayTitle(lines[i]);
+          if (line) return '今天是「' + line + '」，祝您節日愉快！';
+        }
+      }
+    } catch (e) {}
+    return '';
+  }
+
+  function loadTodayHolidayGreeting() {
+    if (wmTodayHolidayPromise) return wmTodayHolidayPromise;
+    var area = detectForumArea();
+    if (area !== '論壇首頁') return Promise.resolve('');
+    var cacheKey = 'wm_today_holiday_' + new Date().toISOString().slice(0, 10);
+    try {
+      var cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        wmTodayHolidayGreeting = cached === '__NONE__' ? '' : cached;
+        return Promise.resolve(wmTodayHolidayGreeting);
+      }
+    } catch (e) {}
+
+    wmTodayHolidayPromise = fetch(WM_FORUM_BASE + 'forum.php?mod=forumdisplay&fid=36', {
+      credentials: 'include',
+      cache: 'no-store'
+    })
+      .then(function (r) { return r.ok ? r.text() : ''; })
+      .then(function (html) {
+        wmTodayHolidayGreeting = wmExtractTodayHolidayGreeting(html);
+        try { sessionStorage.setItem(cacheKey, wmTodayHolidayGreeting || '__NONE__'); } catch (e) {}
+        return wmTodayHolidayGreeting;
+      })
+      .catch(function () { return ''; });
+
+    return wmTodayHolidayPromise;
+  }
+
+  async function preparePageContext() {
+    if (detectForumArea() === '論壇首頁') await loadTodayHolidayGreeting();
+    return pageContext();
+  }
+
   function getForumFid() {
     var search = location.search || '';
     var m = search.match(/[?&]fid=(\d+)/i);
@@ -208,6 +324,7 @@
     }
   }
   function getForumGreeting() {
+    if (detectForumArea() === '論壇首頁' && wmTodayHolidayGreeting) return wmTodayHolidayGreeting;
     var fid = getForumFid();
     if (fid && WM_FORUM_GREETINGS[fid]) return WM_FORUM_GREETINGS[fid];
     var title = (document.title || '').replace(/[-|｜].*$/, '').trim();
@@ -289,16 +406,20 @@
         }, 3750);
         return;
       }
-      iframe.contentWindow && iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'host-context', context: pageContext() }, widgetOrigin);
-      setTimeout(sendPageContent, 300);
-      try {
+      (async function () {
+        var ctx = await preparePageContext();
+        if (!iframe.contentWindow) return;
+        iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'host-context', context: ctx }, widgetOrigin);
+        setTimeout(sendPageContent, 300);
+        try {
         var pending = JSON.parse(localStorage.getItem('wm_ai_pending_action') || 'null');
         if (pending && pending.action && Date.now() - Number(pending.at || 0) < 60000) {
           localStorage.removeItem('wm_ai_pending_action');
           iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'navigation-complete', action: pending.action, context: pageContext() }, widgetOrigin);
           setTimeout(sendPageContent, 500);
         } else if (pending) localStorage.removeItem('wm_ai_pending_action');
-      } catch (err) {}
+        } catch (err) {}
+      })();
     }
     if (d.type === 'action') handleHostAction(d.action);
     if (d.type === 'error') console.warn('[avatar] widget error:', d.message);
