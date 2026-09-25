@@ -2,18 +2,25 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=IM+Fell+English:ital@0;1&family=Noto+Serif+TC:wght@400;500;600;700&display=swap');
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;color:#302317}
-body{font-family:'Noto Serif TC',serif;background:#8b704d url('https://i.meee.com.tw/RWpmQLK.jpg') center top/cover fixed no-repeat}
-body:before{content:"";position:fixed;inset:0;pointer-events:none;background:rgba(238,220,180,.13);mix-blend-mode:multiply}
-.wrap{max-width:1040px;margin:0 auto;padding:76px 72px 110px;min-height:100vh;position:relative}
+body{font-family:'Noto Serif TC',serif;background:#d8c59f;position:relative}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;background:
+radial-gradient(ellipse at center,rgba(255,248,220,.62) 0%,rgba(226,207,165,.38) 58%,rgba(121,91,52,.22) 100%),
+linear-gradient(90deg,rgba(86,56,25,.12),transparent 9%,transparent 91%,rgba(86,56,25,.12));
+box-shadow:inset 0 0 130px rgba(74,45,20,.24);z-index:0}
+body:after{content:"";position:fixed;inset:0;pointer-events:none;opacity:.16;background-image:
+repeating-linear-gradient(0deg,rgba(92,63,32,.12) 0,rgba(92,63,32,.12) 1px,transparent 1px,transparent 4px),
+repeating-linear-gradient(90deg,rgba(255,250,230,.16) 0,rgba(255,250,230,.16) 1px,transparent 1px,transparent 7px);mix-blend-mode:multiply;z-index:0}
+.wrap{max-width:1040px;margin:0 auto;padding:92px 105px 120px;min-height:100vh;position:relative;z-index:1}
+.wrap:before{content:"";position:absolute;inset:50px 70px;border:1px solid rgba(82,57,29,.34);pointer-events:none}
 .wrap:before{content:"";position:absolute;inset:34px 38px;border:1px solid rgba(82,57,29,.5);pointer-events:none}
 header{text-align:center;margin:0 0 52px}
 .kicker{font:italic 15px 'IM Fell English',serif;letter-spacing:2px;color:#5b452d}
 h1{margin:10px 0 7px;font:600 50px/1.05 'Cormorant Garamond',serif;letter-spacing:1px;color:#2c2015}
 .sub{font:italic 15px 'IM Fell English',serif;color:#665039}
-.intro{max-width:780px;margin:0 auto 46px;text-align:center;color:#55412b;line-height:2;font-size:14px}
-.level{margin:0 0 48px}.head{display:flex;align-items:baseline;gap:15px;border-bottom:1px solid rgba(73,49,24,.62);padding:0 0 9px;margin-bottom:0}.num{font:italic 18px 'IM Fell English',serif;color:#665039}.head h2{margin:0;font:600 28px 'Cormorant Garamond',serif;color:#332316}.desc{margin-left:auto;font:italic 13px 'IM Fell English',serif;color:#6d563b}
-.grid{display:flex;flex-direction:column}
-.card{display:grid;grid-template-columns:260px 92px minmax(180px,1fr) 92px;align-items:center;min-height:116px;padding:14px 14px 14px 20px;border-bottom:1px solid rgba(92,63,32,.38);position:relative}
+.intro{max-width:720px;margin:0 auto 56px;text-align:center;color:#55412b;line-height:2;font-size:14px}
+.level{margin:0 0 58px;padding:0 18px}.head{display:flex;align-items:baseline;gap:15px;border-bottom:1px solid rgba(73,49,24,.62);padding:0 0 9px;margin-bottom:0}.num{font:italic 18px 'IM Fell English',serif;color:#665039}.head h2{margin:0;font:600 28px 'Cormorant Garamond',serif;color:#332316}.desc{margin-left:auto;font:italic 13px 'IM Fell English',serif;color:#6d563b}
+.grid{display:flex;flex-direction:column;padding:0 8px}
+.card{display:grid;grid-template-columns:260px 92px minmax(180px,1fr) 92px;align-items:center;min-height:116px;padding:16px 18px 16px 24px;border-bottom:1px solid rgba(92,63,32,.38);position:relative}
 .card:first-child{border-top:1px solid rgba(92,63,32,.28)}
 .card:after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:rgba(255,247,222,.28)}
 .col-label{font:italic 11px 'IM Fell English',serif;letter-spacing:1.1px;color:#6d563b;margin-bottom:5px}
@@ -23,7 +30,7 @@ h1{margin:10px 0 7px;font:600 50px/1.05 'Cormorant Garamond',serif;letter-spacin
 .avatar-cell{display:flex;justify-content:flex-end}.avatar{width:68px;height:82px;object-fit:cover;border:1px solid rgba(72,49,26,.7);padding:3px;background:#d9c397;box-shadow:3px 4px 7px rgba(52,34,16,.28);transform:rotate(1deg)}
 .gear{position:fixed;right:16px;top:16px;width:34px;height:34px;border:0;background:transparent;color:#4e3b27;opacity:.18;cursor:pointer;z-index:5}.gear:hover{opacity:.75}
 .modal{position:fixed;inset:0;background:rgba(38,24,12,.62);display:none;align-items:center;justify-content:center;z-index:10;padding:20px}.box,.panel{width:min(540px,100%);background:#e5d0a4;border:1px solid #725536;box-shadow:0 18px 50px rgba(0,0,0,.3);padding:27px}.panel h3,.box h2{margin-top:0;font:600 27px 'Cormorant Garamond',serif}.panel label,.box label{display:block;margin:11px 0 5px;font-size:14px;color:#5f482f}.panel input,.box input{width:100%;padding:10px;border:1px solid #9a7b52;background:#f1e1bb;font:15px 'Noto Serif TC',serif}.actions{display:flex;gap:8px;margin-top:18px;justify-content:flex-end}.btn{border:1px solid #715536;background:transparent;color:#44311f;padding:8px 13px;font:14px 'Noto Serif TC',serif;cursor:pointer}.close{float:right;border:0;background:none;font-size:22px;cursor:pointer;color:#4d3925}
-@media(max-width:700px){.wrap{padding:52px 22px 80px}.wrap:before{inset:20px 12px}h1{font-size:38px}.card{grid-template-columns:1fr 60px 1fr 65px;min-height:100px;padding:11px 5px 11px 8px}.title{font-size:18px}.name{font-size:17px}.english{font-size:11px}.mini-badge{width:46px;height:46px}.avatar{width:52px;height:65px}.name-cell{padding-left:10px}}
+@media(max-width:700px){.wrap{padding:60px 30px 90px}.wrap:before{inset:20px 12px}h1{font-size:38px}.card{grid-template-columns:1fr 60px 1fr 65px;min-height:100px;padding:11px 5px 11px 8px}.title{font-size:18px}.name{font-size:17px}.english{font-size:11px}.mini-badge{width:46px;height:46px}.avatar{width:52px;height:65px}.name-cell{padding-left:10px}}
 </style></head><body>
 <button class="gear" onclick="login()">✦</button><div class="page"><header class="mast"><div class="kicker">WONGMING EMPIRE · COURT REGISTER</div><h1>黃名帝國 皇室重臣名錄</h1><div class="subtitle">Imperial Register of Royal Ministers</div></header>
 <p class="intro">皇室重臣為帝國的榮譽職銜，並無實際職權，但擁有極高的榮譽地位。共設三個級別，並有相應的級別勳章。</p><main id="levels"></main>
