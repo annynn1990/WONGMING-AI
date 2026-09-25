@@ -14,6 +14,9 @@
     if (new URLSearchParams(location.search).get('wm_holiday_reader') === '1') return;
   } catch (e) {}
 
+  if (document.getElementById('avatar-widget-root') || window.__WM_AVATAR_WIDGET_INSTANCE__) return;
+  window.__WM_AVATAR_WIDGET_INSTANCE__ = true;
+
   // 進入論壇時先判斷目前所在的版區。fid=55 會進入「禁用區」，
   // 帖子頁若沒有 fid，沿用同一分區的 session 記憶。
   var bootstrapStartOpen = null;
@@ -234,58 +237,106 @@
     if (wmTodayHolidayPromise) return wmTodayHolidayPromise;
     if (detectForumArea() !== '論壇首頁') return Promise.resolve('');
 
-    var cacheKey = 'wm_today_holiday_reader_v3_' + new Date().toISOString().slice(0, 10);
+    var cacheKey = 'wm_today_holiday_reader_v4_' + new Date().toISOString().slice(0, 10);
+
+    function greetingFromSource(data) {
+      if (!data || !data.today || !data.today.length) return '';
+      var names = data.today.map(function (x) { return x.name; }).filter(Boolean);
+      names = names.filter(function (n, i, a) { return a.indexOf(n) === i; });
+      return names.length ? '今天是「' + names.join('、') + '」，祝您節日愉快！' : '';
+    }
 
     try {
       var raw = localStorage.getItem('wm_holiday_source_v2');
       if (raw) {
-        var data = JSON.parse(raw);
-        if (data && data.date === new Date().toISOString().slice(0, 10) &&
-            data.today && data.today.length) {
-          wmTodayHolidayGreeting = '今天是「' + data.today.map(function (x) { return x.name; }).join('、') + '」，祝您節日愉快！';
-          sessionStorage.setItem(cacheKey, wmTodayHolidayGreeting);
-          return Promise.resolve(wmTodayHolidayGreeting);
+        var stored = JSON.parse(raw);
+        if (stored && stored.date === new Date().toISOString().slice(0, 10)) {
+          var storedGreeting = greetingFromSource(stored);
+          if (storedGreeting) {
+            wmTodayHolidayGreeting = storedGreeting;
+            return Promise.resolve(storedGreeting);
+          }
         }
-      }
-      var cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        wmTodayHolidayGreeting = cached === '__NONE__' ? '' : cached;
-        return Promise.resolve(wmTodayHolidayGreeting);
       }
     } catch (e) {}
 
-    // 第一次進首頁時，直接建立隱藏的 fid=36 頁面。
-    // fid=36 自己的 JavaScript 會先產生 #holiday-sections，
-    // holiday-reader.js 再把結果寫入同網域 localStorage。
     wmTodayHolidayPromise = new Promise(function (resolve) {
       var frame = document.createElement('iframe');
       frame.setAttribute('aria-hidden', 'true');
       frame.tabIndex = -1;
       frame.style.cssText = 'position:fixed;width:1px;height:1px;left:-10000px;top:-10000px;border:0;opacity:0;pointer-events:none;';
       frame.src = WM_FORUM_BASE + 'forum.php?mod=forumdisplay&fid=36&wm_holiday_reader=1';
-      document.documentElement.appendChild(frame);
+      (document.body || document.documentElement).appendChild(frame);
 
+      var done = false;
       var started = Date.now();
-      var timer = setInterval(function () {
+
+      function finish(value) {
+        if (done) return;
+        done = true;
+        clearInterval(timer);
+        try { frame.remove(); } catch (e) {}
+        wmTodayHolidayGreeting = value || '';
+        try { sessionStorage.setItem(cacheKey, value || '__NONE__'); } catch (e) {}
+        resolve(wmTodayHolidayGreeting);
+      }
+
+      function inspect() {
+        try {
+          var doc = frame.contentDocument || (frame.contentWindow && frame.contentWindow.document);
+          if (doc) {
+            var sections = doc.querySelectorAll('#holiday-sections .section');
+            var today = [];
+            for (var i = 0; i < sections.length; i++) {
+              var section = sections[i];
+              var dateEl = section.querySelector('.date');
+              var nameEl = section.querySelector('.location');
+              var dateText = dateEl ? (dateEl.textContent || '').replace(/\s+/g, '') : '';
+              var name = nameEl ? (nameEl.textContent || '').trim() : '';
+              if (!name || !dateText) continue;
+
+              var m = dateText.match(/(\d{1,2})月(\d{1,2})日/);
+              var range = dateText.match(/(\d{1,2})月(\d{1,2})日[-–—至](\d{1,2})月(\d{1,2})日/);
+              var now = new Date();
+              var cm = now.getMonth() + 1, cd = now.getDate();
+              var isToday = false;
+              if (range) {
+                var cur = cm * 100 + cd;
+                isToday = cur >= Number(range[1]) * 100 + Number(range[2]) &&
+                          cur <= Number(range[3]) * 100 + Number(range[4]);
+              } else if (m) {
+                isToday = Number(m[1]) === cm && Number(m[2]) === cd;
+              }
+              if (isToday) today.push(name);
+            }
+            if (today.length) {
+              today = today.filter(function (n, idx, arr) { return arr.indexOf(n) === idx; });
+              finish('今天是「' + today.join('、') + '」，祝您節日愉快！');
+              return;
+            }
+
+            // DOM 已經產生且今天沒有節日：這也是有效結果，不必一直等。
+            if (sections.length > 0 && Date.now() - started > 1500) {
+              finish('');
+              return;
+            }
+          }
+        } catch (e) {}
+
+        // 若 holiday-reader.js 已寫入 localStorage，也可直接使用。
         try {
           var raw = localStorage.getItem('wm_holiday_source_v2');
           var data = raw ? JSON.parse(raw) : null;
-          var todayKey = new Date().toISOString().slice(0, 10);
-          if (data && data.date === todayKey && data.today && data.today.length) {
-            clearInterval(timer);
-            try { frame.remove(); } catch (e) {}
-            wmTodayHolidayGreeting = '今天是「' + data.today.map(function (x) { return x.name; }).join('、') + '」，祝您節日愉快！';
-            try { sessionStorage.setItem(cacheKey, wmTodayHolidayGreeting); } catch (e) {}
-            resolve(wmTodayHolidayGreeting);
-            return;
-          }
+          var g = greetingFromSource(data);
+          if (g) { finish(g); return; }
         } catch (e) {}
-        if (Date.now() - started > 8000) {
-          clearInterval(timer);
-          try { frame.remove(); } catch (e) {}
-          resolve('');
-        }
-      }, 150);
+
+        if (Date.now() - started > 10000) finish('');
+      }
+
+      var timer = setInterval(inspect, 150);
+      frame.addEventListener('load', function () { setTimeout(inspect, 300); });
+      setTimeout(inspect, 500);
     });
 
     return wmTodayHolidayPromise;
