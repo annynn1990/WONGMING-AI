@@ -4,6 +4,7 @@
   "private": true,
   "description": "Web 右下角 Live2D 語音 AI 虛擬人 demo",
   "dependencies": {
+    "@vercel/connect": "^2.3.2",
     "msedge-tts": "^2.0.5",
     "ws": "^8.18.0"
   }
