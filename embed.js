@@ -118,6 +118,13 @@
     document.head.appendChild(i18nScript);
   } catch (e) {}
 
+  try {
+    var translationPageScript = document.createElement('script');
+    translationPageScript.src = 'https://wongming-ai.vercel.app/translation-page.js?v=20260925';
+    translationPageScript.async = true;
+    document.head.appendChild(translationPageScript);
+  } catch (e) {}
+
   // 4) 收合後的小泡泡（iframe 收起時顯示，點它再展開）
   var bubble = document.createElement('button');
   bubble.type = 'button';
