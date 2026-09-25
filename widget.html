@@ -255,6 +255,15 @@
     const d = e.data || {};
     if (d.ns !== 'avatar-widget-host') return;
     if (d.type === 'say') speak(String(d.text || '').slice(0, 600));
+    if (d.type === 'holiday-greeting') {
+      // 首頁節日提醒由獨立 holiday-source 提供；顯示一次即可。
+      if (hostContext.url && !hostContext.holidayGreetingShown) {
+        hostContext.holidayGreetingShown = true;
+        speak(String(d.text || '').slice(0, 300));
+      }
+      return;
+    }
+
     if (d.type === 'host-page-content') {
       hostPageText = String(d.text || '').slice(0, 12000);
       return;
