@@ -13,7 +13,7 @@ export default async function handler(req, res) {
       const { getToken } = await import('@vercel/connect');
       let token;
       try {
-        token = await getToken('github/wongming-github', { subject: { type: 'app' } });
+        token = await getToken('github/wongming-ai-github', { subject: { type: 'app' } });
       } catch (e) {
         console.error('CONNECT_TOKEN_ERROR', e);
         return res.status(500).json({ok:false,message:'連線授權失敗',code:e?.name||'TOKEN_ERROR'});
@@ -33,7 +33,7 @@ export default async function handler(req, res) {
         const current = await fetch(url,{headers});
         if (!current.ok) return res.status(502).json({ok:false,message:'GitHub 版本讀取失敗',code:'GITHUB_SHA_'+current.status});
         const f = await current.json();
-        const content = Buffer.from(JSON.stringify(data,null,2)+'\\n').toString('base64');
+        const content = Buffer.from(JSON.stringify(data,null,2)+'\n').toString('base64');
         const r = await fetch(GH + '/repos/' + REPO + '/contents/' + PATH,{method:'PUT',headers,body:JSON.stringify({message:'更新燈牆資料',content,sha:f.sha,branch:'main'})});
         if (!r.ok) return res.status(502).json({ok:false,message:'GitHub 儲存失敗',code:'GITHUB_PUT_'+r.status});
         return res.status(200).json({ok:true});
