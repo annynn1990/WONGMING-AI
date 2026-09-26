@@ -1,0 +1,52 @@
+name: debug-panthercat-browser
+on:
+  push:
+    branches: [main]
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm init -y && npm install playwright@1.55.0
+      - run: npx playwright install --with-deps chromium
+      - name: Test live PantherCat
+        run: |
+          node <<'NODE'
+          const { chromium } = require('playwright');
+          (async() => {
+            const browser = await chromium.launch({headless:true});
+            const page = await browser.newPage();
+            const logs = [];
+            page.on('console', m => logs.push('[console '+m.type()+'] '+m.text()));
+            page.on('pageerror', e => logs.push('[pageerror] '+e.stack));
+            page.on('requestfailed', r => logs.push('[requestfailed] '+r.url()+' :: '+(r.failure()&&r.failure().errorText)));
+            await page.goto('https://annynn1990.github.io/WONGMING-AI/widget.html?dev=1&cb=debug', {waitUntil:'networkidle', timeout:60000});
+            await page.waitForTimeout(5000);
+            logs.push('[before] '+await page.evaluate(() => JSON.stringify({
+              model: typeof window.currentModelUrl,
+              hasChange: typeof window.changePanthercatSkin,
+              error: window.__PANTHERCAT_LAST_ERROR__ || null
+            })));
+            const result = await page.evaluate(async () => {
+              try {
+                const r = await window.changePanthercatSkin();
+                return {returned:r, error:window.__PANTHERCAT_LAST_ERROR__||null};
+              } catch(e) {
+                return {thrown:String(e&&e.stack||e)};
+              }
+            });
+            logs.push('[result] '+JSON.stringify(result));
+            await page.waitForTimeout(8000);
+            logs.push('[after] '+await page.evaluate(() => JSON.stringify({
+              error: window.__PANTHERCAT_LAST_ERROR__ || null,
+              skin: typeof currentSkinName !== 'undefined' ? currentSkinName : null,
+              modelUrlType: typeof currentModelUrl !== 'undefined' ? (typeof currentModelUrl==='string'?currentModelUrl.slice(0,80):typeof currentModelUrl) : null,
+              renderer: typeof _renderer !== 'undefined' ? !!_renderer : null
+            })));
+            console.log(logs.join('\n'));
+            await browser.close();
+          })().catch(e => { console.error(e.stack||e); process.exit(1); });
+          NODE
