@@ -157,6 +157,7 @@
   let currentSkinName = 'default';
   let panthercatLoading = null;
   let panthercatBlobUrls = [];
+  const SKIN_STORAGE_KEY = 'wm_avatar_skin_v1';
   const PANTHERCAT_ZIP_URL = CFG.get('panthercat') || new URL('/WONGMING-AI/panthercat-free.zip', location.origin).href;
   const PANTHERCAT_ZIP_FALLBACK = 'https://raw.githubusercontent.com/annynn1990/WONGMING-AI/main/panthercat-free.zip';
   const TTS_ENDPOINT = 'https://wongming-ai.vercel.app/api/tts';
@@ -881,6 +882,7 @@
         // 回到原始角色；MODEL_URL 是 widget 原本使用的 2D 角色。
         currentModelUrl = MODEL_URL;
         currentSkinName = 'default';
+        saveSkinPreference('default');
         _engineMode = null;
         await setEngine('2d');
         if (!_renderer) throw new Error('原本角色恢復失敗');
@@ -903,6 +905,7 @@
 
       currentModelUrl = newUrl;
       currentSkinName = 'panthercat';
+      saveSkinPreference('panthercat');
 
       if (document.getElementById('direct-warn')) {
         document.getElementById('direct-warn').style.display = 'none';
@@ -1030,8 +1033,32 @@
     try { _renderer = (mode === '3d') ? await bootVRM() : await bootAvatar(); } catch (e) { console.error(e); }
     _switching = false;
   }
-  function initEngines() {
-    setEngine(startMode);
+  function saveSkinPreference(skin) {
+    try { localStorage.setItem(SKIN_STORAGE_KEY, skin === 'panthercat' ? 'panthercat' : 'default'); } catch (_) {}
+  }
+
+  function readSkinPreference() {
+    try {
+      return localStorage.getItem(SKIN_STORAGE_KEY) === 'panthercat' ? 'panthercat' : 'default';
+    } catch (_) {
+      return 'default';
+    }
+  }
+
+  async function initEngines() {
+    // 刷新後先恢復上一次的皮，再建立畫面，避免先出現 default 再跳到 PantherCat。
+    if (readSkinPreference() === 'panthercat' && !VRM_URL) {
+      try {
+        await loadPanthercatSkin();
+      } catch (err) {
+        console.warn('[Wongming Avatar] saved PantherCat restore failed:', err);
+        saveSkinPreference('default');
+        currentModelUrl = MODEL_URL;
+        currentSkinName = 'default';
+      }
+    }
+
+    await setEngine(startMode);
     if (has2D && has3D) {  // 兩個皮都給 → 顯示切換鈕，讓使用者即時切
       const eb = document.getElementById('btn-engine');
       if (eb) { eb.style.display = ''; eb.onclick = () => setEngine(_engineMode === '3d' ? '2d' : '3d'); }
