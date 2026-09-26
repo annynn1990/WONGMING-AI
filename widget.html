@@ -796,57 +796,89 @@
     if (currentSkinName === 'foxjk' && currentModelUrl) return currentModelUrl;
     if (foxjkLoading) return foxjkLoading;
 
-    foxjkLoading = (async () => {
-      const JSZip = (await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm')).default;
-      const zip = await JSZip.loadAsync(await fetchFoxjkZip());
-      const names = Object.keys(zip.files)
-        .filter((name) => !zip.files[name].dir)
-        .map(zipPathNormalize);
+    // foxjk_free.zip 的實際結構是「外層 ZIP → 內層角色 ZIP → model3.json」。
+    // 這裡遞迴解開 ZIP，建立扁平化虛擬路徑，才能讓 model3.json 內的相對路徑正確找到。
+    async function collectZipFiles(buffer, prefix, depth, out) {
+      if (depth > 4) throw new Error('FOXJK ZIP 巢狀層數過深');
+      const zip = await JSZip.loadAsync(buffer);
 
-      const modelName =
-        names.find((name) => /\.model3\.json$/i.test(name) && /model|foxjk|fox/i.test(name)) ||
-        names.find((name) => /\.model3\.json$/i.test(name));
+      for (const rawName of Object.keys(zip.files)) {
+        const entry = zip.files[rawName];
+        const name = zipPathNormalize(prefix ? prefix + '/' + rawName : rawName);
+        if (entry.dir) continue;
 
-      if (!modelName) throw new Error('foxjk_free.zip 找不到 .model3.json');
-
-      const newBlobUrls = [];
-      const blobByPath = new Map();
-
-      try {
-        for (const name of names) {
-          const entry = zip.files[name];
-          const data = await entry.async('arraybuffer');
-          const url = URL.createObjectURL(new Blob([data], { type: zipMime(name) }));
-          blobByPath.set(name, url);
-          newBlobUrls.push(url);
+        if (/\.zip$/i.test(rawName)) {
+          const nestedBuffer = await entry.async('arraybuffer');
+          await collectZipFiles(nestedBuffer, name.replace(/\.zip$/i, ''), depth + 1, out);
+          continue;
         }
 
-        const modelJson = JSON.parse(await zip.files[modelName].async('text'));
-        const rewritten = (value) => {
-          if (typeof value === 'string') {
-            const resolved = zipResolve(modelName, value);
-            return blobByPath.get(resolved) || blobByPath.get(zipPathNormalize(value)) || value;
-          }
-          if (Array.isArray(value)) return value.map(rewritten);
-          if (value && typeof value === 'object') {
-            const out = {};
-            Object.keys(value).forEach((k) => { out[k] = rewritten(value[k]); });
-            return out;
-          }
-          return value;
-        };
-
-        const modelBlob = URL.createObjectURL(
-          new Blob([JSON.stringify(rewritten(modelJson))], { type: 'application/json' })
-        );
-        newBlobUrls.push(modelBlob);
-        foxjkBlobUrls.push(...newBlobUrls);
-        return modelBlob;
-      } catch (e) {
-        newBlobUrls.forEach((u) => { try { URL.revokeObjectURL(u); } catch (_) {} });
-        throw e;
+        const data = await entry.async('arraybuffer');
+        out.set(name, data);
       }
-    })().finally(() => { foxjkLoading = null; });
+    }
+
+    foxjkLoading = (async () => {
+      try {
+        const JSZipModule = await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm');
+        const JSZip = JSZipModule.default;
+        const virtualFiles = new Map();
+        await collectZipFiles(await fetchFoxjkZip(), '', 0, virtualFiles);
+
+        const names = Array.from(virtualFiles.keys());
+
+        const modelName =
+          names.find((name) => /\.model3\.json$/i.test(name) && /foxjk|狐狸|model/i.test(name)) ||
+          names.find((name) => /\.model3\.json$/i.test(name));
+
+        if (!modelName) {
+          throw new Error('foxjk_free.zip 內找不到 .model3.json；目前 ZIP 是巢狀 ZIP 結構');
+        }
+
+        const newBlobUrls = [];
+        const blobByPath = new Map();
+
+        try {
+          for (const [name, data] of virtualFiles.entries()) {
+            const url = URL.createObjectURL(new Blob([data], { type: zipMime(name) }));
+            blobByPath.set(name, url);
+            newBlobUrls.push(url);
+          }
+
+          const modelData = virtualFiles.get(modelName);
+          if (!modelData) throw new Error('找不到 FOXJK model3.json 的檔案內容');
+
+          const modelText = new TextDecoder('utf-8').decode(modelData);
+          const modelJson = JSON.parse(modelText);
+
+          const rewritten = (value) => {
+            if (typeof value === 'string') {
+              const resolved = zipResolve(modelName, value);
+              return blobByPath.get(resolved) || blobByPath.get(zipPathNormalize(value)) || value;
+            }
+            if (Array.isArray(value)) return value.map(rewritten);
+            if (value && typeof value === 'object') {
+              const out = {};
+              Object.keys(value).forEach((k) => { out[k] = rewritten(value[k]); });
+              return out;
+            }
+            return value;
+          };
+
+          const modelBlob = URL.createObjectURL(
+            new Blob([JSON.stringify(rewritten(modelJson))], { type: 'application/json' })
+          );
+          newBlobUrls.push(modelBlob);
+          foxjkBlobUrls.push(...newBlobUrls);
+          return modelBlob;
+        } catch (e) {
+          newBlobUrls.forEach((u) => { try { URL.revokeObjectURL(u); } catch (_) {} });
+          throw e;
+        }
+      } finally {
+        foxjkLoading = null;
+      }
+    })();
 
     return foxjkLoading;
   }
@@ -902,7 +934,7 @@
       } catch (_) {}
 
       stopSpeaking();
-      speak('換裝失敗，我先維持原本的角色。');
+      speak('換裝失敗，我先維持原本的樣子。');
       return false;
     }
   }
