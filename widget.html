@@ -157,8 +157,8 @@
   let currentSkinName = 'default';
   let foxjkLoading = null;
   let foxjkBlobUrls = [];
-  const FOXJK_ZIP_URL = CFG.get('foxjk') || 'https://raw.githubusercontent.com/annynn1990/WONGMING-AI/main/foxjk_free.zip?v=20260926';
-  const FOXJK_ZIP_FALLBACK = new URL('/WONGMING-AI/foxjk_free.zip', location.origin).href;
+  const FOXJK_ZIP_URL = CFG.get('foxjk') || new URL('/foxjk_free.zip', location.origin).href;
+  const FOXJK_ZIP_FALLBACK = 'https://raw.githubusercontent.com/annynn1990/WONGMING-AI/main/foxjk_free.zip';
   const TTS_ENDPOINT = 'https://wongming-ai.vercel.app/api/tts';
   const KNOWLEDGE_URL = CFG.get('knowledge') || '';
   if (KNOWLEDGE_URL) { fetch(KNOWLEDGE_URL).then(r => r.json()).then(kb => { if (Array.isArray(kb)) window.KB = kb; }).catch(() => {}); }
@@ -789,7 +789,7 @@
         console.warn('[Wongming Avatar] FOXJK ZIP fetch failed:', url, e);
       }
     }
-    throw new Error('FOXJK 皮膚檔載入失敗：' + (lastError && lastError.message || '未知錯誤') + '；來源：' + urls.join(' / '));
+    throw new Error('FOXJK 皮膚檔載入失敗：' + (lastError && lastError.message || '未知錯誤'));
   }
 
   async function loadFoxjkSkin() {
@@ -933,8 +933,9 @@
         await waitForSkinEngineIdle();
       } catch (_) {}
 
-      stopSpeaking();
-      speak('換裝失敗，我先維持原本的樣子。');
+      const failText = '換裝失敗，我先維持原本的樣子。';
+      showBubble(failText);
+      speak(failText);
       return false;
     }
   }
