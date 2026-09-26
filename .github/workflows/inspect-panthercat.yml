@@ -1,0 +1,57 @@
+name: inspect-panthercat
+on:
+  push:
+    branches: [main]
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect PantherCat ZIP
+        run: |
+          python - <<'PY'
+          import io, json, posixpath, zipfile, re, urllib.request
+          url='https://raw.githubusercontent.com/annynn1990/WONGMING-AI/main/panthercat-free.zip'
+          data=urllib.request.urlopen(url).read()
+          print('ZIP_BYTES', len(data))
+          def norm(p): return posixpath.normpath(p).lstrip('./')
+          def inspect_zip(data, prefix='', depth=0):
+              if depth>5: return
+              z=zipfile.ZipFile(io.BytesIO(data))
+              names=z.namelist()
+              for n in names:
+                  if n.endswith('/'): continue
+                  full=norm(prefix+'/'+n)
+                  print('FILE', full)
+              for n in names:
+                  if n.endswith('/'): continue
+                  b=z.read(n)
+                  full=norm(prefix+'/'+n)
+                  if n.lower().endswith('.zip'):
+                      inspect_zip(b, full[:-4], depth+1)
+                  elif n.lower().endswith('.json'):
+                      try:
+                          text=b.decode('utf-8-sig')
+                          j=json.loads(text)
+                      except Exception as e:
+                          print('JSON_ERROR', full, repr(e)); continue
+                      print('JSON_OK', full)
+                      refs=[]
+                      def walk(x):
+                          if isinstance(x,dict):
+                              for v in x.values(): walk(v)
+                          elif isinstance(x,list):
+                              for v in x: walk(v)
+                          elif isinstance(x,str):
+                              if re.search(r'\\.(?:png|jpg|jpeg|webp|moc3|physics3|motion3|exp3|json|atlas3|mp3|wav)$',x,re.I):
+                                  refs.append(x)
+                      walk(j)
+                      base=posixpath.dirname(full)
+                      for ref in refs:
+                          rr=norm(posixpath.join(base,ref))
+                          print('REF', full, '=>', ref, '=>', rr)
+                      if full.lower().endswith('.model3.json'):
+                          fr=j.get('FileReferences',{})
+                          print('MODEL_FILEREFERENCES', full, json.dumps(fr,ensure_ascii=False))
+          inspect_zip(data)
+          PY
