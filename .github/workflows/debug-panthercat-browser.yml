@@ -31,14 +31,37 @@ jobs:
               error: window.__PANTHERCAT_LAST_ERROR__ || null
             })));
             const result = await page.evaluate(async () => {
-              try {
-                const r = await window.changePanthercatSkin();
-                return {returned:r, error:window.__PANTHERCAT_LAST_ERROR__||null};
-              } catch(e) {
-                return {thrown:String(e&&e.stack||e)};
-              }
-            });
-            logs.push('[result] '+JSON.stringify(result));
+  try {
+    const r = await window.changePanthercatSkin();
+    const m = window.__avatarModel;
+    const a = window.__avatarApp || null;
+    const canvas = document.querySelector('#stage canvas.avatar-canvas');
+    return {
+      returned: r,
+      error: window.__PANTHERCAT_LAST_ERROR__ || null,
+      model: !!m,
+      modelVisible: m ? m.visible : null,
+      worldVisible: m ? m.worldVisible : null,
+      alpha: m ? m.alpha : null,
+      x: m ? m.x : null,
+      y: m ? m.y : null,
+      scaleX: m ? m.scale.x : null,
+      scaleY: m ? m.scale.y : null,
+      width: m ? m.width : null,
+      height: m ? m.height : null,
+      internalWidth: m && m.internalModel ? m.internalModel.width : null,
+      internalHeight: m && m.internalModel ? m.internalModel.height : null,
+      originalWidth: m && m.internalModel ? m.internalModel.originalWidth : null,
+      originalHeight: m && m.internalModel ? m.internalModel.originalHeight : null,
+      textures: m && m.textures ? m.textures.map(t => ({valid:t.valid,width:t.width,height:t.height,baseValid:t.baseTexture&&t.baseTexture.valid})) : null,
+      canvas: canvas ? {width: canvas.width, height: canvas.height, cssW: canvas.clientWidth, cssH: canvas.clientHeight} : null,
+      stage: {w: document.getElementById('stage').clientWidth, h: document.getElementById('stage').clientHeight}
+    };
+  } catch(e) {
+    return {thrown:String(e&&e.stack||e)};
+  }
+});
+logs.push('[result] '+JSON.stringify(result));
             await page.waitForTimeout(8000);
             logs.push('[after] '+await page.evaluate(() => JSON.stringify({
               error: window.__PANTHERCAT_LAST_ERROR__ || null,
