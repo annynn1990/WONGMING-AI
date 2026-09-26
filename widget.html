@@ -153,6 +153,11 @@
   // ===== 可設定（由 embed.js 透過 query 帶入）：皮=模型 / 肉的語音=後端 / 內容=知識庫 =====
   const CFG = new URLSearchParams(location.search);
   const MODEL_URL = CFG.get('model') || 'https://cdn.jsdelivr.net/gh/guansss/pixi-live2d-display/test/assets/haru/haru_greeter_t03.model3.json';
+  let currentModelUrl = MODEL_URL;
+  let currentSkinName = 'default';
+  let foxjkLoading = null;
+  let foxjkBlobUrls = [];
+  const FOXJK_ZIP_URL = CFG.get('foxjk') || new URL('/foxjk_free.zip', location.origin).href;
   const TTS_ENDPOINT = 'https://wongming-ai.vercel.app/api/tts';
   const KNOWLEDGE_URL = CFG.get('knowledge') || '';
   if (KNOWLEDGE_URL) { fetch(KNOWLEDGE_URL).then(r => r.json()).then(kb => { if (Array.isArray(kb)) window.KB = kb; }).catch(() => {}); }
@@ -518,11 +523,11 @@
     'ko':{prompt:'📍 다음에는 어떻게 둘러볼까요?',auto:'1. 자동 안내',random:'2. 랜덤 둘러보기',continue:'안내 계속하기',free:'자유롭게 둘러보기',restart:'안내 다시 시작',next:'다음 장소 보기',chooser:'물론이죠! 순서대로 제국을 안내해 드릴까요, 아니면 무작위로 둘러볼까요?',randomStart:'좋아요. 무작위로 한 곳을 안내해 드릴게요.',stop:'알겠습니다. 자유롭게 둘러보세요. 필요하면 언제든 불러 주세요.',done:'자동 안내를 한 바퀴 마쳤습니다. 방문해 주셔서 감사합니다!',listening:'● 듣는 중',mic:'🎤 말하기'}
   };
   const GUIDE_COMMANDS = {
-    'zh-Hant':{register:['註冊','申請會員','加入會員','建立帳號','申請帳號','開通帳號'],openTour:['能帶我瀏覽帝國','帶我瀏覽帝國','帶我參觀帝國','可以帶我參觀嗎','可以帶我逛帝國嗎'],beginTour:['開始導覽','開始參觀','帶我參觀','帶我逛論壇','帶我看看帝國','參觀帝國'],next:['下一站','下一個','繼續導覽','繼續參觀','繼續','往下一站','再一個'],back:['回上一頁','返回上一頁','上一頁','回去'],forward:['下一頁','往前','前進'],home:['回到論壇首頁','回到首頁','首頁','主頁','論壇首頁'],down:['往下看','往下滑','下一段','繼續往下','往下滾'],up:['往上看','往上滑','上一段','往上滾'],top:['滑到最上面','頁面最上方','回到頂端'],bottom:['滑到最下面','頁面最下方','到最底下'],translate:{en:['翻成英文','改成英文','英文版','英文','英語'],ja:['翻成日文','改成日文','日文版','日文','日語'],ko:['翻成韓文','改成韓文','韓文版','韓文','韓語'],zh:['恢復中文','原文','取消翻譯','翻回中文']},pageContext:['這裡','這頁','目前頁面','這個頁面','這一頁'],pageQuestion:['什麼','哪裡','做什麼','內容','介紹','說明'],wants:['帶我','帶著我','去看看','去看','前往','帶我去','我要去','想去','想看','參觀','看看','去那裡'],references:['那裡','那個地方','剛才說的'],targets:{home:['首頁','主頁','論壇首頁'],palace:['皇宮','皇室','宮殿','君主'],cabinet:['內閣','政府','行政','部門'],parliament:['國會','議會','立法','議政','上議院','下議院'],laws:['法律','法規','法條','司法'],foreign_affairs:['外交','友邦','邦交','建交']}},
-    'zh-Hans':{register:['注册','申请会员','加入会员','建立账号','申请账号','开通账号'],openTour:['能带我浏览帝国','带我浏览帝国','带我参观帝国','可以带我参观吗','可以带我逛帝国吗'],beginTour:['开始导览','开始参观','带我参观','带我逛论坛','带我看看帝国','参观帝国'],next:['下一站','下一个','继续导览','继续参观','继续','往下一站','再一个'],back:['回上一页','返回上一页','上一页','回去'],forward:['下一页','往前','前进'],home:['回到论坛首页','回到首页','首页','主页','论坛首页'],down:['往下看','往下滑','下一段','继续往下','往下滚'],up:['往上看','往上滑','上一段','往上滚'],top:['滑到最上面','页面最上方','回到顶端'],bottom:['滑到最下面','页面最下方','到最底下'],translate:{en:['翻成英文','改成英文','英文版','英文','英语'],ja:['翻成日文','改成日文','日文版','日文','日语'],ko:['翻成韩文','改成韩文','韩文版','韩文','韩语'],zh:['恢复中文','原文','取消翻译','翻回中文']},pageContext:['这里','这页','目前页面','这个页面','这一页'],pageQuestion:['什么','哪里','做什么','内容','介绍','说明'],wants:['带我','带着我','去看看','去看','前往','带我去','我要去','想去','想看','参观','看看','去那里'],references:['那里','那个地方','刚才说的'],targets:{home:['首页','主页','论坛首页'],palace:['皇宫','皇室','宫殿','君主'],cabinet:['内阁','政府','行政','部门'],parliament:['国会','议会','立法','议政','上议院','下议院'],laws:['法律','法规','法条','司法'],foreign_affairs:['外交','友邦','邦交','建交']}},
-    'en':{register:['register','sign up','create account','join the empire','apply for membership'],openTour:['show me around','take me around','take me on a tour','guide me around','tour the empire','can you show me around'],beginTour:['start the tour','start tour','begin the tour','begin tour','start touring'],next:['next stop','next','continue the tour','keep going','go to the next stop'],back:['go back','back','previous page','previous'],forward:['next page','go forward','forward','continue'],home:['go to the forum home','go to the home page','go home','homepage','forum home','home'],down:['scroll down','go down','scroll lower','next section'],up:['scroll up','go up','scroll higher','previous section'],top:['go to the top','back to the top','top of the page'],bottom:['go to the bottom','scroll to the bottom','bottom of the page'],translate:{en:['translate to english','translate this to english','switch to english','english version'],ja:['translate to japanese','translate this to japanese','switch to japanese','japanese version'],ko:['translate to korean','translate this to korean','switch to korean','korean version'],zh:['translate to chinese','switch to chinese','switch back to chinese','chinese version','original language']},pageContext:['this page','this section','what is this','where am i'],pageQuestion:['what','where','which','content','about','explain'],wants:['take me','show me','go to','i want to go','i want to see','visit'],references:['there','that place','what you just mentioned','the place you mentioned'],targets:{home:['home','homepage','forum home'],palace:['palace','royal palace','royal family','monarch'],cabinet:['cabinet','government','ministry','executive'],parliament:['parliament','congress','legislature','senate','house of representatives'],laws:['law','laws','legal','judiciary','court'],foreign_affairs:['foreign affairs','diplomacy','diplomatic','foreign relations','international relations','allies']}},
-    'ja':{register:['登録','会員申請','会員登録','アカウント作成','入会申請'],openTour:['帝国を案内','帝国を見学','案内して','見学したい','帝国を巡る'],beginTour:['案内を始めて','ツアーを始めて','観光を始めて','案内開始'],next:['次の場所','次へ','次の場所へ','案内を続けて','続けて'],back:['戻る','前のページ','前に戻って','一つ前へ'],forward:['次のページ','前へ進む','進む'],home:['ホーム','ホームに戻って','トップページ','フォーラムのトップ'],down:['下にスクロール','下へ','次のセクション'],up:['上にスクロール','上へ','前のセクション'],top:['ページの一番上','一番上に戻って','トップに戻って'],bottom:['ページの一番下','一番下まで','下までスクロール'],translate:{en:['英語に翻訳','英語版','英語にして'],ja:['日本語に翻訳','日本語版','日本語にして'],ko:['韓国語に翻訳','韓国語版','韓国語にして'],zh:['中国語に翻訳','中国語版','中国語に戻して','原文に戻して']},pageContext:['このページ','この画面','ここ'],pageQuestion:['何','内容','紹介','説明','どこ'],wants:['連れて行って','見に行きたい','行きたい','見たい','案内して','連れていって'],references:['そこ','その場所','さっき言った','先ほどの'],targets:{home:['ホーム','トップページ','フォーラムのトップ'],palace:['皇宮','王宮','宮殿','王室','君主'],cabinet:['内閣','政府','行政','省庁'],parliament:['国会','議会','立法'],laws:['法律','法規','司法','裁判'],foreign_affairs:['外交','友好国','国交','外交関係']}},
-    'ko':{register:['등록','회원 가입','회원 신청','계정 만들기','계정 생성','가입'],openTour:['제국을 안내해','제국 안내','구경시켜 줘','둘러보게 해','제국을 둘러봐'],beginTour:['안내 시작','투어 시작','관람 시작'],next:['다음 장소','다음','계속 안내','다음으로'],back:['뒤로','이전 페이지','이전으로 돌아가'],forward:['다음 페이지','앞으로','계속'],home:['홈','홈으로','홈페이지','포럼 홈'],down:['아래로 스크롤','아래로','다음 섹션'],up:['위로 스크롤','위로','이전 섹션'],top:['페이지 맨 위','맨 위로','위로 돌아가'],bottom:['페이지 맨 아래','맨 아래로','아래까지 스크롤'],translate:{en:['영어로 번역','영어 버전','영어로 해'],ja:['일본어로 번역','일본어 버전','일본어로 해'],ko:['한국어로 번역','한국어 버전','한국어로 해'],zh:['중국어로 번역','중국어 버전','중국어로 돌려','원문으로 돌려']},pageContext:['이 페이지','여기','이 화면'],pageQuestion:['뭐','무엇','내용','소개','설명','어디'],wants:['데려가','가고 싶','보고 싶','둘러보고 싶','안내해','보여줘'],references:['거기','그곳','방금 말한','아까 말한'],targets:{home:['홈','홈페이지','포럼 홈'],palace:['궁전','황궁','왕실','군주'],cabinet:['내각','정부','행정','부처'],parliament:['국회','의회','입법','상원','하원'],laws:['법률','법규','사법','법원'],foreign_affairs:['외교','우호국','수교','외교 관계']}}
+    'zh-Hant':{changeSkin:['我可以換人嗎','我要換人','換個人','換皮','換個皮','換角色','換一個角色'],register:['註冊','申請會員','加入會員','建立帳號','申請帳號','開通帳號'],openTour:['能帶我瀏覽帝國','帶我瀏覽帝國','帶我參觀帝國','可以帶我參觀嗎','可以帶我逛帝國嗎'],beginTour:['開始導覽','開始參觀','帶我參觀','帶我逛論壇','帶我看看帝國','參觀帝國'],next:['下一站','下一個','繼續導覽','繼續參觀','繼續','往下一站','再一個'],back:['回上一頁','返回上一頁','上一頁','回去'],forward:['下一頁','往前','前進'],home:['回到論壇首頁','回到首頁','首頁','主頁','論壇首頁'],down:['往下看','往下滑','下一段','繼續往下','往下滾'],up:['往上看','往上滑','上一段','往上滾'],top:['滑到最上面','頁面最上方','回到頂端'],bottom:['滑到最下面','頁面最下方','到最底下'],translate:{en:['翻成英文','改成英文','英文版','英文','英語'],ja:['翻成日文','改成日文','日文版','日文','日語'],ko:['翻成韓文','改成韓文','韓文版','韓文','韓語'],zh:['恢復中文','原文','取消翻譯','翻回中文']},pageContext:['這裡','這頁','目前頁面','這個頁面','這一頁'],pageQuestion:['什麼','哪裡','做什麼','內容','介紹','說明'],wants:['帶我','帶著我','去看看','去看','前往','帶我去','我要去','想去','想看','參觀','看看','去那裡'],references:['那裡','那個地方','剛才說的'],targets:{home:['首頁','主頁','論壇首頁'],palace:['皇宮','皇室','宮殿','君主'],cabinet:['內閣','政府','行政','部門'],parliament:['國會','議會','立法','議政','上議院','下議院'],laws:['法律','法規','法條','司法'],foreign_affairs:['外交','友邦','邦交','建交']}},
+    'zh-Hans':{changeSkin:['我可以换人吗','我要换人','换个人','换皮','换个皮','换角色','换一个角色'],register:['注册','申请会员','加入会员','建立账号','申请账号','开通账号'],openTour:['能带我浏览帝国','带我浏览帝国','带我参观帝国','可以带我参观吗','可以带我逛帝国吗'],beginTour:['开始导览','开始参观','带我参观','带我逛论坛','带我看看帝国','参观帝国'],next:['下一站','下一个','继续导览','继续参观','继续','往下一站','再一个'],back:['回上一页','返回上一页','上一页','回去'],forward:['下一页','往前','前进'],home:['回到论坛首页','回到首页','首页','主页','论坛首页'],down:['往下看','往下滑','下一段','继续往下','往下滚'],up:['往上看','往上滑','上一段','往上滚'],top:['滑到最上面','页面最上方','回到顶端'],bottom:['滑到最下面','页面最下方','到最底下'],translate:{en:['翻成英文','改成英文','英文版','英文','英语'],ja:['翻成日文','改成日文','日文版','日文','日语'],ko:['翻成韩文','改成韩文','韩文版','韩文','韩语'],zh:['恢复中文','原文','取消翻译','翻回中文']},pageContext:['这里','这页','目前页面','这个页面','这一页'],pageQuestion:['什么','哪里','做什么','内容','介绍','说明'],wants:['带我','带着我','去看看','去看','前往','带我去','我要去','想去','想看','参观','看看','去那里'],references:['那里','那个地方','刚才说的'],targets:{home:['首页','主页','论坛首页'],palace:['皇宫','皇室','宫殿','君主'],cabinet:['内阁','政府','行政','部门'],parliament:['国会','议会','立法','议政','上议院','下议院'],laws:['法律','法规','法条','司法'],foreign_affairs:['外交','友邦','邦交','建交']}},
+    'en':{changeSkin:['can i change character','change character','change the character','change avatar','change skin'],register:['register','sign up','create account','join the empire','apply for membership'],openTour:['show me around','take me around','take me on a tour','guide me around','tour the empire','can you show me around'],beginTour:['start the tour','start tour','begin the tour','begin tour','start touring'],next:['next stop','next','continue the tour','keep going','go to the next stop'],back:['go back','back','previous page','previous'],forward:['next page','go forward','forward','continue'],home:['go to the forum home','go to the home page','go home','homepage','forum home','home'],down:['scroll down','go down','scroll lower','next section'],up:['scroll up','go up','scroll higher','previous section'],top:['go to the top','back to the top','top of the page'],bottom:['go to the bottom','scroll to the bottom','bottom of the page'],translate:{en:['translate to english','translate this to english','switch to english','english version'],ja:['translate to japanese','translate this to japanese','switch to japanese','japanese version'],ko:['translate to korean','translate this to korean','switch to korean','korean version'],zh:['translate to chinese','switch to chinese','switch back to chinese','chinese version','original language']},pageContext:['this page','this section','what is this','where am i'],pageQuestion:['what','where','which','content','about','explain'],wants:['take me','show me','go to','i want to go','i want to see','visit'],references:['there','that place','what you just mentioned','the place you mentioned'],targets:{home:['home','homepage','forum home'],palace:['palace','royal palace','royal family','monarch'],cabinet:['cabinet','government','ministry','executive'],parliament:['parliament','congress','legislature','senate','house of representatives'],laws:['law','laws','legal','judiciary','court'],foreign_affairs:['foreign affairs','diplomacy','diplomatic','foreign relations','international relations','allies']}},
+    'ja':{changeSkin:['キャラクターを変えてもいい','キャラクターを変える','キャラを変える','スキンを変える'],register:['登録','会員申請','会員登録','アカウント作成','入会申請'],openTour:['帝国を案内','帝国を見学','案内して','見学したい','帝国を巡る'],beginTour:['案内を始めて','ツアーを始めて','観光を始めて','案内開始'],next:['次の場所','次へ','次の場所へ','案内を続けて','続けて'],back:['戻る','前のページ','前に戻って','一つ前へ'],forward:['次のページ','前へ進む','進む'],home:['ホーム','ホームに戻って','トップページ','フォーラムのトップ'],down:['下にスクロール','下へ','次のセクション'],up:['上にスクロール','上へ','前のセクション'],top:['ページの一番上','一番上に戻って','トップに戻って'],bottom:['ページの一番下','一番下まで','下までスクロール'],translate:{en:['英語に翻訳','英語版','英語にして'],ja:['日本語に翻訳','日本語版','日本語にして'],ko:['韓国語に翻訳','韓国語版','韓国語にして'],zh:['中国語に翻訳','中国語版','中国語に戻して','原文に戻して']},pageContext:['このページ','この画面','ここ'],pageQuestion:['何','内容','紹介','説明','どこ'],wants:['連れて行って','見に行きたい','行きたい','見たい','案内して','連れていって'],references:['そこ','その場所','さっき言った','先ほどの'],targets:{home:['ホーム','トップページ','フォーラムのトップ'],palace:['皇宮','王宮','宮殿','王室','君主'],cabinet:['内閣','政府','行政','省庁'],parliament:['国会','議会','立法'],laws:['法律','法規','司法','裁判'],foreign_affairs:['外交','友好国','国交','外交関係']}},
+    'ko':{changeSkin:['캐릭터를 바꿔도 돼요','캐릭터 바꿔','캐릭터 변경','스킨 변경'],register:['등록','회원 가입','회원 신청','계정 만들기','계정 생성','가입'],openTour:['제국을 안내해','제국 안내','구경시켜 줘','둘러보게 해','제국을 둘러봐'],beginTour:['안내 시작','투어 시작','관람 시작'],next:['다음 장소','다음','계속 안내','다음으로'],back:['뒤로','이전 페이지','이전으로 돌아가'],forward:['다음 페이지','앞으로','계속'],home:['홈','홈으로','홈페이지','포럼 홈'],down:['아래로 스크롤','아래로','다음 섹션'],up:['위로 스크롤','위로','이전 섹션'],top:['페이지 맨 위','맨 위로','위로 돌아가'],bottom:['페이지 맨 아래','맨 아래로','아래까지 스크롤'],translate:{en:['영어로 번역','영어 버전','영어로 해'],ja:['일본어로 번역','일본어 버전','일본어로 해'],ko:['한국어로 번역','한국어 버전','한국어로 해'],zh:['중국어로 번역','중국어 버전','중국어로 돌려','원문으로 돌려']},pageContext:['이 페이지','여기','이 화면'],pageQuestion:['뭐','무엇','내용','소개','설명','어디'],wants:['데려가','가고 싶','보고 싶','둘러보고 싶','안내해','보여줘'],references:['거기','그곳','방금 말한','아까 말한'],targets:{home:['홈','홈페이지','포럼 홈'],palace:['궁전','황궁','왕실','군주'],cabinet:['내각','정부','행정','부처'],parliament:['국회','의회','입법','상원','하원'],laws:['법률','법규','사법','법원'],foreign_affairs:['외교','우호국','수교','외교 관계']}}
   };
   function guideLanguage(){ try{return window.WM_I18N&&typeof window.WM_I18N.getLanguage==='function'?window.WM_I18N.getLanguage():'zh-Hant';}catch(e){return 'zh-Hant';} }
   function guideUI(){ return GUIDE_TOUR_UI[guideLanguage()]||GUIDE_TOUR_UI['zh-Hant']; }
@@ -686,6 +691,7 @@
     const t=String(q||'').trim().replace(/[！!。．？?]+$/g,'');
     if(!t) return false;
     const cmd=guideCommands();
+    if(guideCommandMatch(t,cmd.changeSkin)){changeFoxjkSkin();return true;}
     if(guideCommandMatch(t,cmd.register)){
       if(registrationRedirectPending)return true;
       registrationRedirectPending=true;
@@ -725,7 +731,128 @@
     }
     return false;
   }
-  function handleUser(text) {
+  function zipPathNormalize(path) {
+    const out = [];
+    String(path || '').replace(/\\/g, '/').split('/').forEach((part) => {
+      if (!part || part === '.') return;
+      if (part === '..') { out.pop(); return; }
+      out.push(part);
+    });
+    return out.join('/');
+  }
+
+  function zipResolve(baseFile, ref) {
+    const raw = String(ref || '').replace(/\\/g, '/');
+    if (!raw || /^(data:|blob:|https?:|\/)/i.test(raw)) return raw;
+    const baseDir = String(baseFile || '').split('/').slice(0, -1).join('/');
+    return zipPathNormalize((baseDir ? baseDir + '/' : '') + raw);
+  }
+
+  function zipMime(path) {
+    const p = String(path || '').toLowerCase();
+    if (p.endsWith('.json')) return 'application/json';
+    if (p.endsWith('.png')) return 'image/png';
+    if (p.endsWith('.jpg') || p.endsWith('.jpeg')) return 'image/jpeg';
+    if (p.endsWith('.webp')) return 'image/webp';
+    if (p.endsWith('.wav')) return 'audio/wav';
+    if (p.endsWith('.mp3')) return 'audio/mpeg';
+    return 'application/octet-stream';
+  }
+
+  function releaseFoxjkUrls() {
+    foxjkBlobUrls.splice(0).forEach((u) => {
+      try { URL.revokeObjectURL(u); } catch (e) {}
+    });
+  }
+
+  async function loadFoxjkSkin() {
+    if (currentSkinName === 'foxjk' && currentModelUrl) return currentModelUrl;
+    if (foxjkLoading) return foxjkLoading;
+
+    foxjkLoading = (async () => {
+      const resp = await fetch(FOXJK_ZIP_URL, { cache: 'force-cache' });
+      if (!resp.ok) throw new Error('FOXJK 皮膚檔載入失敗：HTTP ' + resp.status);
+
+      const JSZip = (await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm')).default;
+      const zip = await JSZip.loadAsync(await resp.arrayBuffer());
+      const names = Object.keys(zip.files)
+        .filter((name) => !zip.files[name].dir)
+        .map(zipPathNormalize);
+
+      const modelName =
+        names.find((name) => /\.model3\.json$/i.test(name) && /model|foxjk|fox/i.test(name)) ||
+        names.find((name) => /\.model3\.json$/i.test(name));
+
+      if (!modelName) throw new Error('foxjk_free.zip 找不到 .model3.json');
+
+      const blobByPath = new Map();
+      for (const name of names) {
+        const entry = zip.files[name];
+        const data = await entry.async('arraybuffer');
+        const url = URL.createObjectURL(new Blob([data], { type: zipMime(name) }));
+        blobByPath.set(name, url);
+        foxjkBlobUrls.push(url);
+      }
+
+      const modelJson = JSON.parse(await zip.files[modelName].async('text'));
+      const rewritten = (value) => {
+        if (typeof value === 'string') {
+          const resolved = zipResolve(modelName, value);
+          return blobByPath.get(resolved) || blobByPath.get(zipPathNormalize(value)) || value;
+        }
+        if (Array.isArray(value)) return value.map(rewritten);
+        if (value && typeof value === 'object') {
+          const out = {};
+          Object.keys(value).forEach((k) => { out[k] = rewritten(value[k]); });
+          return out;
+        }
+        return value;
+      };
+
+      const modelBlob = URL.createObjectURL(new Blob([JSON.stringify(rewritten(modelJson))], { type: 'application/json' }));
+      foxjkBlobUrls.push(modelBlob);
+      currentModelUrl = modelBlob;
+      currentSkinName = 'foxjk';
+      return currentModelUrl;
+    })().finally(() => { foxjkLoading = null; });
+
+    return foxjkLoading;
+  }
+
+  async function changeFoxjkSkin() {
+    if (currentSkinName === 'foxjk') {
+      speak('我現在就是這個造型啦。');
+      return true;
+    }
+    const reply = '好好好，隨便你。';
+    try {
+      speak(reply);
+      await waitForAvatarRetry(1050);
+
+      const newUrl = await loadFoxjkSkin();
+      stopSpeaking();
+
+      if (_renderer) {
+        try { _renderer.dispose(); } catch (e) {}
+        _renderer = null;
+      }
+      _engineMode = null;
+      await setEngine('2d');
+
+      if (!_renderer) throw new Error('FOXJK 皮膚啟動失敗');
+      // 舊 default 皮仍由 CDN 管理；只在 FOXJK 已成功載入後才保留 blob URL。
+      currentModelUrl = newUrl;
+      if (document.getElementById('direct-warn')) document.getElementById('direct-warn').style.display = 'none';
+      return true;
+    } catch (err) {
+      console.error('[Wongming Avatar] FOXJK skin failed:', err);
+      stopSpeaking();
+      speak('皮膚換裝失敗，我先維持原來的樣子。');
+      return false;
+    }
+  }
+
+    function handleUser(text) {
     if (text) showBubble('你：' + text);
     if (tryHostCommand(text)) { pushConversation('user', text); return; }
     Promise.resolve().then(async () => {
@@ -1006,7 +1133,7 @@
         resizeTo: document.getElementById('stage'),
       });
 
-      model = await Live2DModel.from(MODEL_URL);
+      model = await Live2DModel.from(currentModelUrl);
       app.stage.addChild(model);
       model.anchor.set(0.5, 1.0);
 
@@ -1104,13 +1231,14 @@
   (function renderSuggestions() {
     const box = document.getElementById('suggestions');
     if (!box) return;
-    const SUGGESTIONS = ['我有疑問', '能帶我瀏覽帝國嗎', '語音聽不見', '麥克風怎麼用？', '我可以說什麼？'];
+    const SUGGESTIONS = ['我有疑問', '能帶我瀏覽帝國嗎', '語音聽不見', '麥克風怎麼用？', '我可以換人嗎？'];
     const label = document.createElement('div'); label.className = 'sg-label'; label.textContent = '💬 你可以問我：';
     box.appendChild(label);
     SUGGESTIONS.forEach((s) => {
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'sugg'; b.textContent = s;
       b.onclick = () => {
+        if (s === '我可以換人嗎？') { changeFoxjkSkin(); return; }
         if (s === '我有疑問') {
           const msg = '當然，直接把你的問題告訴我就好。關於目前這個版面、帝國資料或論壇操作，都可以直接問我。';
           speak(msg);
