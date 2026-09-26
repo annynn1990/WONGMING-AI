@@ -4,11 +4,11 @@ var API='https://wongming-ai.vercel.app';
 var LANG={'zh-Hant':'繁體中文','zh-Hans':'简体中文','en':'English','ja':'日本語','ko':'한국어'};
 var VOICE={'zh-Hant':'zh-TW-HsiaoChenNeural','zh-Hans':'zh-CN-XiaoxiaoNeural','en':'en-US-AriaNeural','ja':'ja-JP-NanamiNeural','ko':'ko-KR-SunHiNeural'};
 var UI={
-'zh-Hant':{label:'💬 你可以問我：',question:'我有疑問',tour:'能帶我瀏覽帝國嗎',voice:'語音聽不見',mic:'麥克風怎麼用？',what:'我可以說什麼？',translate:'🌐 選擇頁面語言：'},
-'zh-Hans':{label:'💬 你可以问我：',question:'我有疑问',tour:'能带我浏览帝国吗',voice:'听不见语音',mic:'麦克风怎么用？',what:'我可以说什么？',translate:'🌐 选择页面语言：'},
-'en':{label:'💬 You can ask me:',question:'I have a question',tour:'Can you show me around the Empire?',voice:'I cannot hear the voice',mic:'How do I use the microphone?',what:'What can I say?',translate:'🌐 Choose page language:'},
-'ja':{label:'💬 こんなことを聞けます：',question:'質問があります',tour:'帝国を案内してくれますか？',voice:'音声が聞こえません',mic:'マイクはどう使いますか？',what:'何を聞けますか？',translate:'🌐 ページの言語を選択：'},
-'ko':{label:'💬 이렇게 물어보세요:',question:'질문이 있어요',tour:'제국을 안내해 줄 수 있나요?',voice:'음성이 들리지 않아요',mic:'마이크는 어떻게 사용하나요?',what:'무엇을 물어볼 수 있나요?',translate:'🌐 페이지 언어 선택:'}
+'zh-Hant':{label:'💬 你可以問我：',question:'我有疑問',tour:'能帶我瀏覽帝國嗎',voice:'語音聽不見',mic:'麥克風怎麼用？',what:'我可以換人嗎？',translate:'🌐 選擇頁面語言：'},
+'zh-Hans':{label:'💬 你可以问我：',question:'我有疑问',tour:'能带我浏览帝国吗',voice:'听不见语音',mic:'麦克风怎么用？',what:'我可以换人吗？',translate:'🌐 选择页面语言：'},
+'en':{label:'💬 You can ask me:',question:'I have a question',tour:'Can you show me around the Empire?',voice:'I cannot hear the voice',mic:'How do I use the microphone?',what:'Can I change character?',translate:'🌐 Choose page language:'},
+'ja':{label:'💬 こんなことを聞けます：',question:'質問があります',tour:'帝国を案内してくれますか？',voice:'音声が聞こえません',mic:'マイクはどう使いますか？',what:'キャラクターを変えてもいい？',translate:'🌐 ページの言語を選択：'},
+'ko':{label:'💬 이렇게 물어보세요:',question:'질문이 있어요',tour:'제국을 안내해 줄 수 있나요?',voice:'음성이 들리지 않아요',mic:'마이크는 어떻게 사용하나요?',what:'캐릭터를 바꿔도 돼요?',translate:'🌐 페이지 언어 선택:'}
 };
 var PARENT_ORIGIN='*';try{PARENT_ORIGIN=new URL(document.referrer).origin||'*';}catch(e){}
 var state={language:'zh-Hant',country:'',ready:false};var cache=new Map();
