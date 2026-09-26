@@ -691,7 +691,7 @@
     const t=String(q||'').trim().replace(/[！!。．？?]+$/g,'');
     if(!t) return false;
     const cmd=guideCommands();
-    if(guideCommandMatch(t,cmd.changeSkin)){changeFoxjkSkin();return true;}
+    if(guideCommandMatch(t,cmd.changeSkin)){openSkinPicker();return true;}
     if(guideCommandMatch(t,cmd.register)){
       if(registrationRedirectPending)return true;
       registrationRedirectPending=true;
@@ -850,6 +850,156 @@
       speak('皮膚換裝失敗，我先維持原來的樣子。');
       return false;
     }
+  }
+
+
+  // ===== 角色選擇器：目前角色 / FOXJK =====
+  let skinPickerOpen = false;
+  let skinSwitching = false;
+
+  function ensureSkinPicker() {
+    if (document.getElementById('wm-skin-picker')) return;
+    const style = document.createElement('style');
+    style.id = 'wm-skin-picker-style';
+    style.textContent = `
+      #wm-skin-picker{position:absolute;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;background:rgba(9,11,24,.66);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .2s ease}
+      #wm-skin-picker.open{opacity:1;pointer-events:auto}
+      #wm-skin-picker .wm-skin-panel{width:min(100%,318px);box-sizing:border-box;border-radius:20px;padding:15px;background:rgba(255,255,255,.97);color:#222033;box-shadow:0 18px 50px rgba(0,0,0,.34),inset 0 0 0 1px rgba(255,255,255,.7);transform:translateY(10px) scale(.98);transition:transform .2s ease}
+      #wm-skin-picker.open .wm-skin-panel{transform:none}
+      #wm-skin-picker .wm-skin-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+      #wm-skin-picker .wm-skin-title{font-size:15px;font-weight:800}
+      #wm-skin-picker .wm-skin-sub{font-size:11px;color:#777c90;margin-top:3px}
+      #wm-skin-picker .wm-skin-close{width:30px;height:30px;border:0;border-radius:10px;cursor:pointer;background:#eef0f7;color:#4a4e62;font-size:16px;font-weight:700}
+      #wm-skin-picker .wm-skin-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+      #wm-skin-picker .wm-skin-card{appearance:none;border:1px solid #e4e6ef;background:#fff;color:#222033;border-radius:16px;padding:10px;text-align:left;cursor:pointer;box-shadow:0 5px 16px rgba(24,28,56,.08);transition:transform .14s,box-shadow .14s,border-color .14s,background .14s}
+      #wm-skin-picker .wm-skin-card:hover{transform:translateY(-2px);box-shadow:0 9px 20px rgba(24,28,56,.14);border-color:#8b86f3}
+      #wm-skin-picker .wm-skin-card.active{border-color:#5b54e8;background:#f6f5ff;box-shadow:0 0 0 2px rgba(91,84,232,.11),0 9px 20px rgba(24,28,56,.12)}
+      #wm-skin-picker .wm-skin-preview{height:106px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:9px;overflow:hidden;position:relative}
+      #wm-skin-picker .wm-skin-preview.default{background:radial-gradient(circle at 50% 32%,rgba(255,255,255,.96),rgba(221,224,250,.92))}
+      #wm-skin-picker .wm-skin-preview.foxjk{background:radial-gradient(circle at 50% 32%,rgba(255,244,223,.98),rgba(238,208,168,.92))}
+      #wm-skin-picker .wm-skin-avatar{width:58px;height:76px;border-radius:50% 50% 44% 44%;position:relative;box-shadow:0 7px 15px rgba(0,0,0,.14)}
+      #wm-skin-picker .wm-skin-avatar.default{background:linear-gradient(180deg,#c8c9e9 0 38%,#f4d7cc 39% 68%,#625f89 69%)}
+      #wm-skin-picker .wm-skin-avatar.foxjk{background:linear-gradient(180deg,#e5a34f 0 36%,#f7d4c1 37% 67%,#6f4a35 68%)}
+      #wm-skin-picker .wm-skin-avatar::before{content:"";position:absolute;left:13px;right:13px;top:24px;height:12px;border-radius:50%;background:radial-gradient(circle at 28% 50%,#262638 0 2px,transparent 2.5px),radial-gradient(circle at 72% 50%,#262638 0 2px,transparent 2.5px)}
+      #wm-skin-picker .wm-skin-avatar::after{content:"";position:absolute;left:23px;right:23px;bottom:14px;height:4px;border-radius:99px;background:rgba(70,48,60,.55)}
+      #wm-skin-picker .wm-skin-name{font-size:13px;font-weight:800;margin-bottom:3px}
+      #wm-skin-picker .wm-skin-desc{font-size:10.5px;color:#777c90;line-height:1.45}
+      #wm-skin-picker .wm-skin-status{margin-top:11px;padding:8px 10px;border-radius:11px;background:#f4f5fa;color:#686d81;font-size:11px;line-height:1.45;text-align:center}
+      #wm-skin-picker .wm-skin-check{display:inline-flex;align-items:center;gap:4px;margin-top:7px;padding:3px 7px;border-radius:99px;background:#ebeaff;color:#5b54e8;font-size:9.5px;font-weight:800}
+      #wm-skin-picker.busy .wm-skin-card{pointer-events:none;opacity:.7}
+    `;
+    (document.head || document.documentElement).appendChild(style);
+
+    const overlay = document.createElement('div');
+    overlay.id = 'wm-skin-picker';
+    overlay.innerHTML = `
+      <div class="wm-skin-panel" role="dialog" aria-modal="true" aria-label="角色選擇">
+        <div class="wm-skin-head">
+          <div><div class="wm-skin-title">🎭 選擇角色</div><div class="wm-skin-sub">可以隨時切換虛擬人的外觀</div></div>
+          <button type="button" class="wm-skin-close" aria-label="關閉角色選擇">✕</button>
+        </div>
+        <div class="wm-skin-grid">
+          <button type="button" class="wm-skin-card" data-skin="default">
+            <div class="wm-skin-preview default"><div class="wm-skin-avatar default"></div></div>
+            <div class="wm-skin-name">目前角色</div>
+            <div class="wm-skin-desc">回到原本的虛擬導覽員角色</div>
+            <span class="wm-skin-check" data-check="default">✓ 使用中</span>
+          </button>
+          <button type="button" class="wm-skin-card" data-skin="foxjk">
+            <div class="wm-skin-preview foxjk"><div class="wm-skin-avatar foxjk"></div></div>
+            <div class="wm-skin-name">FOXJK</div>
+            <div class="wm-skin-desc">使用 foxjk_free.zip 的 Live2D 角色</div>
+            <span class="wm-skin-check" data-check="foxjk">✓ 使用中</span>
+          </button>
+        </div>
+        <div class="wm-skin-status">目前角色：<strong data-current-name>目前角色</strong></div>
+      </div>
+    `;
+    document.getElementById('stage').appendChild(overlay);
+    overlay.querySelector('.wm-skin-close').onclick = closeSkinPicker;
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeSkinPicker(); });
+    overlay.querySelectorAll('.wm-skin-card').forEach((card) => { card.onclick = () => selectSkin(card.getAttribute('data-skin')); });
+  }
+
+  function updateSkinPickerState(statusText) {
+    const overlay = document.getElementById('wm-skin-picker');
+    if (!overlay) return;
+    const current = currentSkinName === 'foxjk' ? 'FOXJK' : '目前角色';
+    const nameEl = overlay.querySelector('[data-current-name]');
+    if (nameEl) nameEl.textContent = current;
+    overlay.querySelectorAll('.wm-skin-card').forEach((card) => {
+      const key = card.getAttribute('data-skin');
+      const active = key === currentSkinName;
+      card.classList.toggle('active', active);
+      const check = card.querySelector('[data-check="' + key + '"]');
+      if (check) check.style.display = active ? 'inline-flex' : 'none';
+    });
+    const status = overlay.querySelector('.wm-skin-status');
+    if (status) status.innerHTML = statusText || ('目前角色：<strong>' + current + '</strong>');
+  }
+
+  function openSkinPicker() {
+    ensureSkinPicker();
+    const overlay = document.getElementById('wm-skin-picker');
+    if (!overlay) return;
+    skinPickerOpen = true;
+    overlay.classList.add('open');
+    overlay.classList.remove('busy');
+    updateSkinPickerState();
+  }
+
+  function closeSkinPicker() {
+    const overlay = document.getElementById('wm-skin-picker');
+    if (!overlay) return;
+    skinPickerOpen = false;
+    overlay.classList.remove('open');
+    overlay.classList.remove('busy');
+  }
+
+  async function changeDefaultSkin() {
+    if (currentSkinName === 'default') {
+      showBubble('目前就是原本的角色。');
+      return true;
+    }
+    try {
+      stopSpeaking();
+      if (_renderer) { try { _renderer.dispose(); } catch (e) {} _renderer = null; }
+      releaseFoxjkUrls();
+      currentModelUrl = MODEL_URL;
+      currentSkinName = 'default';
+      _engineMode = null;
+      await setEngine('2d');
+      if (!_renderer) throw new Error('預設角色啟動失敗');
+      showBubble('已換回目前角色。');
+      return true;
+    } catch (err) {
+      console.error('[Wongming Avatar] default skin failed:', err);
+      showBubble('原本角色載入失敗，先維持目前畫面。');
+      return false;
+    }
+  }
+
+  async function selectSkin(name) {
+    if (skinSwitching) return;
+    ensureSkinPicker();
+    const overlay = document.getElementById('wm-skin-picker');
+    if (!overlay) return;
+    if (name !== 'default' && name !== 'foxjk') return;
+    if (name === currentSkinName) {
+      closeSkinPicker();
+      speak(name === 'foxjk' ? '我現在就是 FOXJK。' : '我現在就是原本的角色。');
+      return;
+    }
+    skinSwitching = true;
+    overlay.classList.add('busy');
+    updateSkinPickerState(name === 'foxjk' ? '正在載入 FOXJK 角色……' : '正在換回目前角色……');
+    let ok = false;
+    try { ok = name === 'foxjk' ? await changeFoxjkSkin() : await changeDefaultSkin(); }
+    catch (e) { console.error('[Wongming Avatar] skin selection failed:', e); ok = false; }
+    skinSwitching = false;
+    overlay.classList.remove('busy');
+    if (ok) { updateSkinPickerState(); setTimeout(closeSkinPicker, 450); }
+    else updateSkinPickerState('換裝失敗，角色先維持原樣。');
   }
 
     function handleUser(text) {
@@ -1238,7 +1388,7 @@
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'sugg'; b.textContent = s;
       b.onclick = () => {
-        if (s === '我可以換人嗎？') { changeFoxjkSkin(); return; }
+        if (s === '我可以換人嗎？') { openSkinPicker(); return; }
         if (s === '我有疑問') {
           const msg = '當然，直接把你的問題告訴我就好。關於目前這個版面、帝國資料或論壇操作，都可以直接問我。';
           speak(msg);
