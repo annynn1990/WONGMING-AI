@@ -830,49 +830,34 @@
 
       if (!modelName) throw new Error('panthercat-free.zip 找不到 .model3.json');
 
-      const blobByPath = new Map();
-      const createdUrls = [];
+      // 直接使用 pixi-live2d-display 0.4.0 的 FileLoader。
+      // Chromium 會阻擋 XHR 讀取我們自己建立的 blob: URL，導致 Network error / Texture loading error。
+      const files = [];
 
-      try {
-        for (const name of names) {
-          const entry = zip.files[name];
-          if (!entry) throw new Error('ZIP 找不到檔案：' + name);
-          const data = await entry.async('arraybuffer');
-          const url = URL.createObjectURL(new Blob([data], { type: zipMime(name) }));
-          blobByPath.set(name, url);
-          createdUrls.push(url);
-        }
+      for (const name of names) {
+        const entry = zip.files[name];
+        if (!entry) throw new Error('ZIP 找不到檔案：' + name);
+        const data = await entry.async('arraybuffer');
+        const file = new File([data], name.split('/').pop(), { type: zipMime(name) });
 
-        const modelJson = JSON.parse(await zip.files[modelName].async('text'));
-        const rewritten = (value) => {
-          if (typeof value === 'string') {
-            const resolved = zipResolve(modelName, value);
-            return blobByPath.get(resolved) || blobByPath.get(zipPathNormalize(value)) || value;
-          }
-          if (Array.isArray(value)) return value.map(rewritten);
-          if (value && typeof value === 'object') {
-            const out = {};
-            Object.keys(value).forEach((k) => { out[k] = rewritten(value[k]); });
-            return out;
-          }
-          return value;
-        };
+        Object.defineProperty(file, 'webkitRelativePath', {
+          value: name,
+          configurable: true
+        });
 
-        const modelBlob = URL.createObjectURL(
-          new Blob([JSON.stringify(rewritten(modelJson))], { type: 'application/json' })
-        );
-        createdUrls.push(modelBlob);
-
-        // 保持原本 FOXJK 換皮的生命週期：載入成功後立即更新目前皮，
-        // 然後 changePanthercatSkin() 才重建 2D 引擎。
-        currentModelUrl = modelBlob;
-        currentSkinName = 'panthercat';
-        panthercatBlobUrls.push(...createdUrls);
-        return currentModelUrl;
-      } catch (e) {
-        createdUrls.forEach((u) => { try { URL.revokeObjectURL(u); } catch (_) {} });
-        throw e;
+        files.push(file);
       }
+
+      if (!files.some((file) => /\\.model3\\.json$/i.test(file.name))) {
+        throw new Error('PANTHERCAT ZIP 找不到可載入的 model3.json');
+      }
+
+      // Live2DModel.from(File[]) 會自行解析 model3.json，
+      // 再依 webkitRelativePath 找到 moc3、textures、physics。
+      currentModelUrl = files;
+      currentSkinName = 'panthercat';
+      return files;
+
     })().finally(() => { panthercatLoading = null; });
 
     return panthercatLoading;
