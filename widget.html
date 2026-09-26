@@ -1256,17 +1256,17 @@
       const FIT_MODE = CFG.get('fit') || 'half';
       function fit() {
         const w = app.renderer.width, h = app.renderer.height;
-        // 不再使用 internalModel.height：不同 Live2D 模型的座標系可能不同，
-        // PantherCat 會因此被算到畫布外。直接以 Pixi 實際 model.height 做取景。
-        const nativeH = Number(model.height) || 1000;
-        const base = (h / nativeH) * 0.95;
-        const s = FIT_MODE === 'half' ? base * 1.9 : base;
-        model.scale.set(s);
-        model.anchor.set(0.5, 1.0);
-        model.x = w / 2;
-        model.y = h;
-        model.visible = true;
-        model.alpha = 1;
+        const nativeH = (model.internalModel && model.internalModel.height) || 1000;
+        if (FIT_MODE === 'half') {
+          const ZOOM = 1.9;                                 // 放大倍率：越大越近（半身越緊）
+          const s = (h / nativeH) * 0.95 * ZOOM;
+          model.scale.set(s);
+          model.x = w / 2;
+          model.y = nativeH * s + h * 0.04;                 // 腳推到畫面外、頭留 4% 上緣
+        } else {
+          model.scale.set((h / nativeH) * 0.95);
+          model.x = w / 2; model.y = h;
+        }
       }
       fit(); window.addEventListener('resize', fit);
 
