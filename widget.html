@@ -155,10 +155,10 @@
   const MODEL_URL = CFG.get('model') || 'https://cdn.jsdelivr.net/gh/guansss/pixi-live2d-display/test/assets/haru/haru_greeter_t03.model3.json';
   let currentModelUrl = MODEL_URL;
   let currentSkinName = 'default';
-  let foxjkLoading = null;
-  let foxjkBlobUrls = [];
-  const FOXJK_ZIP_URL = CFG.get('foxjk') || new URL('/foxjk_free.zip', location.origin).href;
-  const FOXJK_ZIP_FALLBACK = 'https://raw.githubusercontent.com/annynn1990/WONGMING-AI/main/foxjk_free.zip';
+  let panthercatLoading = null;
+  let panthercatBlobUrls = [];
+  const PANTHERCAT_ZIP_URL = CFG.get('foxjk') || new URL('/panthercat-free.zip', location.origin).href;
+  const PANTHERCAT_ZIP_FALLBACK = 'https://raw.githubusercontent.com/annynn1990/WONGMING-AI/main/panthercat-free.zip';
   const TTS_ENDPOINT = 'https://wongming-ai.vercel.app/api/tts';
   const KNOWLEDGE_URL = CFG.get('knowledge') || '';
   if (KNOWLEDGE_URL) { fetch(KNOWLEDGE_URL).then(r => r.json()).then(kb => { if (Array.isArray(kb)) window.KB = kb; }).catch(() => {}); }
@@ -692,7 +692,7 @@
     const t=String(q||'').trim().replace(/[！!。．？?]+$/g,'');
     if(!t) return false;
     const cmd=guideCommands();
-    if(guideCommandMatch(t,cmd.changeSkin)){changeFoxjkSkin();return true;}
+    if(guideCommandMatch(t,cmd.changeSkin)){changePanthercatSkin();return true;}
     if(guideCommandMatch(t,cmd.register)){
       if(registrationRedirectPending)return true;
       registrationRedirectPending=true;
@@ -761,7 +761,7 @@
   }
 
   function releaseFoxjkUrls() {
-    foxjkBlobUrls.splice(0).forEach((u) => {
+    panthercatBlobUrls.splice(0).forEach((u) => {
       try { URL.revokeObjectURL(u); } catch (e) {}
     });
   }
@@ -774,8 +774,8 @@
   }
 
   async function fetchFoxjkZip() {
-    const urls = [FOXJK_ZIP_URL];
-    if (FOXJK_ZIP_FALLBACK && FOXJK_ZIP_FALLBACK !== FOXJK_ZIP_URL) urls.push(FOXJK_ZIP_FALLBACK);
+    const urls = [PANTHERCAT_ZIP_URL];
+    if (PANTHERCAT_ZIP_FALLBACK && PANTHERCAT_ZIP_FALLBACK !== PANTHERCAT_ZIP_URL) urls.push(PANTHERCAT_ZIP_FALLBACK);
     let lastError = null;
     for (const url of urls) {
       try {
@@ -786,20 +786,20 @@
         return buf;
       } catch (e) {
         lastError = e;
-        console.warn('[Wongming Avatar] FOXJK ZIP fetch failed:', url, e);
+        console.warn('[Wongming Avatar] PANTHERCAT ZIP fetch failed:', url, e);
       }
     }
-    throw new Error('FOXJK 皮膚檔載入失敗：' + (lastError && lastError.message || '未知錯誤'));
+    throw new Error('PANTHERCAT 皮膚檔載入失敗：' + (lastError && lastError.message || '未知錯誤'));
   }
 
-  async function loadFoxjkSkin() {
-    if (currentSkinName === 'foxjk' && currentModelUrl) return currentModelUrl;
-    if (foxjkLoading) return foxjkLoading;
+  async function loadPanthercatSkin() {
+    if (currentSkinName === 'panthercat' && currentModelUrl) return currentModelUrl;
+    if (panthercatLoading) return panthercatLoading;
 
-    // foxjk_free.zip 的實際結構是「外層 ZIP → 內層角色 ZIP → model3.json」。
+    // panthercat-free.zip 的實際結構是「外層 ZIP → 內層角色 ZIP → model3.json」。
     // 這裡遞迴解開 ZIP，建立扁平化虛擬路徑，才能讓 model3.json 內的相對路徑正確找到。
     async function collectZipFiles(buffer, prefix, depth, out) {
-      if (depth > 4) throw new Error('FOXJK ZIP 巢狀層數過深');
+      if (depth > 4) throw new Error('PANTHERCAT ZIP 巢狀層數過深');
       const zip = await JSZip.loadAsync(buffer);
 
       for (const rawName of Object.keys(zip.files)) {
@@ -818,7 +818,7 @@
       }
     }
 
-    foxjkLoading = (async () => {
+    panthercatLoading = (async () => {
       try {
         const JSZipModule = await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm');
         const JSZip = JSZipModule.default;
@@ -832,7 +832,7 @@
           names.find((name) => /\.model3\.json$/i.test(name));
 
         if (!modelName) {
-          throw new Error('foxjk_free.zip 內找不到 .model3.json；目前 ZIP 是巢狀 ZIP 結構');
+          throw new Error('panthercat-free.zip 內找不到 .model3.json；目前 ZIP 是巢狀 ZIP 結構');
         }
 
         const newBlobUrls = [];
@@ -846,7 +846,7 @@
           }
 
           const modelData = virtualFiles.get(modelName);
-          if (!modelData) throw new Error('找不到 FOXJK model3.json 的檔案內容');
+          if (!modelData) throw new Error('找不到 PANTHERCAT model3.json 的檔案內容');
 
           const modelText = new TextDecoder('utf-8').decode(modelData);
           const modelJson = JSON.parse(modelText);
@@ -869,62 +869,62 @@
             new Blob([JSON.stringify(rewritten(modelJson))], { type: 'application/json' })
           );
           newBlobUrls.push(modelBlob);
-          foxjkBlobUrls.push(...newBlobUrls);
+          panthercatBlobUrls.push(...newBlobUrls);
           return modelBlob;
         } catch (e) {
           newBlobUrls.forEach((u) => { try { URL.revokeObjectURL(u); } catch (_) {} });
           throw e;
         }
       } finally {
-        foxjkLoading = null;
+        panthercatLoading = null;
       }
     })();
 
-    return foxjkLoading;
+    return panthercatLoading;
   }
 
-  async function changeFoxjkSkin() {
-    if (currentSkinName === 'foxjk') {
+  async function changePanthercatSkin() {
+    if (currentSkinName === 'panthercat') {
       speak('我現在就是這個造型啦。');
       return true;
     }
 
     const prevModelUrl = currentModelUrl;
     const prevSkinName = currentSkinName;
-    const prevBlobUrls = foxjkBlobUrls.slice();
+    const prevBlobUrls = panthercatBlobUrls.slice();
 
     try {
       speak('好好好，隨便你。');
       await waitForSkinEngineIdle();
 
-      const newUrl = await loadFoxjkSkin();
+      const newUrl = await loadPanthercatSkin();
       await waitForSkinEngineIdle();
       stopSpeaking();
 
       // 先指定新模型，再強制 2D 引擎重新建立；只有成功後才視為換裝完成。
       currentModelUrl = newUrl;
-      currentSkinName = 'foxjk';
+      currentSkinName = 'panthercat';
       _engineMode = null;
       await waitForSkinEngineIdle();
       await setEngine('2d');
       await waitForSkinEngineIdle();
 
-      if (!_renderer) throw new Error('FOXJK 角色啟動失敗');
+      if (!_renderer) throw new Error('PANTHERCAT 角色啟動失敗');
 
       if (document.getElementById('direct-warn')) {
         document.getElementById('direct-warn').style.display = 'none';
       }
-      showBubble('換好啦，現在是 FOXJK。');
+      showBubble('換好啦，現在是 PANTHERCAT。');
       return true;
     } catch (err) {
-      console.error('[Wongming Avatar] FOXJK skin failed:', err);
+      console.error('[Wongming Avatar] PANTHERCAT skin failed:', err);
 
-      // 完整回復成原角色，避免出現「畫面沒角色但狀態已經變 FOXJK」。
+      // 完整回復成原角色，避免出現「畫面沒角色但狀態已經變 PANTHERCAT」。
       try { if (_renderer) _renderer.dispose(); } catch (_) {}
       _renderer = null;
       currentModelUrl = prevModelUrl;
       currentSkinName = prevSkinName;
-      foxjkBlobUrls = prevBlobUrls;
+      panthercatBlobUrls = prevBlobUrls;
       _engineMode = null;
 
       try {
@@ -1326,7 +1326,7 @@
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'sugg'; b.textContent = s;
       b.onclick = () => {
-        if (s === '我可以換人嗎？') { changeFoxjkSkin(); return; }
+        if (s === '我可以換人嗎？') { changePanthercatSkin(); return; }
         if (s === '我有疑問') {
           const msg = '當然，直接把你的問題告訴我就好。關於目前這個版面、帝國資料或論壇操作，都可以直接問我。';
           speak(msg);
