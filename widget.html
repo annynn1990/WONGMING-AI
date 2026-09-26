@@ -865,12 +865,13 @@
             return value;
           };
 
-          const modelBlob = URL.createObjectURL(
-            new Blob([JSON.stringify(rewritten(modelJson))], { type: 'application/json' })
-          );
-          newBlobUrls.push(modelBlob);
+          // Live2DModel.from() 需要能判斷這是 .model3.json；
+          // blob: URL 沒有副檔名，0.4.0 可能無法正確選擇 Cubism 4 runtime。
+          // 改成直接傳 JSON 物件，並提供一個明確的 .model3.json URL。
+          const rewrittenModel = rewritten(modelJson);
+          rewrittenModel.url = 'panthercat-free/defaultA v1.1.model3.json';
           panthercatBlobUrls.push(...newBlobUrls);
-          return modelBlob;
+          return rewrittenModel;
         } catch (e) {
           newBlobUrls.forEach((u) => { try { URL.revokeObjectURL(u); } catch (_) {} });
           throw e;
