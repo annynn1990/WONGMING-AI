@@ -796,85 +796,90 @@
     if (currentSkinName === 'panthercat' && currentModelUrl) return currentModelUrl;
     if (panthercatLoading) return panthercatLoading;
 
-    // panthercat-free.zip 的實際結構是「外層 ZIP → 內層角色 ZIP → model3.json」。
-    // 這裡遞迴解開 ZIP，建立扁平化虛擬路徑，才能讓 model3.json 內的相對路徑正確找到。
-    async function collectZipFiles(buffer, prefix, depth, out) {
-      if (depth > 4) throw new Error('PANTHERCAT ZIP 巢狀層數過深');
-      const zip = await JSZip.loadAsync(buffer);
-
-      for (const rawName of Object.keys(zip.files)) {
-        const entry = zip.files[rawName];
-        const name = zipPathNormalize(prefix ? prefix + '/' + rawName : rawName);
-        if (entry.dir) continue;
-
-        if (/\.zip$/i.test(rawName)) {
-          const nestedBuffer = await entry.async('arraybuffer');
-          await collectZipFiles(nestedBuffer, name.replace(/\.zip$/i, ''), depth + 1, out);
-          continue;
-        }
-
-        const data = await entry.async('arraybuffer');
-        out.set(name, data);
-      }
-    }
-
     panthercatLoading = (async () => {
-      try {
-        const JSZipModule = await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm');
-        const JSZip = JSZipModule.default;
-        const virtualFiles = new Map();
-        await collectZipFiles(await fetchPanthercatZip(), '', 0, virtualFiles);
-
-        const names = Array.from(virtualFiles.keys());
-
-        const modelName =
-          names.find((name) => /\.model3\.json$/i.test(name) && /panther|cat|豹|貓|model/i.test(name)) ||
-          names.find((name) => /\.model3\.json$/i.test(name));
-
-        if (!modelName) {
-          throw new Error('panthercat-free.zip 內找不到 .model3.json');
-        }
-
-        // 使用 pixi-live2d-display 0.4.0 內建的 FileLoader 路徑模型：
-        // 每個 File 都提供 webkitRelativePath，讓套件自行建立 Cubism4ModelSettings
-        // 並把 Moc / Textures / Physics 映射成 object URL。
-        const modelData = virtualFiles.get(modelName);
-        if (!modelData) throw new Error('找不到 PANTHERCAT model3.json 的檔案內容');
-
-        const requiredNames = [
-          modelName,
-          ...['defaultA v1.1.moc3', 'textures/texture_00.png', 'defaultA v1.1.physics3.json']
-            .map((p) => zipResolve(modelName, p))
-        ];
-        const seen = new Set();
-        const panthercatFiles = [];
-
-        for (const wanted of requiredNames) {
-          const normalized = zipPathNormalize(wanted);
-          if (seen.has(normalized)) continue;
-          seen.add(normalized);
-          const data = virtualFiles.get(normalized);
-          if (!data) throw new Error('PANTHERCAT ZIP 缺少必要檔案：' + normalized);
-
-          const leafName = normalized.split('/').pop();
-          const file = new File([data], leafName, { type: zipMime(normalized) });
-          Object.defineProperty(file, 'webkitRelativePath', {
-            value: normalized,
-            configurable: true
-          });
-          panthercatFiles.push(file);
-        }
-
-        return panthercatFiles;      } finally {
-        panthercatLoading = null;
+      const urls = [PANTHERCAT_ZIP_URL];
+      if (PANTHERCAT_ZIP_FALLBACK && PANTHERCAT_ZIP_FALLBACK !== PANTHERCAT_ZIP_URL) {
+        urls.push(PANTHERCAT_ZIP_FALLBACK);
       }
-    })();
+
+      let resp = null;
+      let lastError = null;
+      for (const url of urls) {
+        try {
+          const r = await fetch(url, { cache: 'no-store', mode: 'cors' });
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          resp = r;
+          break;
+        } catch (e) {
+          lastError = e;
+          console.warn('[Wongming Avatar] PANTHERCAT ZIP fetch failed:', url, e);
+        }
+      }
+      if (!resp) throw new Error('PANTHERCAT 皮膚檔載入失敗：' + (lastError && lastError.message || '未知錯誤'));
+
+      const JSZip = (await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm')).default;
+      const zip = await JSZip.loadAsync(await resp.arrayBuffer());
+
+      const names = Object.keys(zip.files)
+        .filter((name) => !zip.files[name].dir)
+        .map(zipPathNormalize);
+
+      const modelName =
+        names.find((name) => /\.model3\.json$/i.test(name) && /panther|cat|defaulta|model/i.test(name)) ||
+        names.find((name) => /\.model3\.json$/i.test(name));
+
+      if (!modelName) throw new Error('panthercat-free.zip 找不到 .model3.json');
+
+      const blobByPath = new Map();
+      const createdUrls = [];
+
+      try {
+        for (const name of names) {
+          const entry = zip.files[name];
+          if (!entry) throw new Error('ZIP 找不到檔案：' + name);
+          const data = await entry.async('arraybuffer');
+          const url = URL.createObjectURL(new Blob([data], { type: zipMime(name) }));
+          blobByPath.set(name, url);
+          createdUrls.push(url);
+        }
+
+        const modelJson = JSON.parse(await zip.files[modelName].async('text'));
+        const rewritten = (value) => {
+          if (typeof value === 'string') {
+            const resolved = zipResolve(modelName, value);
+            return blobByPath.get(resolved) || blobByPath.get(zipPathNormalize(value)) || value;
+          }
+          if (Array.isArray(value)) return value.map(rewritten);
+          if (value && typeof value === 'object') {
+            const out = {};
+            Object.keys(value).forEach((k) => { out[k] = rewritten(value[k]); });
+            return out;
+          }
+          return value;
+        };
+
+        const modelBlob = URL.createObjectURL(
+          new Blob([JSON.stringify(rewritten(modelJson))], { type: 'application/json' })
+        );
+        createdUrls.push(modelBlob);
+
+        // 保持原本 FOXJK 換皮的生命週期：載入成功後立即更新目前皮，
+        // 然後 changePanthercatSkin() 才重建 2D 引擎。
+        currentModelUrl = modelBlob;
+        currentSkinName = 'panthercat';
+        panthercatBlobUrls.push(...createdUrls);
+        return currentModelUrl;
+      } catch (e) {
+        createdUrls.forEach((u) => { try { URL.revokeObjectURL(u); } catch (_) {} });
+        throw e;
+      }
+    })().finally(() => { panthercatLoading = null; });
 
     return panthercatLoading;
   }
 
   async function changePanthercatSkin() {
-    if (currentSkinName === 'panthercat') {
+    if (currentSkinName === 'panthercat' && currentModelUrl) {
       speak('我現在就是這個造型啦。');
       return true;
     }
@@ -885,31 +890,35 @@
 
     try {
       speak('好好好，隨便你。');
-      await waitForSkinEngineIdle();
+      await waitForAvatarRetry(1050);
 
       const newUrl = await loadPanthercatSkin();
-      await waitForSkinEngineIdle();
       stopSpeaking();
 
-      // 先指定新模型，再強制 2D 引擎重新建立；只有成功後才視為換裝完成。
+      if (_renderer) {
+        try { _renderer.dispose(); } catch (e) {}
+        _renderer = null;
+      }
+
+      _engineMode = null;
+      await setEngine('2d');
+
+      if (!_renderer) throw new Error('PANTHERCAT 皮膚啟動失敗');
+
+      // loadPanthercatSkin 已完成狀態更新；這裡只確認使用同一個 model URL。
       currentModelUrl = newUrl;
       currentSkinName = 'panthercat';
-      _engineMode = null;
-      await waitForSkinEngineIdle();
-      await setEngine('2d');
-      await waitForSkinEngineIdle();
-
-      if (!_renderer) throw new Error('PANTHERCAT 角色啟動失敗');
 
       if (document.getElementById('direct-warn')) {
         document.getElementById('direct-warn').style.display = 'none';
       }
+
       showBubble('換好啦，現在是 PANTHERCAT。');
       return true;
     } catch (err) {
       console.error('[Wongming Avatar] PANTHERCAT skin failed:', err);
+      try { window.__PANTHERCAT_LAST_ERROR__ = String(err && (err.stack || err.message) || err); } catch (_) {}
 
-      // 完整回復成原角色，避免出現「畫面沒角色但狀態已經變 PANTHERCAT」。
       try { if (_renderer) _renderer.dispose(); } catch (_) {}
       _renderer = null;
       currentModelUrl = prevModelUrl;
@@ -918,11 +927,10 @@
       _engineMode = null;
 
       try {
-        await waitForSkinEngineIdle();
         await setEngine('2d');
-        await waitForSkinEngineIdle();
       } catch (_) {}
 
+      stopSpeaking();
       const failText = '換裝失敗，我先維持原本的樣子。';
       showBubble(failText);
       speak(failText);
