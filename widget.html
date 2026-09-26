@@ -157,7 +157,7 @@
   let currentSkinName = 'default';
   let panthercatLoading = null;
   let panthercatBlobUrls = [];
-  const PANTHERCAT_ZIP_URL = CFG.get('foxjk') || new URL('/panthercat-free.zip', location.origin).href;
+  const PANTHERCAT_ZIP_URL = CFG.get('panthercat') || new URL('/WONGMING-AI/panthercat-free.zip', location.origin).href;
   const PANTHERCAT_ZIP_FALLBACK = 'https://raw.githubusercontent.com/annynn1990/WONGMING-AI/main/panthercat-free.zip';
   const TTS_ENDPOINT = 'https://wongming-ai.vercel.app/api/tts';
   const KNOWLEDGE_URL = CFG.get('knowledge') || '';
@@ -773,7 +773,7 @@
     }
   }
 
-  async function fetchFoxjkZip() {
+  async function fetchPanthercatZip() {
     const urls = [PANTHERCAT_ZIP_URL];
     if (PANTHERCAT_ZIP_FALLBACK && PANTHERCAT_ZIP_FALLBACK !== PANTHERCAT_ZIP_URL) urls.push(PANTHERCAT_ZIP_FALLBACK);
     let lastError = null;
@@ -823,16 +823,16 @@
         const JSZipModule = await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm');
         const JSZip = JSZipModule.default;
         const virtualFiles = new Map();
-        await collectZipFiles(await fetchFoxjkZip(), '', 0, virtualFiles);
+        await collectZipFiles(await fetchPanthercatZip(), '', 0, virtualFiles);
 
         const names = Array.from(virtualFiles.keys());
 
         const modelName =
-          names.find((name) => /\.model3\.json$/i.test(name) && /foxjk|狐狸|model/i.test(name)) ||
+          names.find((name) => /\.model3\.json$/i.test(name) && /panther|cat|豹|貓|model/i.test(name)) ||
           names.find((name) => /\.model3\.json$/i.test(name));
 
         if (!modelName) {
-          throw new Error('panthercat-free.zip 內找不到 .model3.json；目前 ZIP 是巢狀 ZIP 結構');
+          throw new Error('panthercat-free.zip 內找不到 .model3.json');
         }
 
         const newBlobUrls = [];
