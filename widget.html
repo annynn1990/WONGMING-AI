@@ -848,7 +848,7 @@
         files.push(file);
       }
 
-      if (!files.some((file) => /\\.model3\\.json$/i.test(file.name))) {
+      if (!files.some((file) => /\.model3\.json$/i.test(file.name))) {
         throw new Error('PANTHERCAT ZIP 找不到可載入的 model3.json');
       }
 
