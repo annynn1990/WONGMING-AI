@@ -864,33 +864,43 @@
   }
 
   async function changePanthercatSkin() {
-    if (currentSkinName === 'panthercat' && currentModelUrl) {
-      speak('我現在就是這個造型啦。');
-      return true;
-    }
-
-    const prevModelUrl = currentModelUrl;
-    const prevSkinName = currentSkinName;
-    const prevBlobUrls = panthercatBlobUrls.slice();
+    const switchingBack = currentSkinName === 'panthercat';
 
     try {
-      speak('好好好，隨便你。');
+      speak(switchingBack ? '好，換回原本的角色。' : '好好好，隨便你。');
       await waitForAvatarRetry(1050);
-
-      const newUrl = await loadPanthercatSkin();
-      stopSpeaking();
 
       if (_renderer) {
         try { _renderer.dispose(); } catch (e) {}
         _renderer = null;
       }
 
+      // 同一個「我可以換人嗎」指令做來回切換：
+      // default → PantherCat → default → PantherCat ...
+      if (switchingBack) {
+        // 回到原始角色；MODEL_URL 是 widget 原本使用的 2D 角色。
+        currentModelUrl = MODEL_URL;
+        currentSkinName = 'default';
+        _engineMode = null;
+        await setEngine('2d');
+        if (!_renderer) throw new Error('原本角色恢復失敗');
+
+        if (document.getElementById('direct-warn')) {
+          document.getElementById('direct-warn').style.display = 'none';
+        }
+        stopSpeaking();
+        showBubble('好啦，換回原本的角色了。');
+        return true;
+      }
+
+      const newUrl = await loadPanthercatSkin();
+      stopSpeaking();
+
       _engineMode = null;
       await setEngine('2d');
 
       if (!_renderer) throw new Error('PANTHERCAT 皮膚啟動失敗');
 
-      // loadPanthercatSkin 已完成狀態更新；這裡只確認使用同一個 model URL。
       currentModelUrl = newUrl;
       currentSkinName = 'panthercat';
 
@@ -901,14 +911,12 @@
       showBubble('換好啦，現在是 PANTHERCAT。');
       return true;
     } catch (err) {
-      console.error('[Wongming Avatar] PANTHERCAT skin failed:', err);
+      console.error('[Wongming Avatar] skin switch failed:', err);
       try { window.__PANTHERCAT_LAST_ERROR__ = String(err && (err.stack || err.message) || err); } catch (_) {}
 
-      try { if (_renderer) _renderer.dispose(); } catch (_) {}
-      _renderer = null;
-      currentModelUrl = prevModelUrl;
-      currentSkinName = prevSkinName;
-      panthercatBlobUrls = prevBlobUrls;
+      // 失敗時恢復到切換前狀態。
+      currentModelUrl = switchingBack ? currentModelUrl : MODEL_URL;
+      currentSkinName = switchingBack ? 'panthercat' : 'default';
       _engineMode = null;
 
       try {
@@ -916,7 +924,9 @@
       } catch (_) {}
 
       stopSpeaking();
-      const failText = '換裝失敗，我先維持原本的樣子。';
+      const failText = switchingBack
+        ? '換回原本的角色失敗，我先維持現在的樣子。'
+        : '換裝失敗，我先維持原本的樣子。';
       showBubble(failText);
       speak(failText);
       return false;
