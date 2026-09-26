@@ -835,48 +835,37 @@
           throw new Error('panthercat-free.zip 內找不到 .model3.json');
         }
 
-        const newBlobUrls = [];
-        const blobByPath = new Map();
+        // 使用 pixi-live2d-display 0.4.0 內建的 FileLoader 路徑模型：
+        // 每個 File 都提供 webkitRelativePath，讓套件自行建立 Cubism4ModelSettings
+        // 並把 Moc / Textures / Physics 映射成 object URL。
+        const modelData = virtualFiles.get(modelName);
+        if (!modelData) throw new Error('找不到 PANTHERCAT model3.json 的檔案內容');
 
-        try {
-          for (const [name, data] of virtualFiles.entries()) {
-            const url = URL.createObjectURL(new Blob([data], { type: zipMime(name) }));
-            blobByPath.set(name, url);
-            newBlobUrls.push(url);
-          }
+        const requiredNames = [
+          modelName,
+          ...['defaultA v1.1.moc3', 'textures/texture_00.png', 'defaultA v1.1.physics3.json']
+            .map((p) => zipResolve(modelName, p))
+        ];
+        const seen = new Set();
+        const panthercatFiles = [];
 
-          const modelData = virtualFiles.get(modelName);
-          if (!modelData) throw new Error('找不到 PANTHERCAT model3.json 的檔案內容');
+        for (const wanted of requiredNames) {
+          const normalized = zipPathNormalize(wanted);
+          if (seen.has(normalized)) continue;
+          seen.add(normalized);
+          const data = virtualFiles.get(normalized);
+          if (!data) throw new Error('PANTHERCAT ZIP 缺少必要檔案：' + normalized);
 
-          const modelText = new TextDecoder('utf-8').decode(modelData);
-          const modelJson = JSON.parse(modelText);
-
-          const rewritten = (value) => {
-            if (typeof value === 'string') {
-              const resolved = zipResolve(modelName, value);
-              return blobByPath.get(resolved) || blobByPath.get(zipPathNormalize(value)) || value;
-            }
-            if (Array.isArray(value)) return value.map(rewritten);
-            if (value && typeof value === 'object') {
-              const out = {};
-              Object.keys(value).forEach((k) => { out[k] = rewritten(value[k]); });
-              return out;
-            }
-            return value;
-          };
-
-          // Live2DModel.from() 需要能判斷這是 .model3.json；
-          // blob: URL 沒有副檔名，0.4.0 可能無法正確選擇 Cubism 4 runtime。
-          // 改成直接傳 JSON 物件，並提供一個明確的 .model3.json URL。
-          const rewrittenModel = rewritten(modelJson);
-          rewrittenModel.url = 'panthercat-free/defaultA v1.1.model3.json';
-          panthercatBlobUrls.push(...newBlobUrls);
-          return rewrittenModel;
-        } catch (e) {
-          newBlobUrls.forEach((u) => { try { URL.revokeObjectURL(u); } catch (_) {} });
-          throw e;
+          const leafName = normalized.split('/').pop();
+          const file = new File([data], leafName, { type: zipMime(normalized) });
+          Object.defineProperty(file, 'webkitRelativePath', {
+            value: normalized,
+            configurable: true
+          });
+          panthercatFiles.push(file);
         }
-      } finally {
+
+        return panthercatFiles;      } finally {
         panthercatLoading = null;
       }
     })();
