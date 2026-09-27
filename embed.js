@@ -373,7 +373,14 @@
     return '';
   }
   function getForumAreaState(fid, area) {
+    // 同一 fid 下的「論壇版面」與「帖子頁」不是同一個到達位置。
+    // 例如從崇興門的帖子頁回到 fid=36 的版面時，仍應重新觸發「這裡是崇興門」介紹。
+    var search = location.search || '';
     var key = String(fid || area || '').trim();
+    var isThread = /forum\\.php$/i.test(location.pathname) && /(?:^|[?&])mod=viewthread(?:&|$)/i.test(search);
+    var isForumDisplay = /forum\\.php$/i.test(location.pathname) && /(?:^|[?&])mod=forumdisplay(?:&|$)/i.test(search);
+    if (key && isThread) key += ':thread';
+    else if (key && isForumDisplay) key += ':forum';
     if (!key) return { key: '', pending: false };
     try {
       var current = sessionStorage.getItem('wm_current_forum_area') || '';
