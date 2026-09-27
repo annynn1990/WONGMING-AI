@@ -451,6 +451,14 @@
 
   function getForumGreeting() {
     var fid = getForumFid();
+    if (detectForumArea() === '論壇首頁') {
+      var welcome = '歡迎來到「黃名帝國」，';
+      if (wmTodayHolidayGreeting) {
+        var holiday = String(wmTodayHolidayGreeting).replace(/^今天是「/, '今天是「');
+        return welcome + holiday + '有任何疑問都可以直接問我。';
+      }
+      return welcome + '有任何疑問都可以直接問我。';
+    }
     if (fid === '36') {
       var names = wmGetTodayHolidayNamesFromDoc(document);
       var info = wmGetAnnouncementInfo();
