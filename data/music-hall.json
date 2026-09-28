@@ -1,22 +1,26 @@
 [
   {
     "title": "天命所歸典禮曲",
-    "artist": "",
+    "englishTitle": "",
+    "intro": "",
     "youtube": "https://www.youtube.com/watch?v=nJFxOGmXo3k"
   },
   {
     "title": "統治吧！帝國",
-    "artist": "大樂集團",
+    "englishTitle": "大樂集團",
+    "intro": "",
     "youtube": "https://youtu.be/0FjsDF4D_qw?si=hZVBVGG2JZ127DmN"
   },
   {
     "title": "宮廷的遐想",
-    "artist": "Reverie of the Court",
+    "englishTitle": "Reverie of the Court",
+    "intro": "",
     "youtube": "https://www.youtube.com/watch?v=-XttfvXYPLc"
   },
   {
     "title": "昭武破陣樂",
-    "artist": "Zhaowu’s Breaking Through the Enemy Array",
+    "englishTitle": "Zhaowu’s Breaking Through the Enemy Array",
+    "intro": "",
     "youtube": "https://www.youtube.com/watch?v=wv6zMrVgZLg"
   }
 ]
