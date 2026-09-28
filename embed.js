@@ -135,6 +135,83 @@
   } catch (e) {}
 
   // 4) 收合後的小泡泡（iframe 收起時顯示，點它再展開）
+  var MUSIC_HALL_URL = 'https://annynn1990.github.io/wongming-music-hall/?from=forum183';
+  var MUSIC_WINDOW_NAME = 'WongmingRoyalMusicHall';
+
+  // 只有 183 版面（以及 183 版面的帖子頁）顯示皇家音樂廳入口。
+  function isMusicHallForum() {
+    return getForumFid() === '183';
+  }
+
+  var musicButton = document.createElement('button');
+  musicButton.type = 'button';
+  musicButton.setAttribute('aria-label', '開啟皇家音樂廳');
+  musicButton.title = '皇家音樂廳';
+  musicButton.textContent = '♫';
+  musicButton.style.cssText = [
+    'position:fixed', 'right:88px', 'bottom:18px',
+    'z-index:2147483001', 'width:56px', 'height:56px',
+    'border:0', 'border-radius:50%', 'cursor:pointer',
+    'font-family:Georgia,"Times New Roman",serif', 'font-size:31px',
+    'font-weight:500', 'line-height:1',
+    'background:rgba(15,8,2,.86)', 'color:#e8c978',
+    'text-shadow:0 0 7px rgba(232,201,120,.55),0 0 20px rgba(232,201,120,.28)',
+    'box-shadow:0 6px 20px rgba(0,0,0,.34),0 0 18px rgba(226,193,123,.12)',
+    'display:none', 'align-items:center', 'justify-content:center',
+    'transition:transform .2s, box-shadow .2s'
+  ].join(';');
+
+  musicButton.onmouseenter = function () {
+    musicButton.style.transform = 'scale(1.08)';
+    musicButton.style.boxShadow = '0 6px 24px rgba(0,0,0,.38),0 0 28px rgba(226,193,123,.28)';
+  };
+  musicButton.onmouseleave = function () {
+    musicButton.style.transform = 'scale(1)';
+    musicButton.style.boxShadow = '0 6px 20px rgba(0,0,0,.34),0 0 18px rgba(226,193,123,.12)';
+  };
+
+  function syncMusicButton() {
+    var visible = isMusicHallForum();
+    musicButton.style.display = visible ? 'flex' : 'none';
+    if (visible && widgetOpen) {
+      musicButton.style.right = (EXPANDED.w + 28) + 'px';
+      musicButton.style.bottom = '24px';
+    } else {
+      musicButton.style.right = '88px';
+      musicButton.style.bottom = '18px';
+    }
+  }
+
+  musicButton.onclick = function () {
+    var features = [
+      'width=' + Math.round(screen.availWidth * 0.90),
+      'height=' + Math.round(screen.availHeight * 0.90),
+      'left=' + Math.max(0, Math.round((screen.availWidth - screen.availWidth * 0.90) / 2)),
+      'top=' + Math.max(0, Math.round((screen.availHeight - screen.availHeight * 0.90) / 2)),
+      'resizable=yes',
+      'scrollbars=no'
+    ].join(',');
+
+    var existing = null;
+    try { existing = window.open('', MUSIC_WINDOW_NAME); } catch (e) {}
+    if (existing && !existing.closed) {
+      try { existing.focus(); } catch (e) {}
+      return;
+    }
+
+    try {
+      var w = window.open(MUSIC_HALL_URL, MUSIC_WINDOW_NAME, features);
+      if (w) {
+        try { w.focus(); } catch (e) {}
+      }
+    } catch (e) {}
+  };
+
+  (document.body || document.documentElement).appendChild(musicButton);
+  syncMusicButton();
+  setInterval(syncMusicButton, 700);
+  window.addEventListener('popstate', syncMusicButton);
+
   var bubble = document.createElement('button');
   bubble.type = 'button';
   bubble.className = 'aw-bubble';
@@ -167,6 +244,7 @@
       iframe.style.display = 'none';
       bubble.style.display = 'flex';
     }
+    try { syncMusicButton(); } catch (e) {}
   }
   bubble.onclick = function () {
     setOpen(true);
