@@ -266,6 +266,14 @@
       postToParent('ready');
       return;
     }
+    if (d.type === 'avatar-resume') {
+      try {
+        if (typeof window.__avatarLive2DResume === 'function') window.__avatarLive2DResume();
+      } catch (err) {
+        console.warn('[Wongming Avatar] resume after reopen failed:', err);
+      }
+      return;
+    }
     if (d.type === 'say') speak(String(d.text || '').slice(0, 600));
     if (d.type === 'holiday-greeting') {
       // 首頁節日提醒由獨立 holiday-source 提供；顯示一次即可。
@@ -1292,9 +1300,22 @@
 
       postToParent('ready');
       window.__avatarModel = model;
+      window.__avatarLive2DResume = function () {
+        try {
+          const stage = document.getElementById('stage');
+          const w = stage ? stage.clientWidth : 0;
+          const h = stage ? stage.clientHeight : 0;
+          if (app && w > 0 && h > 0) {
+            app.renderer.resize(w, h);
+            fit();
+            try { app.renderer.render(app.stage); } catch (e) {}
+          }
+        } catch (e) {}
+      };
 
       return { dispose() {
         try { window.removeEventListener('resize', fit); } catch (e) {}
+        try { delete window.__avatarLive2DResume; } catch (e) { window.__avatarLive2DResume = null; }
         try { app && app.destroy(true, { children: true, texture: true, baseTexture: true }); } catch (e) {}
         app = null; model = null; canvas.remove();
       } };
