@@ -31,13 +31,22 @@ export default async function handler(req, res) {
       if (req.method === 'POST') {
         const data = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
         if (!Array.isArray(data) || (!Array.isArray(data) || (isMusicHall ? data.length > 200 : data.length !== 80))) return res.status(400).json({ok:false,message:'資料格式錯誤'});
-        const current = await fetch(url,{headers});
-        if (!current.ok) return res.status(502).json({ok:false,message:'GitHub 版本讀取失敗',code:'GITHUB_SHA_'+current.status});
-        const f = await current.json();
         const content = Buffer.from(JSON.stringify(data,null,2)+'\n').toString('base64');
-        const r = await fetch(GH + '/repos/' + REPO + '/contents/' + PATH,{method:'PUT',headers,body:JSON.stringify({message:isMusicHall?'更新皇家音樂廳曲目':'更新燈牆資料',content,sha:f.sha,branch:'main'})});
-        if (!r.ok) return res.status(502).json({ok:false,message:'GitHub 儲存失敗',code:'GITHUB_PUT_'+r.status});
-        return res.status(200).json({ok:true});
+        let lastStatus = 0;
+        for (let attempt = 0; attempt < 2; attempt++) {
+          const current = await fetch(url,{headers});
+          if (!current.ok) return res.status(502).json({ok:false,message:'GitHub 版本讀取失敗',code:'GITHUB_SHA_'+current.status});
+          const f = await current.json();
+          const r = await fetch(GH + '/repos/' + REPO + '/contents/' + PATH,{method:'PUT',headers,body:JSON.stringify({message:isMusicHall?'更新皇家音樂廳曲目':'更新燈牆資料',content,sha:f.sha,branch:'main'})});
+          if (r.ok) return res.status(200).json({ok:true});
+          lastStatus = r.status;
+          if (r.status !== 409) {
+            let detail = '';
+            try { const e = await r.json(); detail = e?.message || ''; } catch {}
+            return res.status(502).json({ok:false,message:'GitHub 儲存失敗',code:'GITHUB_PUT_'+r.status,detail});
+          }
+        }
+        return res.status(502).json({ok:false,message:'資料版本衝突，請再試一次',code:'GITHUB_CONFLICT_'+lastStatus});
       }
       return res.status(405).json({ok:false,message:'不支援的操作'});
     } catch(e) {
