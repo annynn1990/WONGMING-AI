@@ -5,9 +5,10 @@ export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method === 'OPTIONS') return res.status(204).end();
 
-  if (req.query && req.query.shrine === '1') {
+  if (req.query && (req.query.shrine === '1' || req.query.shrine === '2')) {
     const REPO = 'annynn1990/WONGMING-AI';
-    const PATH = req.query.shrine === '2' ? 'data/music-hall.json' : 'data/shrine-lamps.json';
+    const isMusicHall = req.query.shrine === '2';
+    const PATH = isMusicHall ? 'data/music-hall.json' : 'data/shrine-lamps.json';
     const GH = 'https://api.github.com';
     try {
       const { getToken } = await import('@vercel/connect');
@@ -29,12 +30,12 @@ export default async function handler(req, res) {
       }
       if (req.method === 'POST') {
         const data = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-        if (!Array.isArray(data) || (PATH.endsWith('shrine-lamps.json') ? data.length !== 80 : data.length > 200)) return res.status(400).json({ok:false,message:'資料格式錯誤'});
+        if (!Array.isArray(data) || (!Array.isArray(data) || (isMusicHall ? data.length > 200 : data.length !== 80))) return res.status(400).json({ok:false,message:'資料格式錯誤'});
         const current = await fetch(url,{headers});
         if (!current.ok) return res.status(502).json({ok:false,message:'GitHub 版本讀取失敗',code:'GITHUB_SHA_'+current.status});
         const f = await current.json();
         const content = Buffer.from(JSON.stringify(data,null,2)+'\n').toString('base64');
-        const r = await fetch(GH + '/repos/' + REPO + '/contents/' + PATH,{method:'PUT',headers,body:JSON.stringify({message:'更新燈牆資料',content,sha:f.sha,branch:'main'})});
+        const r = await fetch(GH + '/repos/' + REPO + '/contents/' + PATH,{method:'PUT',headers,body:JSON.stringify({message:isMusicHall?'更新皇家音樂廳曲目':'更新燈牆資料',content,sha:f.sha,branch:'main'})});
         if (!r.ok) return res.status(502).json({ok:false,message:'GitHub 儲存失敗',code:'GITHUB_PUT_'+r.status});
         return res.status(200).json({ok:true});
       }
