@@ -7,7 +7,7 @@ export default async function handler(req, res) {
 
   if (req.query && req.query.shrine === '1') {
     const REPO = 'annynn1990/WONGMING-AI';
-    const PATH = 'data/shrine-lamps.json';
+    const PATH = req.query.shrine === '2' ? 'data/music-hall.json' : 'data/shrine-lamps.json';
     const GH = 'https://api.github.com';
     try {
       const { getToken } = await import('@vercel/connect');
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
       }
       if (req.method === 'POST') {
         const data = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-        if (!Array.isArray(data) || data.length !== 80) return res.status(400).json({ok:false,message:'資料格式錯誤'});
+        if (!Array.isArray(data) || (PATH.endsWith('shrine-lamps.json') ? data.length !== 80 : data.length > 200)) return res.status(400).json({ok:false,message:'資料格式錯誤'});
         const current = await fetch(url,{headers});
         if (!current.ok) return res.status(502).json({ok:false,message:'GitHub 版本讀取失敗',code:'GITHUB_SHA_'+current.status});
         const f = await current.json();
