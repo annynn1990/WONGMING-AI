@@ -1331,10 +1331,9 @@
     if (model) try { model.motion('Tap'); } catch (e) {}
 
     // 首頁點擊虛擬人：固定自我介紹；其他版面：介紹目前所在區域。
-    const fid = (new URLSearchParams(location.search).get('fid') || '').trim();
-    const forumGreeting = (window.parent && window.parent.WM_FORUM_GREETINGS)
-      ? window.parent.WM_FORUM_GREETINGS[fid]
-      : null;
+    // embed.js 會透過 host-context 傳入目前論壇 fid 與該版面的導覽詞。
+    const fid = String(hostContext.fid || '').trim();
+    const forumGreeting = String(hostContext.greeting || '').trim();
 
     if (fid && forumGreeting) {
       speak(forumGreeting);
