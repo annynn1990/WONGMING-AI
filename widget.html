@@ -1329,7 +1329,18 @@
     onTap._lock = true;
     setTimeout(() => { onTap._lock = false; }, 400);
     if (model) try { model.motion('Tap'); } catch (e) {}
-    speak('你好～我是黃名帝國新上任的網站導覽員！');
+
+    // 首頁點擊虛擬人：固定自我介紹；其他版面：介紹目前所在區域。
+    const fid = (new URLSearchParams(location.search).get('fid') || '').trim();
+    const forumGreeting = (window.parent && window.parent.WM_FORUM_GREETINGS)
+      ? window.parent.WM_FORUM_GREETINGS[fid]
+      : null;
+
+    if (fid && forumGreeting) {
+      speak(forumGreeting);
+    } else {
+      speak('你好～我是新上任的黃名帝國導覽員！');
+    }
   }
 
   // ===== 控制列 =====
