@@ -161,6 +161,12 @@
       root.style.height = EXPANDED.h + 'px';
       iframe.style.display = 'block';
       bubble.style.display = 'none';
+      // iframe 從 display:none 恢復後，通知子頁重新量測 renderer/canvas。
+      setTimeout(function () {
+        try {
+          if (iframe.contentWindow) iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'avatar-resume' }, widgetOrigin);
+        } catch (e) {}
+      }, 60);
     } else {
       root.style.width = '60px';
       root.style.height = '60px';
