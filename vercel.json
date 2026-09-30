@@ -15,6 +15,7 @@
     {"src":"/api/tts","dest":"/api/tts.js"},
     {"src":"/api/locale","dest":"/api/locale.js"},
     {"src":"/api/translate","dest":"/api/translate.js"},
+    {"src":"/museum/?","dest":"/museum.html"},
     {"src":"/","dest":"/index.html"},
     {"handle":"filesystem"}
   ]
