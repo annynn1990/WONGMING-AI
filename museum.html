@@ -421,7 +421,6 @@ function makeGallery(g,x,z,side){
 
 // Five halls per side, arranged as a formal museum promenade.
 const zRows=[-2,-9,-16,-23,-30];
-await document.fonts.load('700 40px "Noto Sans CJK TC"');
 for(let i=0;i<5;i++){
   makeGallery(galleryData[i],-18,zRows[i],-1);
   makeGallery(galleryData[i+5],18,zRows[i],1);
