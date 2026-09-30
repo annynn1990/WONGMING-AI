@@ -47,7 +47,7 @@ let timeMode="day";
 
 const camera=new THREE.PerspectiveCamera(68,innerWidth/innerHeight,.05,240);
 camera.position.set(0,1.7,27);
-camera.rotation.set(0,Math.PI,0,"YXZ");
+camera.rotation.set(0,0,0,"YXZ");
 
 const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:"high-performance"});
 renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
@@ -97,7 +97,9 @@ function add(g,m,p=[0,0,0],r=[0,0,0],cast=true){
   o.castShadow=cast;o.receiveShadow=true;scene.add(o);return o;
 }
 function box(w,h,d,x,y,z,m=mat.concrete,r=[0,0,0],cast=true){
-  return add(new THREE.BoxGeometry(w,h,d),m,[x,y,z],r,cast);
+  const rot=r===false?[0,0,0]:r;
+  const doCast=r===false?false:cast;
+  return add(new THREE.BoxGeometry(w,h,d),m,[x,y,z],rot,doCast);
 }
 function cyl(rad,h,x,y,z,m=mat.concrete,seg=24,cast=true){
   return add(new THREE.CylinderGeometry(rad,rad,h,seg),m,[x,y,z],[0,0,0],cast);
