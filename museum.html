@@ -5,318 +5,266 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>黃名歷史博物館｜Wongming Museum of History</title>
 <style>
-:root{--ivory:#efe8d5;--muted:#9da4ae;--gold:#c9a962;--glass:#0c1118c9}
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#05070a;color:var(--ivory);font-family:Inter,"Noto Sans TC","Noto Serif TC",sans-serif}
+:root{--ink:#eee7d5;--muted:#9ea4aa;--gold:#cfb16b;--glass:#11161bd4}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080a0d;color:var(--ink);font-family:Inter,"Noto Sans TC","Noto Serif TC",sans-serif}
 canvas{display:block}
-#brand{position:fixed;z-index:20;left:30px;top:26px;pointer-events:none;text-shadow:0 3px 24px #000}
-#brand h1{margin:0;font:600 29px/1 "Noto Serif TC",serif;letter-spacing:.16em}
-#brand p{margin:9px 0 0;font-size:10px;letter-spacing:.18em;color:#b6bbc2;text-transform:uppercase}
-#panel{position:fixed;z-index:20;top:24px;right:25px;width:290px;padding:18px 18px 17px;background:linear-gradient(180deg,#10151be8,#070a0fce);border:1px solid #ffffff16;backdrop-filter:blur(18px);box-shadow:0 18px 60px #0009}
-.kicker{font-size:9px;letter-spacing:.22em;color:var(--gold);text-transform:uppercase}.title{font-size:18px;margin:7px 0}.copy{font-size:12px;line-height:1.75;color:#b9bdc4;margin:0}
-#enter{margin-top:14px;width:100%;height:39px;border:1px solid #b99a5a;background:linear-gradient(180deg,#191b1c,#0e1013);color:#ead9a8;cursor:pointer;letter-spacing:.17em;font-size:11px}
-#enter:hover{background:#24251f}
-#hint{position:fixed;z-index:20;left:50%;bottom:20px;transform:translateX(-50%);padding:9px 14px;background:#070a0ec7;border:1px solid #ffffff15;color:#aeb4bc;font-size:11px;white-space:nowrap;backdrop-filter:blur(14px)}
-#reticle{position:fixed;z-index:20;left:50%;top:50%;width:7px;height:7px;margin:-3.5px;border:1px solid #e4d3a4;border-radius:50%;opacity:.75;pointer-events:none}
-#info{position:fixed;z-index:21;left:50%;bottom:78px;transform:translateX(-50%);display:none;max-width:min(560px,88vw);padding:13px 18px;background:#090c11ed;border:1px solid #ffffff18;box-shadow:0 15px 50px #0008;font-size:12px;line-height:1.7;color:#c9cbd0}
-#info strong{color:#e4d19b}
-@media(max-width:700px){#panel{right:12px;top:12px;width:232px}.title{font-size:16px}#brand{left:14px;top:14px}.hint{display:none}}
+#brand{position:fixed;z-index:20;top:24px;left:28px;text-shadow:0 4px 25px #000;pointer-events:none}
+#brand h1{margin:0;font:600 29px/1 "Noto Serif TC",serif;letter-spacing:.15em}
+#brand p{margin:8px 0 0;font-size:10px;letter-spacing:.18em;color:#bdc1c5;text-transform:uppercase}
+#panel{position:fixed;z-index:20;top:22px;right:24px;width:292px;padding:17px 17px 16px;background:linear-gradient(180deg,#10151be8,#080b0fd7);border:1px solid #fff2;box-shadow:0 18px 60px #0008;backdrop-filter:blur(18px)}
+.kicker{font-size:9px;letter-spacing:.22em;color:var(--gold);text-transform:uppercase}.title{margin:7px 0 6px;font-size:18px}.copy{margin:0;color:#b8bdc3;font-size:12px;line-height:1.75}
+#enter{width:100%;margin-top:13px;height:39px;border:1px solid #bf9c57;background:#17191a;color:#eadbad;cursor:pointer;letter-spacing:.16em;font-size:11px}
+#hint{position:fixed;z-index:20;bottom:18px;left:50%;transform:translateX(-50%);padding:9px 14px;background:#090c10cf;border:1px solid #fff2;color:#acb3ba;font-size:11px;white-space:nowrap;backdrop-filter:blur(13px)}
+#reticle{position:fixed;z-index:20;left:50%;top:50%;width:7px;height:7px;margin:-3.5px;border:1px solid #eedba7;border-radius:50%;pointer-events:none}
+#info{position:fixed;z-index:21;left:50%;bottom:70px;transform:translateX(-50%);display:none;max-width:min(560px,88vw);padding:13px 18px;background:#080b10ee;border:1px solid #fff2;color:#c9ccd1;font-size:12px;line-height:1.75;box-shadow:0 18px 50px #0009}
+#info strong{color:#e5d19b}
+@media(max-width:700px){#panel{right:10px;top:10px;width:225px}#brand{left:12px;top:12px}#hint{display:none}}
 </style>
 </head>
 <body>
-<div id="brand"><h1>黃名歷史博物館</h1><p>Wongming Museum of History · Contemporary Heritage</p></div>
+<div id="brand"><h1>黃名歷史博物館</h1><p>Wongming Museum of History · Architectural Study</p></div>
 <div id="panel">
-  <div class="kicker">WONGMING / 2026</div>
-  <div class="title">歷史，放進一座可以行走的建築。</div>
-  <p class="copy">以「時間的縫隙」為建築概念：厚重石材收藏記憶，透明幕牆讓歷史與今日相互觀看。中央中庭是全館的心臟。</p>
-  <button id="enter">ENTER IMMERSIVE VR</button>
+<div class="kicker">ARCHITECTURAL REFERENCE · M+</div>
+<div class="title">以現實博物館建築為藍本</div>
+<p class="copy">本館採用香港 M+ 的核心空間邏輯作為黃名版本：懸臂式大型基座、上升的縱向塔樓、公共屋頂花園、中央採光井與開放展覽空間。</p>
+<button id="enter">ENTER IMMERSIVE VR</button>
 </div>
-<div id="hint">桌面：WASD 移動・Shift 加速・拖曳觀看・點擊展品查看　｜　VR：啟用沉浸模式</div>
-<div id="reticle"></div>
-<div id="info"></div>
-
-<script type="importmap">
-{"imports":{
-"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
-"three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
-}}
-</script>
+<div id="hint">WASD 移動・Shift 加速・滑鼠拖曳觀看・點擊展區　｜　VR：Enter Immersive</div>
+<div id="reticle"></div><div id="info"></div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from "three";
 import {VRButton} from "three/addons/webxr/VRButton.js";
 
 const scene=new THREE.Scene();
-scene.background=new THREE.Color(0x05070a);
-scene.fog=new THREE.Fog(0x05070a,30,125);
+scene.background=new THREE.Color(0x080a0d);
+scene.fog=new THREE.Fog(0x080a0d,35,145);
 
-const camera=new THREE.PerspectiveCamera(68,innerWidth/innerHeight,.05,240);
-camera.position.set(0,1.65,28);
+const camera=new THREE.PerspectiveCamera(68,innerWidth/innerHeight,.05,260);
+camera.position.set(0,1.7,30);
 
 const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:"high-performance"});
-renderer.setPixelRatio(Math.min(devicePixelRatio,1.65));
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));
 renderer.setSize(innerWidth,innerHeight);
 renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.08;
+renderer.toneMappingExposure=1.05;
 renderer.xr.enabled=true;
 document.body.appendChild(renderer.domElement);
 
-const M={
-ground:new THREE.MeshStandardMaterial({color:0x1a1b20,roughness:.72}),
-stone:new THREE.MeshStandardMaterial({color:0x36393e,roughness:.84}),
-stoneLight:new THREE.MeshStandardMaterial({color:0x5a5d61,roughness:.77}),
-charcoal:new THREE.MeshStandardMaterial({color:0x0d1116,roughness:.7}),
-black:new THREE.MeshStandardMaterial({color:0x06080c,roughness:.9}),
-metal:new THREE.MeshStandardMaterial({color:0x967637,metalness:.84,roughness:.22}),
-gold:new THREE.MeshStandardMaterial({color:0xc8a65b,metalness:.72,roughness:.28}),
-glass:new THREE.MeshPhysicalMaterial({color:0x8aa3b1,metalness:.04,roughness:.08,transmission:.38,transparent:true,opacity:.32,side:THREE.DoubleSide}),
-glassDark:new THREE.MeshPhysicalMaterial({color:0x3a4b56,roughness:.18,transmission:.2,transparent:true,opacity:.42,side:THREE.DoubleSide}),
-warm:new THREE.MeshBasicMaterial({color:0xf0cf7a}),
-red:new THREE.MeshStandardMaterial({color:0x4b1118,roughness:.54}),
-paper:new THREE.MeshStandardMaterial({color:0xb8b3a5,roughness:.66}),
-water:new THREE.MeshPhysicalMaterial({color:0x223746,metalness:.15,roughness:.08,transmission:.5,transparent:true,opacity:.72})
+const mat={
+ground:new THREE.MeshStandardMaterial({color:0x34353a,roughness:.8}),
+grass:new THREE.MeshStandardMaterial({color:0x33412f,roughness:.98}),
+concrete:new THREE.MeshStandardMaterial({color:0x55565a,roughness:.86}),
+concrete2:new THREE.MeshStandardMaterial({color:0x777875,roughness:.8}),
+ceramic:new THREE.MeshStandardMaterial({color:0x4a443e,roughness:.52,metalness:.12}),
+dark:new THREE.MeshStandardMaterial({color:0x101317,roughness:.75}),
+glass:new THREE.MeshPhysicalMaterial({color:0x7793a4,roughness:.1,transmission:.42,transparent:true,opacity:.38,side:THREE.DoubleSide}),
+glassDark:new THREE.MeshPhysicalMaterial({color:0x34444e,roughness:.18,transmission:.2,transparent:true,opacity:.5,side:THREE.DoubleSide}),
+gold:new THREE.MeshStandardMaterial({color:0xc5a15a,metalness:.78,roughness:.24}),
+white:new THREE.MeshStandardMaterial({color:0xb8b5ad,roughness:.62}),
+black:new THREE.MeshStandardMaterial({color:0x07090c,roughness:.92}),
+water:new THREE.MeshPhysicalMaterial({color:0x203747,roughness:.07,transmission:.52,transparent:true,opacity:.7}),
+light:new THREE.MeshBasicMaterial({color:0xf1d17d})
 };
 
-const hemi=new THREE.HemisphereLight(0xa8b8ce,0x0b0806,1.25);scene.add(hemi);
-const moon=new THREE.DirectionalLight(0xcddcff,.72);moon.position.set(18,30,18);moon.castShadow=true;moon.shadow.mapSize.set(2048,2048);scene.add(moon);
-const warm=new THREE.DirectionalLight(0xffdf9c,1.15);warm.position.set(-18,16,30);scene.add(warm);
+scene.add(new THREE.HemisphereLight(0xaebed1,0x100b07,1.15));
+const key=new THREE.DirectionalLight(0xffe8bb,1.7);key.position.set(-25,35,28);key.castShadow=true;key.shadow.mapSize.set(2048,2048);scene.add(key);
+const fill=new THREE.DirectionalLight(0x8ea4c7,.5);fill.position.set(28,20,-30);scene.add(fill);
 
-function mesh(geo,mat,pos=[0,0,0],rot=[0,0,0],cast=true){
- const m=new THREE.Mesh(geo,mat);m.position.set(...pos);m.rotation.set(...rot);m.castShadow=cast;m.receiveShadow=true;scene.add(m);return m;
+function add(g,m,p=[0,0,0],r=[0,0,0],cast=true){
+ const o=new THREE.Mesh(g,m);o.position.set(...p);o.rotation.set(...r);o.castShadow=cast;o.receiveShadow=true;scene.add(o);return o;
 }
-function box(w,h,d,x,y,z,mat=M.stone,rx=0,ry=0,rz=0){return mesh(new THREE.BoxGeometry(w,h,d),mat,[x,y,z],[rx,ry,rz])}
-function cyl(r,h,x,y,z,mat=M.stone,seg=32){return mesh(new THREE.CylinderGeometry(r,r,h,seg),mat,[x,y,z])}
-function line(x1,y1,z1,x2,y2,z2,mat=M.gold){return mesh(new THREE.CylinderGeometry(.045,.045,Math.hypot(Math.hypot(x2-x1,y2-y1),z2-z1),12),mat,[(x1+x2)/2,(y1+y2)/2,(z1+z2)/2],[Math.acos((z2-z1)/Math.hypot(Math.hypot(x2-x1,y2-y1),z2-z1)),Math.atan2(x2-x1,z2-z1),0],false)}
+function B(w,h,d,x,y,z,m=mat.concrete,r=[0,0,0]){return add(new THREE.BoxGeometry(w,h,d),m,[x,y,z],r)}
+function C(r,h,x,y,z,m=mat.concrete,seg=28){return add(new THREE.CylinderGeometry(r,r,h,seg),m,[x,y,z])}
 
-box(100,.4,110,0,-.2,-28,M.ground,false,0,0);
+B(110,.4,130,0,-.2,-22,mat.ground);
 
-// ---------- exterior plaza ----------
-box(48,.22,30,0,.05,19,M.stoneLight);
-for(let i=0;i<12;i++)box(5.2,.14,2.5,-27.5+i*5,.14,11,M.ground);
-for(let i=0;i<6;i++)box(36,.16,2.2,0,.15,23-i*2.15,M.ground);
+// public lawn / promenade
+B(82,.08,42,0,.04,24,mat.grass,false);
+for(let i=-30;i<=30;i+=8)B(5,.12,35,i,.11,24,mat.ground);
+for(let z=6;z<=37;z+=7)B(75,.10,3.4,0,.12,z,mat.ground);
 
-const pool=box(18,.12,7,0,.10,7,M.water);
-for(let x=-7.5;x<=7.5;x+=2.5) cyl(.06,5,x,2.55,7,M.gold,20);
+// harbor water behind
+B(92,.08,18,0,.03,-72,mat.water,false);
 
-// entrance steps
-for(let i=0;i<7;i++)box(20-i*1.0,.32,2.0,0,.32+i*.31,2.5+i*1.95,M.stoneLight);
-box(15,.4,3,0,2.55,17,M.black);
+// plaza paving
+B(70,.12,27,0,.1,3,mat.concrete2);
 
-// ---------- main mass ----------
-box(39,11,15,0,6.2,-1,M.stone);
-box(36,8,17,0,4.7,-13,M.charcoal);
-box(26,13,18,0,7.1,-27,M.stone);
-box(45,.8,18,0,12.0,-1,M.black);
+// ---------- M+ style upside-down T massing ----------
+// podium: broad horizontal base, raised and cantilevered
+B(58,3.8,48,0,4.6,-13,mat.dark);
+B(62,1.0,50,0,7.0,-13,mat.ceramic);
+B(66,.55,54,0,9.25,-13,mat.black);
 
-// cantilever roof slabs
-box(48,.7,5,-4,11.1,4,M.black,0,0,.025);
-box(48,.55,7,5,11.25,-8,M.stoneLight,0,0,-.02);
-box(44,.45,6,-3,14.0,-18,M.black,0,.0,.025);
+// tower: slim vertical block fused into podium
+B(22,27,21,2,22.0,-10,mat.dark);
+B(24,.8,23,2,35.8,-10,mat.black);
+B(23,1.0,22,2,8.9,-10,mat.ceramic);
 
-// ---------- central atrium ----------
-box(25,10,1.2,0,5.4,5.7,M.glass);
-box(23,10,1.0,0,5.0,-6.0,M.glassDark);
-box(23,.8,17,0,10.3,-.1,M.glassDark);
-for(let x=-10;x<=10;x+=5){
-  box(.28,10,.35,x,5,-.1,M.gold);
-  box(.12,11,.12,x,5,-.2,M.warm,false,0,0,0);
+// slight offset creates distinctive monolithic silhouette
+B(3,24,15.0,14.2,22,-10,mat.black);
+
+// ---------- facade terracotta / vertical fins ----------
+const finGeo=new THREE.BoxGeometry(.22,3.15,.34);
+const finMat=mat.ceramic;
+function finsFront(y,z,width,step,top){
+ const n=Math.floor(width/step);
+ const im=new THREE.InstancedMesh(finGeo,finMat,n);im.castShadow=true;
+ for(let i=0;i<n;i++){
+  const x=-width/2+i*step;
+  const m=new THREE.Matrix4().makeTranslation(x,y,z);
+  im.setMatrixAt(i,m);
+ }
+ im.instanceMatrix.needsUpdate=true;scene.add(im);
 }
-for(let z=-5;z<=5;z+=2.5)line(-11,0,z,11,0,z,M.metal);
+for(let y=8.3;y<35.6;y+=3.3)finsFront(y,-21.7,59,0.48,0);
+for(let y=9;y<35.6;y+=3.4)finsFront(y,1.2,59,0.48,0);
 
-// vertical light fins
-for(let i=-6;i<=6;i+=3){
- const fin=box(.24,8,.55,i,4.7,6.2,M.gold);
- fin.rotation.z=(i/6)*.06;
+// tower vertical louvers
+const towerFinGeo=new THREE.BoxGeometry(.18,25,.38);
+const im1=new THREE.InstancedMesh(towerFinGeo,mat.ceramic,74);im1.castShadow=true;
+for(let i=0;i<74;i++){const x=2-11.2+i*.305;im1.setMatrixAt(i,new THREE.Matrix4().makeTranslation(x,22,-20.7))}
+im1.instanceMatrix.needsUpdate=true;scene.add(im1);
+const im2=new THREE.InstancedMesh(towerFinGeo,mat.ceramic,74);im2.castShadow=true;
+for(let i=0;i<74;i++){const x=2-11.2+i*.305;im2.setMatrixAt(i,new THREE.Matrix4().makeTranslation(x,22,0.7))}
+im2.instanceMatrix.needsUpdate=true;scene.add(im2);
+
+// ---------- ground under cantilever / main hall ----------
+B(42,3.0,29,0,1.8,-10,mat.black);
+for(const x of [-24,-18,-12,-6,0,6,12,18,24]){
+ C(.42,5.6,x,2.9,2.4,mat.concrete2,24);
 }
+for(const x of [-21,-14,-7,0,7,14,21])C(.3,5.8,x,2.9,-23.8,mat.ceramic,24);
 
-// ---------- left history wing ----------
-box(17,8,35,-17,4.6,-10,M.stoneLight);
-box(17,6,4,-17,7.4,-27,M.black);
-box(19,.6,37,-17,8.8,-10,M.black,0,0,.045);
-for(let z=-24;z<=4;z+=7){
- box(13,5,.35,-17,3.5,z,M.paper);
- box(13.4,.16,.5,-17,6.2,z-.2,M.gold);
-}
-for(let x=-24;x<=-10;x+=3.5) box(.22,7,.22,x,4,-10,M.gold);
-for(let i=0;i<7;i++) box(2.1,1.8,.7,-25+i*2.5,1.1,-29,M.black);
+// grand glass entrances
+B(19,5.2,.35,0,3.3,2.35,mat.glass);
+B(12,5.2,.35,0,3.3,-24.9,mat.glassDark);
+for(let x=-8;x<=8;x+=4)B(.2,5.2,.48,x,3.3,2.1,mat.gold);
 
-// left stair / ramp
-for(let i=0;i<10;i++)box(7.6,.28,1.3,-16,0.25+i*.28,1.2-i*1.25,M.stoneLight,0,.0,-.08);
-
-// ---------- right culture wing ----------
-box(17,8,35,17,4.6,-10,M.stoneLight);
-box(17,6,4,17,7.4,-27,M.black);
-box(19,.6,37,17,8.8,-10,M.black,0,0,-.045);
-for(let z=-23;z<=5;z+=7){
- box(13,5,.35,17,3.5,z,M.paper);
- box(13.4,.16,.5,17,6.2,z-.2,M.gold);
-}
-for(let x=10;x<=24;x+=3.5) box(.22,7,.22,x,4,-10,M.gold);
-
-// ---------- upper bridge ----------
-box(20,3.4,9,0,8.0,-8,M.black);
-box(18,2.3,7.7,0,8.7,-8,M.glassDark);
-for(let x=-7;x<=7;x+=3.5)box(.12,2.3,.12,x,8.7,-8,M.gold);
-
-// ---------- central grand hall ----------
-box(22,.3,25,0,.18,-14,M.charcoal);
-for(let x=-8;x<=8;x+=4){
- for(let z=-5;z>=-24;z-=6.3)cyl(.18,6.8,x,3.6,z,M.stoneLight,24);
-}
-box(22,.55,25,0,8.7,-14,M.black);
-for(let x=-9;x<=9;x+=4.5){
- box(2.3,.1,15,x,8.35,-14,M.glass);
+// hanging pendant lights under overhang
+for(let x=-18;x<=18;x+=6)for(let z=-1;z<=8;z+=4.5){
+ C(.05,1.4,x,5.9,z,mat.gold,16);
+ C(.45,.16,x,5.18,z,mat.light,32);
 }
 
-// skylight cuts represented by glowing strips
-for(let x=-8;x<=8;x+=4){
- box(.14,7,.3,x,4.0,-14,M.warm,false);
+// ---------- roof garden / public roof deck ----------
+B(52,.25,38,0,9.62,-13,mat.grass,false);
+for(let x=-20;x<=20;x+=10)B(2.5,.22,30,x,9.82,-13,mat.concrete2,false);
+for(let z=-27;z<=1;z+=7)B(48,.18,1.8,0,9.86,z,mat.concrete2,false);
+for(let x=-20;x<=20;x+=8){
+ for(let z=-26;z<=0;z+=8)C(.65,1.0,x,10.45,z,mat.ceramic,20);
 }
 
-// ---------- monumental entrance portal ----------
-box(28,8,.7,0,4.3,4.9,M.black);
-box(19,8,.45,0,4.25,4.45,M.glassDark);
-for(let x=-9;x<=9;x+=4.5)box(.55,8,.9,x,4.3,4.25,M.gold);
-box(19,.5,1,0,8.3,4.1,M.gold);
+// roof garden parapet
+B(54,1.0,1,0,10.25,5.2,mat.black);
+B(54,1.0,1,0,10.25,-31.2,mat.black);
+B(1,1,38,-26.5,10.25,-13,mat.black);
+B(1,1,38,26.5,10.25,-13,mat.black);
 
-// inscription
-function labelTexture(top,bottom){
- const c=document.createElement("canvas");c.width=1000;c.height=300;
- const g=c.getContext("2d");g.clearRect(0,0,1000,300);
- g.textAlign="center";g.fillStyle="#e5d39e";g.font="700 76px serif";g.fillText(top,500,120);
- g.fillStyle="#aeb4bc";g.font="30px sans-serif";g.fillText(bottom,500,185);
+// ---------- central light well / atrium ----------
+B(17,.35,22,0,8.2,-13,mat.glass);
+B(10,7,.4,0,4.8,-2.2,mat.glass);
+B(10,7,.4,0,4.8,-23.8,mat.glassDark);
+for(let x=-4.5;x<=4.5;x+=3)B(.16,7,.22,x,4.8,-13,mat.gold);
+
+// monumental diagonal stair / found-space gesture
+const stairMat=mat.concrete2;
+for(let i=0;i<14;i++){
+ const w=1.2+i*.17;
+ B(w,.22,1.5,-7+i*.55,0.45+i*.26,-7-i*.95,stairMat,[0,.03,-.02]);
+}
+for(let i=0;i<14;i++){
+ B(1.2+i*.17,.22,1.5,7-i*.55,0.45+i*.26,-7-i*.95,stairMat,[0,-.03,.02]);
+}
+
+// triple-height exhibition volume
+B(21,.35,20,0,.28,-33,mat.black);
+for(const x of [-10.5,10.5])B(.65,12,20,x,6,-33,mat.concrete);
+for(let x=-8;x<=8;x+=4)B(.22,11,.5,x,6,-22.8,mat.gold);
+
+// gallery walls and suspended volumes
+B(18,5,.55,0,4,-43,mat.concrete2);
+for(let x=-12;x<=12;x+=6)B(4.8,3.8,.22,x,3.1,-41.8,mat.white);
+for(let x=-12;x<=12;x+=6)C(.08,4,x,5.25,-42.5,mat.gold,18);
+
+// ---------- history timeline facade / LED wall ---------- 
+const led=new THREE.MeshBasicMaterial({color:0x365b7a});
+B(21,12,.10,2,22.0,0.82,led,false);
+for(let i=0;i<9;i++)for(let j=0;j<18;j++){
+ const p=B(1.4,.34,.05,-6+i*2,15.2+j*.75,0.72,new THREE.MeshBasicMaterial({color:0x1b2630}),false);
+ p.userData.led=true;
+}
+
+// labels on entrance
+function tex(top,sub){
+ const c=document.createElement("canvas");c.width=900;c.height=260;const g=c.getContext("2d");
+ g.clearRect(0,0,900,260);g.textAlign="center";g.fillStyle="#ead8a7";g.font="700 68px serif";g.fillText(top,450,105);
+ g.fillStyle="#c2c6cb";g.font="28px sans-serif";g.fillText(sub,450,165);
  return new THREE.CanvasTexture(c);
 }
-const sign=mesh(new THREE.PlaneGeometry(14,4.2),new THREE.MeshBasicMaterial({map:labelTexture("黃名歷史博物館","WONGMING MUSEUM OF HISTORY"),transparent:true}),[0,5.3,4.05]);
-sign.renderOrder=5;
+add(new THREE.PlaneGeometry(11,3.2),new THREE.MeshBasicMaterial({map:tex("黃名歷史博物館","WONGMING MUSEUM OF HISTORY"),transparent:true}),[0,4.9,2.05]);
 
-// ---------- interior galleries ----------
-function displayCase(x,z,title,accent=M.gold){
- box(3.3,1.0,2.0,x,.55,z,M.black);
- box(2.8,1.0,.35,x,1.0,z-.55,M.glassDark);
- const p=box(.75,1.2,.75,x,1.0,z,M.paper);
- p.userData={title};
- cyl(.07,1.8,x,2.1,z,M.gold,20);
- return p;
+// ---------- plaza objects and paths ----------
+for(let x=-30;x<=30;x+=10){
+ C(.09,4.2,x,2.1,14,mat.gold,18);
+ C(.38,.08,x,4.12,14,mat.light,32);
 }
-const items=[
- [-7,-18,"早期檔案"],[-3,-18,"帝國印記"],[1,-18,"慶寧文書"],[5,-18,"宮廷樂章"],
- [-7,-30,"城市發展"],[-2,-30,"外交典藏"],[3,-30,"數位時代"],[8,-30,"當代藝術"]
-];
-items.forEach((a)=>displayCase(...a));
-
-function frame(x,y,z,w,h,title){
- box(w,h,.18,x,y,z,M.black);
- box(w-.2,h-.2,.05,x,y,z-.11,M.paper,false);
- const tex=labelTexture(title,"WONGMING ARCHIVE");
- const m=mesh(new THREE.PlaneGeometry(w-.45,h-.55),new THREE.MeshBasicMaterial({map:tex,transparent:true}),[x,y,z-.12]);
- m.rotation.y=Math.PI;
-}
-frame(-10,4,-13,4.4,2.8,"帝國沿革");
-frame(10,4,-13,4.4,2.8,"文化藝術");
-frame(0,5.1,-34,9.6,3.7,"黃名數位典藏");
-
-// timeline wall
-const years=[["1995","建立"],["2013","仁宗即位"],["2025","第32屆內閣"],["2026","數位博物館"]];
-for(let i=0;i<years.length;i++){
- const x=-12+i*8;
- box(5.7,2.7,.22,x,3.1,-39,M.black);
- const t=labelTexture(years[i][0],years[i][1]);
- mesh(new THREE.PlaneGeometry(5.15,2.1),new THREE.MeshBasicMaterial({map:t,transparent:true}),[x,3.15,-39.14]);
+for(const x of [-24,-12,0,12,24]){
+ C(1.1,.4,x,.25,25,mat.black,32);
+ C(.07,2.0,x,.95,25,mat.gold,18);
 }
 
-// ---------- sculpture court ----------
-for(let i=0;i<8;i++){
- const x=-14+i*4;
- const base=cyl(.8,.3,x,.18,-47,M.black,32);
- const s=new THREE.Mesh(new THREE.OctahedronGeometry(.95+(.15*i),1),M[i%2?M.gold:M.stoneLight]);
- s.position.set(x,1.25,-47);s.scale.y=1.8;s.castShadow=true;scene.add(s);
-}
-for(let i=-14;i<=14;i+=4)line(i,0.03,-50,i,0.03,-44,M.metal);
-
-// ---------- roof lanterns ----------
-for(let i=-8;i<=8;i+=4){
- const lantern=box(2.6,.5,5.4,i,12.5,-19,M.glassDark,0,0,i*.008);
- box(2.1,.15,4.8,i,12.78,-19,M.warm,0,0,i*.006);
-}
-
-// ---------- urban furniture ----------
-for(let x=-18;x<=18;x+=6){
- box(3.8,.28,1.0,x,.42,28,M.black);
- box(.18,1.2,.18,x-1.55,.98,28,M.gold);
- box(.18,1.2,.18,x+1.55,.98,28,M.gold);
-}
-
-// ---------- clickable info zones ----------
-const info=document.getElementById("info");
+// ---------- hotspots ----------
 const hotspots=[
- {p:new THREE.Vector3(0,2,-14),title:"中央展廳",text:"全館的公共心臟，以天井、玻璃與光井把自然光導入室內。"},
- {p:new THREE.Vector3(-7,2,-18),title:"帝國沿革展",text:"以時間軸、檔案與象徵物件呈現黃名帝國的歷史節點。"},
- {p:new THREE.Vector3(7,2,-18),title:"文化藝術展",text:"宮廷音樂、典禮、設計與當代藝術以開放式展廳相連。"},
- {p:new THREE.Vector3(0,2,-39),title:"數位典藏",text:"將網站、聲音、影像與 WebXR 本身視為新世代的博物館藏品。"}
+ {p:new THREE.Vector3(0,3,-1),title:"主入口與中央大堂",text:"黃名版本採用現實博物館常見的多孔入口：從公共廣場直接進入大堂，再通往主要展廳。"},
+ {p:new THREE.Vector3(0,7,-13),title:"中央採光井",text:"整座建築的核心空間，以垂直採光與多層視線把不同樓層連在一起。"},
+ {p:new THREE.Vector3(-15,3,-19),title:"帝國歷史展區",text:"把黃名歷史典藏配置在大型懸臂基座內，形成連續展廳。"},
+ {p:new THREE.Vector3(15,3,-19),title:"文化與藝術展區",text:"宮廷音樂、典禮、設計與當代藝術在同一個開放展覽系統中展出。"},
+ {p:new THREE.Vector3(0,11,-12),title:"公共屋頂花園",text:"屋頂保留為公共空間，讓博物館不只是一棟室內建築，而是可步行的城市平台。"}
 ];
-const markerMat=new THREE.MeshBasicMaterial({color:0xd8bb6f,transparent:true,opacity:.6});
-hotspots.forEach(h=>{const m=new THREE.Mesh(new THREE.RingGeometry(.8,.9,32),markerMat);m.rotation.x=-Math.PI/2;m.position.set(h.p.x,.08,h.p.z);m.userData=h;scene.add(m)});
+const ringMat=new THREE.MeshBasicMaterial({color:0xd1af63});
+hotspots.forEach(h=>{const r=new THREE.Mesh(new THREE.RingGeometry(.72,.82,36),ringMat);r.rotation.x=-Math.PI/2;r.position.set(h.p.x,.09,h.p.z);r.userData=h;scene.add(r)});
 
-let yaw=0,pitch=0,drag=false,lastX=0,lastY=0;
-const keys={};
-addEventListener("keydown",e=>{keys[e.code]=true});
-addEventListener("keyup",e=>{keys[e.code]=false});
+// navigation
+let yaw=0,pitch=0,drag=false,lastX=0,lastY=0;const keys={};
+addEventListener("keydown",e=>keys[e.code]=true);addEventListener("keyup",e=>keys[e.code]=false);
 addEventListener("mousedown",e=>{drag=true;lastX=e.clientX;lastY=e.clientY});
 addEventListener("mouseup",()=>drag=false);
-addEventListener("mousemove",e=>{
- if(!drag||renderer.xr.isPresenting)return;
- yaw-=(e.clientX-lastX)*.003;
- pitch-=(e.clientY-lastY)*.002;
- pitch=Math.max(-1.15,Math.min(1.15,pitch));
- lastX=e.clientX;lastY=e.clientY;
-});
-addEventListener("click",e=>{
+addEventListener("mousemove",e=>{if(!drag||renderer.xr.isPresenting)return;yaw-=(e.clientX-lastX)*.003;pitch-=(e.clientY-lastY)*.002;pitch=Math.max(-1.15,Math.min(1.15,pitch));lastX=e.clientX;lastY=e.clientY});
+addEventListener("click",()=>{
  if(renderer.xr.isPresenting)return;
- const fwd=new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
- let best=null,dist=999;
- for(const h of hotspots){const d=camera.position.distanceTo(h.p);if(d<8){const to=h.p.clone().sub(camera.position).normalize();if(to.dot(fwd)>.55&&d<dist){best=h;dist=d}}}
- if(best){info.innerHTML="<strong>"+best.title+"</strong><br>"+best.text;info.style.display="block";clearTimeout(window.__hideInfo);window.__hideInfo=setTimeout(()=>info.style.display="none",5200);}
+ const f=new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);let best=null,bd=99;
+ for(const h of hotspots){const d=camera.position.distanceTo(h.p);if(d<8){const t=h.p.clone().sub(camera.position).normalize();if(t.dot(f)>.5&&d<bd){best=h;bd=d}}}
+ if(best){const el=document.getElementById("info");el.innerHTML="<strong>"+best.title+"</strong><br>"+best.text;el.style.display="block";clearTimeout(window.__inf);window.__inf=setTimeout(()=>el.style.display="none",5000);}
 });
 
-// VR button
+// immersive
 document.getElementById("enter").onclick=()=>{
- if(!renderer.xr.isPresenting){
-   const b=VRButton.createButton(renderer);
-   b.style.position="fixed";b.style.left="50%";b.style.bottom="55px";b.style.transform="translateX(-50%)";
-   b.style.zIndex="50";
-   document.body.appendChild(b);
-   b.click();
- }
+ if(renderer.xr.isPresenting)return;
+ const b=VRButton.createButton(renderer);
+ b.style.position="fixed";b.style.bottom="48px";b.style.left="50%";b.style.transform="translateX(-50%)";b.style.zIndex="50";
+ document.body.appendChild(b);b.click();
 };
 
 const clock=new THREE.Clock();
 function animate(){
  const dt=Math.min(clock.getDelta(),.045);
  if(!renderer.xr.isPresenting){
-   const forward=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw));
-   const right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
-   const sp=(keys.ShiftLeft?6.5:3.2)*dt;
-   if(keys.KeyW)camera.position.addScaledVector(forward,-sp);
-   if(keys.KeyS)camera.position.addScaledVector(forward,sp);
-   if(keys.KeyA)camera.position.addScaledVector(right,-sp);
-   if(keys.KeyD)camera.position.addScaledVector(right,sp);
-   camera.position.y=1.65;
-   camera.position.x=Math.max(-30,Math.min(30,camera.position.x));
-   camera.position.z=Math.max(-54,Math.min(34,camera.position.z));
+   const f=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw)),r=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
+   const sp=(keys.ShiftLeft?6.4:3.1)*dt;
+   if(keys.KeyW)camera.position.addScaledVector(f,-sp);if(keys.KeyS)camera.position.addScaledVector(f,sp);
+   if(keys.KeyA)camera.position.addScaledVector(r,-sp);if(keys.KeyD)camera.position.addScaledVector(r,sp);
+   camera.position.y=1.7;camera.position.x=Math.max(-37,Math.min(37,camera.position.x));camera.position.z=Math.max(-74,Math.min(41,camera.position.z));
    camera.rotation.set(pitch,yaw,0,"YXZ");
  }
- // subtle living light
  const t=performance.now()*.001;
- warm.intensity=1.05+.13*Math.sin(t*.7);
+ scene.traverse(o=>{if(o.userData&&o.userData.led&&o.material&&o.material.color){const n=o.position.x*7+o.position.y*3;const v=.12+.18*(.5+.5*Math.sin(t*1.25+n));o.material.color.setHSL(.56,.28,.08+v)}});
  renderer.render(scene,camera);
 }
 renderer.setAnimationLoop(animate);
-
-addEventListener("resize",()=>{
- camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);
-});
+addEventListener("resize",()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script>
-</body>
-</html>
+</body></html>
