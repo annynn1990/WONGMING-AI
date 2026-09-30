@@ -127,17 +127,15 @@ function add(g,m,p=[0,0,0],r=[0,0,0],cast=true){
 function B(w,h,d,x,y,z,m=mat.concrete,r=[0,0,0]){const cast=r===false?false:true;const rot=r===false?[0,0,0]:r;return add(new THREE.BoxGeometry(w,h,d),m,[x,y,z],rot,cast)}
 function C(r,h,x,y,z,m=mat.concrete,seg=28){return add(new THREE.CylinderGeometry(r,r,h,seg),m,[x,y,z])}
 
-// ---------- intelligent entrance ----------
+// ---------- monumental automatic entrance ----------
 const entranceDoors=[];
 const entranceLights=[];
 function makeSlidingDoor(x0){
-  const door=add(new THREE.BoxGeometry(3.55,6.75,.12),mat.glass,[x0,3.69,2.18]);
+  const door=add(new THREE.BoxGeometry(3.55,6.75,.12),mat.glass,[x0,3.69,10.72]);
   door.userData.closedX=x0;
   door.userData.side=x0<0?-1:1;
   entranceDoors.push(door);
 }
-
-
 B(110,.4,130,0,-.2,-22,mat.ground);
 
 // public lawn / promenade
@@ -197,47 +195,61 @@ for(const x of [-24,-18,-12,-6,0,6,12,18,24]){
 }
 for(const x of [-21,-14,-7,0,7,14,21])C(.3,5.8,x,2.9,-23.8,mat.ceramic,24);
 
-// grand entrance vestibule + sensor-operated automatic glass doors
-// Monumental 8 m-class portal, proportioned to the museum's large podium.
-B(21,8.3,.65,0,4.35,3.35,mat.glassDark);
-B(24,.70,7.4,0,8.55,3.45,mat.black);
-B(21,.20,7.0,0,8.18,3.45,mat.gold);
+// ---------- MAIN ENTRANCE / MONUMENTAL PORTAL ----------
+// Long approach axis from the public plaza.
+B(14,.08,31,0,.13,24,mat.black,false);
+for(const x of [-5.4,5.4])B(.18,.08,27,x,.22,23,mat.gold,false);
+for(let z=23;z>12;z-=2.2)B(12,.08,.95,0,.21,z,mat.concrete2,false);
 
-// Deep glazed vestibule / air-lock.
-B(20,7.6,.22,0,3.95,1.35,mat.glass);
-B(20,7.6,.22,0,3.95,4.45,mat.glass);
+// Broad arrival steps.
+for(let i=0;i<5;i++)B(17-i*.7,.32,1.05,0,.16+i*.32,15.7-i*1.0,mat.concrete2);
 
-// Tall architectural piers.
-for(const x of [-10.5,10.5])B(.88,8.25,1.08,x,4.28,3.1,mat.concrete2);
+// Monumental projecting portal canopy, deliberately much taller and deeper.
+B(23,.72,7.8,0,8.45,13.85,mat.black);
+B(19,.18,7.1,0,8.08,10.95,mat.gold);
+B(21,8.15,.70,0,4.25,11.18,mat.glassDark);
 
-// Automatic sliding glass doors, 6.65 m tall.
+// Deep glass vestibule: exterior plane + inner plane.
+B(20,7.5,.20,0,3.85,14.15,mat.glass);
+B(20,7.5,.20,0,3.85,7.15,mat.glass);
+
+// Tall stone portal piers.
+for(const x of [-10.5,10.5])B(.95,8.4,1.15,x,4.30,11.1,mat.concrete2);
+
+// Six-and-three-quarter metre automatic glass doors at the true front entrance.
 makeSlidingDoor(-1.78);
 makeSlidingDoor(1.78);
 
-// Slim mullions and automatic-door header.
-for(const x of [-7,-1.78,0,1.78,7])B(.11,6.75,.16,x,3.69,2.18,mat.gold);
-B(14.2,.15,.20,0,7.15,2.18,mat.gold);
-
-// Infrared/radar presence sensor.
-const sensorBar=B(13.6,.11,.12,0,7.28,2.05,mat.light,false);
+// Door mullions, header and sensor.
+for(const x of [-7,-1.78,0,1.78,7])B(.11,6.75,.16,x,3.69,10.70,mat.gold);
+B(14.2,.16,.20,0,7.12,10.70,mat.gold);
+const sensorBar=B(13.8,.11,.12,0,7.28,10.58,mat.light,false);
 sensorBar.userData.entranceSensor=true;
 entranceLights.push(sensorBar);
 
-// Threshold and illuminated ceiling strips.
-B(15.2,.07,3.25,0,.06,2.20,mat.black,false);
-for(const x of [-6,-2,2,6]){
-  entranceLights.push(B(1.35,.07,2.2,x,7.40,2.25,mat.light,false));
-}
-const sensorIndicator=B(.20,.20,.08,0,7.12,2.04,mat.light,false);
+// Ceiling light strips and entrance status indicator.
+for(const x of [-6,-2,2,6])entranceLights.push(B(1.35,.07,3.0,x,7.38,11.55,mat.light,false));
+const sensorIndicator=B(.20,.20,.08,0,7.12,10.56,mat.light,false);
 entranceLights.push(sensorIndicator);
 
-// hanging pendant lights under overhang
-for(let x=-18;x<=18;x+=6)for(let z=-1;z<=8;z+=4.5){
- C(.05,1.4,x,5.9,z,mat.gold,16);
- C(.45,.16,x,5.18,z,mat.light,32);
+// Large readable entrance title facing the plaza.
+function entranceTexture(){
+  const c=document.createElement("canvas");c.width=1400;c.height=320;
+  const g=c.getContext("2d");g.clearRect(0,0,c.width,c.height);g.textAlign="center";
+  g.fillStyle="#ead8a7";g.font="700 92px serif";g.fillText("帝國歷史博物館",700,125);
+  g.fillStyle="#d0d4d8";g.font="34px sans-serif";g.letterSpacing="8px";g.fillText("WONGMING MUSEUM OF HISTORY",700,205);
+  return new THREE.CanvasTexture(c);
+}
+add(new THREE.PlaneGeometry(15.5,3.55),new THREE.MeshBasicMaterial({map:entranceTexture(),transparent:true}),[0,6.35,10.38]);
+
+// Roofline spotlights over the entrance.
+for(const x of [-8,-4,0,4,8]) {
+  const spot=new THREE.SpotLight(0xffd98b,9,24,.48,.42,1.5);
+  spot.position.set(x,8.0,15.2);spot.target.position.set(x,0,11);
+  scene.add(spot);scene.add(spot.target);
 }
 
-// ---------- roof garden / public roof deck ----------
+//// ---------- roof garden / public roof deck ----------
 B(52,.25,38,0,9.62,-13,mat.grass,false);
 for(let x=-20;x<=20;x+=10)B(2.5,.22,30,x,9.82,-13,mat.concrete2,false);
 for(let z=-27;z<=1;z+=7)B(48,.18,1.8,0,9.86,z,mat.concrete2,false);
@@ -251,31 +263,78 @@ B(54,1.0,1,0,10.25,-31.2,mat.black);
 B(1,1,38,-26.5,10.25,-13,mat.black);
 B(1,1,38,26.5,10.25,-13,mat.black);
 
-// ---------- central light well / atrium ----------
+// ---------- CENTRAL ATRIUM + FORUM-DRIVEN EXHIBITION HALLS ----------
 B(17,.35,22,0,8.2,-13,mat.glass);
-B(10,7,.4,0,4.8,-2.2,mat.glass);
-B(10,7,.4,0,4.8,-23.8,mat.glassDark);
-for(let x=-4.5;x<=4.5;x+=3)B(.16,7,.22,x,4.8,-13,mat.gold);
+B(14,7,.45,0,4.7,-2.2,mat.glass);
+B(14,7,.45,0,4.7,-23.8,mat.glassDark);
+for(let x=-6;x<=6;x+=3)B(.16,7,.22,x,4.7,-13,mat.gold);
 
-// monumental diagonal stair / found-space gesture
+// Grand stair aligned with the central axis.
 const stairMat=mat.concrete2;
-for(let i=0;i<14;i++){
- const w=1.2+i*.17;
- B(w,.22,1.5,-7+i*.55,0.45+i*.26,-7-i*.95,stairMat,[0,.03,-.02]);
-}
-for(let i=0;i<14;i++){
- B(1.2+i*.17,.22,1.5,7-i*.55,0.45+i*.26,-7-i*.95,stairMat,[0,-.03,.02]);
+for(let i=0;i<16;i++){
+  const w=1.5+i*.22;
+  B(w,.22,1.5,-8+i*.52,.45+i*.27,-5.8-i*.88,stairMat,[0,.03,-.02]);
+  B(w,.22,1.5,8-i*.52,.45+i*.27,-5.8-i*.88,stairMat,[0,-.03,.02]);
 }
 
-// triple-height exhibition volume
-B(21,.35,20,0,.28,-33,mat.black);
-for(const x of [-10.5,10.5])B(.65,12,20,x,6,-33,mat.concrete);
-for(let x=-8;x<=8;x+=4)B(.22,11,.5,x,6,-22.8,mat.gold);
+// Museum circulation spine.
+B(5,.06,46,0,.10,-13,mat.black,false);
+for(let z=8;z>=-34;z-=6)B(4.8,.04,1.1,0,.14,z,mat.gold,false);
 
-// gallery walls and suspended volumes
-B(18,5,.55,0,4,-43,mat.concrete2);
-for(let x=-12;x<=12;x+=6)B(4.8,3.8,.22,x,3.1,-41.8,mat.white);
-for(let x=-12;x<=12;x+=6)C(.08,4,x,5.25,-42.5,mat.gold,18);
+const galleryData=[
+ {title:"帝國紀念廳",sub:"紀念本國功勛人士",kind:"MEMORIAL"},
+ {title:"黃名歷史廳",sub:"黃名帝國歷史展覽",kind:"WONGMING HISTORY"},
+ {title:"微國歷史廳",sub:"微國歷史展覽",kind:"MICRONATION HISTORY"},
+ {title:"黃名專題廳",sub:"黃名帝國專題歷史介紹",kind:"SPECIAL COLLECTION"},
+ {title:"黃名文物廳",sub:"黃名帝國文物展覽",kind:"ARTIFACTS"},
+ {title:"微國專題廳",sub:"微國專題歷史介紹",kind:"MICRONATION TOPICS"},
+ {title:"微國文物廳",sub:"微國文物展覽",kind:"MICRONATION ARTIFACTS"},
+ {title:"歷史回顧廳",sub:"討論黃名或微國歷史故事",kind:"HISTORICAL REVIEW"},
+ {title:"文化景區中心",sub:"全國歷史建築與景區導覽中心",kind:"CULTURAL SITES"},
+ {title:"歷史文物局辦公室",sub:"本國歷史研究及文物事務部門",kind:"HERITAGE OFFICE"}
+];
+
+function galleryTexture(g){
+  const c=document.createElement("canvas");c.width=1000;c.height=230;
+  const q=c.getContext("2d");q.clearRect(0,0,1000,230);q.textAlign="center";
+  q.fillStyle="#ead8a7";q.font="700 52px serif";q.fillText(g.title,500,88);
+  q.fillStyle="#aeb5bc";q.font="22px sans-serif";q.fillText(g.kind,500,130);
+  q.fillStyle="#d0d2d4";q.font="22px sans-serif";q.fillText(g.sub,500,173);
+  return new THREE.CanvasTexture(c);
+}
+
+function makeGallery(g,x,z,side){
+  const w=10.8,d=6.2,h=5.8;
+  // Floor and walls create an unmistakable room instead of loose props.
+  B(w,.12,d,x,.18,z,mat.ceramic,false);
+  B(w,.35,.22,x,h/2+.2,z-d/2,mat.dark);
+  B(.22,h,d,x-w/2,h/2+.2,z,mat.dark);
+  B(.22,h,d,x+w/2,h/2+.2,z,mat.dark);
+  B(w,.22,.22,x,h+.08,z-d/2,mat.black,false);
+
+  // Open side portal toward the central spine.
+  const doorX=side<0?x+w/2+.12:x-w/2-.12;
+  B(2.8,5.2,.28,doorX,2.8,z,mat.gold,false);
+
+  // Entrance plaque and two display cases.
+  add(new THREE.PlaneGeometry(7.8,1.8),new THREE.MeshBasicMaterial({map:galleryTexture(g),transparent:true}),[x,4.35,z+d/2+.125]);
+  for(const px of [x-2.2,x+2.2]){
+    B(2.1,1.1,1.35,px,.78,z,mat.glass,false);
+    B(1.4,.08,.8,px,1.36,z,mat.gold,false);
+  }
+  // Back-wall artwork panels.
+  for(const px of [x-3.6,x,x+3.6]){
+    B(2.35,2.15,.10,px,2.65,z-d/2-.08,mat.white,false);
+    B(1.9,.05,.04,px,3.72,z-d/2-.14,mat.gold,false);
+  }
+}
+
+// Five halls per side, arranged as a formal museum promenade.
+const zRows=[-2,-9,-16,-23,-30];
+for(let i=0;i<5;i++){
+  makeGallery(galleryData[i],-18,zRows[i],-1);
+  makeGallery(galleryData[i+5],18,zRows[i],1);
+}
 
 // ---------- history timeline facade / LED wall ---------- 
 const led=new THREE.MeshBasicMaterial({color:0x365b7a});
@@ -285,15 +344,13 @@ for(let i=0;i<9;i++)for(let j=0;j<18;j++){
  p.userData.led=true;
 }
 
-// labels on entrance
+// ---------- exterior wayfinding ----------
 function tex(top,sub){
  const c=document.createElement("canvas");c.width=900;c.height=260;const g=c.getContext("2d");
  g.clearRect(0,0,900,260);g.textAlign="center";g.fillStyle="#ead8a7";g.font="700 68px serif";g.fillText(top,450,105);
  g.fillStyle="#c2c6cb";g.font="28px sans-serif";g.fillText(sub,450,165);
  return new THREE.CanvasTexture(c);
 }
-add(new THREE.PlaneGeometry(11,3.2),new THREE.MeshBasicMaterial({map:tex("黃名歷史博物館","WONGMING MUSEUM OF HISTORY"),transparent:true}),[0,6.25,2.05]);
-
 // ---------- plaza objects and paths ----------
 for(let x=-30;x<=30;x+=10){
  C(.09,4.2,x,2.1,14,mat.gold,18);
@@ -304,33 +361,34 @@ for(const x of [-24,-12,0,12,24]){
  C(.07,2.0,x,.95,25,mat.gold,18);
 }
 
-// ---------- hotspots ----------
+// ---------- exhibition hotspots ----------
 const hotspots=[
- {p:new THREE.Vector3(0,3,-1),title:"主入口與中央大堂",text:"黃名版本採用現實博物館常見的多孔入口：從公共廣場直接進入大堂，再通往主要展廳。"},
- {p:new THREE.Vector3(0,7,-13),title:"中央採光井",text:"整座建築的核心空間，以垂直採光與多層視線把不同樓層連在一起。"},
- {p:new THREE.Vector3(-15,3,-19),title:"帝國歷史展區",text:"把黃名歷史典藏配置在大型懸臂基座內，形成連續展廳。"},
- {p:new THREE.Vector3(15,3,-19),title:"文化與藝術展區",text:"宮廷音樂、典禮、設計與當代藝術在同一個開放展覽系統中展出。"},
- {p:new THREE.Vector3(0,11,-12),title:"公共屋頂花園",text:"屋頂保留為公共空間，讓博物館不只是一棟室內建築，而是可步行的城市平台。"}
+ {p:new THREE.Vector3(-18,1.2,-2),title:"帝國紀念廳",text:"紀念本國功勛人士。"},
+ {p:new THREE.Vector3(-18,1.2,-9),title:"黃名歷史廳",text:"黃名帝國歷史展覽。"},
+ {p:new THREE.Vector3(-18,1.2,-16),title:"微國歷史廳",text:"微國歷史展覽。"},
+ {p:new THREE.Vector3(-18,1.2,-23),title:"黃名專題廳",text:"黃名帝國專題歷史介紹。"},
+ {p:new THREE.Vector3(-18,1.2,-30),title:"黃名文物廳",text:"黃名帝國文物展覽。"},
+ {p:new THREE.Vector3(18,1.2,-2),title:"微國專題廳",text:"微國專題歷史介紹。"},
+ {p:new THREE.Vector3(18,1.2,-9),title:"微國文物廳",text:"微國文物展覽。"},
+ {p:new THREE.Vector3(18,1.2,-16),title:"歷史回顧廳",text:"討論黃名或微國歷史故事。"},
+ {p:new THREE.Vector3(18,1.2,-23),title:"文化景區中心",text:"全國歷史建築與景區導覽中心。"},
+ {p:new THREE.Vector3(18,1.2,-30),title:"歷史文物局辦公室",text:"本國歷史研究及文物事務部門。"},
+ {p:new THREE.Vector3(0,1.4,10.2),title:"中央入口大堂",text:"從主入口進入中央大堂後，左右兩側分流至十個主題展廳。"}
 ];
 const ringMat=new THREE.MeshBasicMaterial({color:0xd1af63});
 hotspots.forEach(h=>{const r=new THREE.Mesh(new THREE.RingGeometry(.72,.82,36),ringMat);r.rotation.x=-Math.PI/2;r.position.set(h.p.x,.09,h.p.z);r.userData=h;scene.add(r)});
 
 // Automatic sensor door controller.
 function updateEntrance(dt){
-  const distanceZ=Math.abs(camera.position.z-2.1);
-  const distanceX=Math.abs(camera.position.x);
-  const detected=distanceZ<8.2 && distanceX<9.0;
-
+  const dz=Math.abs(camera.position.z-10.8);
+  const dx=Math.abs(camera.position.x);
+  const detected=dz<9.5 && dx<9.2;
   for(const d of entranceDoors){
     const target=d.userData.closedX + (detected ? d.userData.side*3.75 : 0);
-    const diff=target-d.position.x;
-    d.position.x += THREE.MathUtils.clamp(diff,-3.2*dt,3.2*dt);
+    d.position.x += THREE.MathUtils.clamp(target-d.position.x,-3.6*dt,3.6*dt);
   }
-
-  const pulse=detected ? 0.78+0.18*Math.sin(performance.now()*0.009) : 0.32;
-  for(const l of entranceLights){
-    if(l.material?.color) l.material.color.setScalar(pulse);
-  }
+  const pulse=detected ? .78+.18*Math.sin(performance.now()*.009) : .32;
+  for(const l of entranceLights)if(l.material?.color)l.material.color.setScalar(pulse);
 }
 
 // Collision boundaries: solve X/Z separately so the camera cannot tunnel through walls.
@@ -340,8 +398,8 @@ const colliders=[
  {minX:28.7,maxX:29.6,minZ:-37,maxZ:11.0},
  {minX:-29,maxX:29,minZ:-37.6,maxZ:-36.7},
  // front facade: leave a 14 m-wide central portal for the automatic doors
- {minX:-29,maxX:-7.3,minZ:10.35,maxZ:11.15},
- {minX:7.3,maxX:29,minZ:10.35,maxZ:11.15},
+ {minX:-29,maxX:-7.5,minZ:10.35,maxZ:11.15},
+ {minX:7.5,maxX:29,minZ:10.35,maxZ:11.15},
  // inner side/rear boundaries of the main gallery shell
  {minX:-28.8,maxX:-28.0,minZ:-35.8,maxZ:9.9},
  {minX:28.0,maxX:28.8,minZ:-35.8,maxZ:9.9}
@@ -351,7 +409,7 @@ function blockedAt(x,z){
   for(const r of colliders) if(insideRect(x,z,r)) return true;
   // Door leaves themselves are solid while closing; open leaves move to the side.
   for(const d of entranceDoors){
-    if(Math.abs(d.position.x-x)<1.82 && Math.abs(2.18-z)<.20) return true;
+    if(Math.abs(d.position.x-x)<1.82 && Math.abs(10.72-z)<.20) return true;
   }
   return false;
 }
