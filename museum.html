@@ -74,7 +74,8 @@ new HDRLoader()
     console.warn("HDR sky failed; using procedural fallback.",err);
   });
 
-// HDR sky/environment is loaded above; materials below are lit by both image-based light and a directional sun.\nconst mat={
+// HDR sky/environment is loaded above; materials below are lit by both image-based light and a directional sun.
+const mat={
 ground:new THREE.MeshStandardMaterial({color:0x34353a,roughness:.8}),
 grass:new THREE.MeshStandardMaterial({color:0x33412f,roughness:.98}),
 concrete:new THREE.MeshStandardMaterial({color:0x55565a,roughness:.86}),
