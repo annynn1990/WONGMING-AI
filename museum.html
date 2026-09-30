@@ -128,7 +128,7 @@ function C(r,h,x,y,z,m=mat.concrete,seg=28){return add(new THREE.CylinderGeometr
 const entranceDoors=[];
 const entranceLights=[];
 function makeSlidingDoor(x0){
-  const door=add(new THREE.BoxGeometry(3.55,6.65,.12),mat.glass,[x0,3.64,2.18]);
+  const door=add(new THREE.BoxGeometry(3.55,6.75,.12),mat.glass,[x0,3.69,2.18]);
   door.userData.closedX=x0;
   door.userData.side=x0<0?-1:1;
   entranceDoors.push(door);
@@ -195,38 +195,37 @@ for(const x of [-24,-18,-12,-6,0,6,12,18,24]){
 for(const x of [-21,-14,-7,0,7,14,21])C(.3,5.8,x,2.9,-23.8,mat.ceramic,24);
 
 // grand entrance vestibule + sensor-operated automatic glass doors
-B(21,6.6,.55,0,4.0,3.25,mat.glassDark);
-B(24,.58,7.4,0,6.9,3.45,mat.black);
-B(21,.18,7.0,0,6.56,3.45,mat.gold);
+// Monumental 8 m-class portal, proportioned to the museum's large podium.
+B(21,8.3,.65,0,4.35,3.35,mat.glassDark);
+B(24,.70,7.4,0,8.55,3.45,mat.black);
+B(21,.20,7.0,0,8.18,3.45,mat.gold);
 
-// Deep glazed vestibule gives the entrance a real architectural threshold.
-B(20,5.45,.22,0,3.05,1.35,mat.glass);
-B(20,5.45,.22,0,3.05,4.45,mat.glass);
+// Deep glazed vestibule / air-lock.
+B(20,7.6,.22,0,3.95,1.35,mat.glass);
+B(20,7.6,.22,0,3.95,4.45,mat.glass);
 
-// Slim entrance piers.
-for(const x of [-10.2,10.2])B(.72,6.1,1.0,x,3.3,3.1,mat.concrete2);
+// Tall architectural piers.
+for(const x of [-10.5,10.5])B(.88,8.25,1.08,x,4.28,3.1,mat.concrete2);
 
-// Automatic sliding glass door leaves.
-makeSlidingDoor(-3.35);
-makeSlidingDoor(3.35);
+// Automatic sliding glass doors, 6.65 m tall.
+makeSlidingDoor(-1.78);
+makeSlidingDoor(1.78);
 
-// Door mullions and motor/header housing.
-for(const x of [-7,-3.35,0,3.35,7])B(.10,4.95,.15,x,2.95,2.18,mat.gold);
-B(14.2,.13,.16,0,5.49,2.18,mat.gold);
+// Slim mullions and automatic-door header.
+for(const x of [-7,-1.78,0,1.78,7])B(.11,6.75,.16,x,3.69,2.18,mat.gold);
+B(14.2,.15,.20,0,7.15,2.18,mat.gold);
 
-// Infrared/radar sensor bar above the doors.
-const sensorBar=B(13.6,.10,.12,0,5.60,2.05,mat.light,false);
+// Infrared/radar presence sensor.
+const sensorBar=B(13.6,.11,.12,0,7.28,2.05,mat.light,false);
 sensorBar.userData.entranceSensor=true;
 entranceLights.push(sensorBar);
 
-// Threshold and interior welcome light.
+// Threshold and illuminated ceiling strips.
 B(15.2,.07,3.25,0,.06,2.20,mat.black,false);
 for(const x of [-6,-2,2,6]){
-  entranceLights.push(B(1.35,.07,2.2,x,7.30,2.25,mat.light,false));
+  entranceLights.push(B(1.35,.07,2.2,x,7.40,2.25,mat.light,false));
 }
-
-// Small status indicator: amber = standby, bright = detecting/opening.
-const sensorIndicator=B(.20,.20,.08,0,7.04,2.04,mat.light,false);
+const sensorIndicator=B(.20,.20,.08,0,7.12,2.04,mat.light,false);
 entranceLights.push(sensorIndicator);
 
 // hanging pendant lights under overhang
@@ -333,35 +332,59 @@ function updateEntrance(dt){
 
 // Collision boundaries: solve X/Z separately so the camera cannot tunnel through walls.
 const colliders=[
- {minX:-29.6,maxX:-28.7,minZ:-37,maxZ:11.2},
- {minX:28.7,maxX:29.6,minZ:-37,maxZ:11.2},
- {minX:-29,maxX:29,minZ:-37.5,maxZ:-36.6},
- {minX:-29,maxX:-7.4,minZ:4.15,maxZ:4.85},
- {minX:7.4,maxX:29,minZ:4.15,maxZ:4.85}
+ // outer side/rear shell of the podium
+ {minX:-29.6,maxX:-28.7,minZ:-37,maxZ:11.0},
+ {minX:28.7,maxX:29.6,minZ:-37,maxZ:11.0},
+ {minX:-29,maxX:29,minZ:-37.6,maxZ:-36.7},
+ // front facade: leave a 14 m-wide central portal for the automatic doors
+ {minX:-29,maxX:-7.3,minZ:10.35,maxZ:11.15},
+ {minX:7.3,maxX:29,minZ:10.35,maxZ:11.15},
+ // inner side/rear boundaries of the main gallery shell
+ {minX:-28.8,maxX:-28.0,minZ:-35.8,maxZ:9.9},
+ {minX:28.0,maxX:28.8,minZ:-35.8,maxZ:9.9}
 ];
 function insideRect(x,z,r){return x>r.minX&&x<r.maxX&&z>r.minZ&&z<r.maxZ;}
 function blockedAt(x,z){
- for(const r of colliders)if(insideRect(x,z,r))return true;
- for(const d of entranceDoors)if(Math.abs(d.position.x-x)<1.84&&Math.abs(2.18-z)<.20)return true;
- return false;
+  for(const r of colliders) if(insideRect(x,z,r)) return true;
+  // Door leaves themselves are solid while closing; open leaves move to the side.
+  for(const d of entranceDoors){
+    if(Math.abs(d.position.x-x)<1.82 && Math.abs(2.18-z)<.20) return true;
+  }
+  return false;
 }
 function moveWithCollision(dx,dz){
- const nx=camera.position.x+dx;if(!blockedAt(nx,camera.position.z))camera.position.x=nx;
- const nz=camera.position.z+dz;if(!blockedAt(camera.position.x,nz))camera.position.z=nz;
+  const nx=camera.position.x+dx;
+  if(!blockedAt(nx,camera.position.z)) camera.position.x=nx;
+  const nz=camera.position.z+dz;
+  if(!blockedAt(camera.position.x,nz)) camera.position.z=nz;
 }
 
 function applyTimeMode(mode){
- timeMode=mode;const night=mode==="night";
- if(night){
-  scene.background=nightSkyColor;scene.backgroundIntensity=.72;scene.environmentIntensity=.2;scene.fog.color.set(0x030711);
-  key.intensity=.26;fill.intensity=.08;rim.intensity=.16;stars.material.opacity=.92;
-  nightLights.forEach(l=>{l.intensity=l.color.r>.8?28:8;});
-  document.getElementById("timeBtn").textContent="切換至日景 · DAY";
- }else{
-  scene.background=daySky||new THREE.Color(0x80a0bf);scene.backgroundIntensity=.66;scene.environmentIntensity=.9;scene.fog.color.set(0x080a0d);
-  key.intensity=2.25;fill.intensity=.42;rim.intensity=.30;stars.material.opacity=0;nightLights.forEach(l=>l.intensity=0);
-  document.getElementById("timeBtn").textContent="切換至夜景 · NIGHT";
- }
+  timeMode=mode;
+  const night=mode==="night";
+  if(night){
+    scene.background=nightSkyColor;
+    scene.backgroundIntensity=.72;
+    scene.environmentIntensity=.20;
+    scene.fog.color.set(0x030711);
+    key.intensity=.26;
+    fill.intensity=.08;
+    rim.intensity=.16;
+    stars.material.opacity=.92;
+    nightLights.forEach(l=>{l.intensity=l.color.r>.8?28:8;});
+    document.getElementById("timeBtn").textContent="切換至日景 · DAY";
+  }else{
+    scene.background=daySky||new THREE.Color(0x80a0bf);
+    scene.backgroundIntensity=.66;
+    scene.environmentIntensity=.90;
+    scene.fog.color.set(0x080a0d);
+    key.intensity=2.25;
+    fill.intensity=.42;
+    rim.intensity=.30;
+    stars.material.opacity=0;
+    nightLights.forEach(l=>l.intensity=0);
+    document.getElementById("timeBtn").textContent="切換至夜景 · NIGHT";
+  }
 }
 document.getElementById("timeBtn").onclick=()=>applyTimeMode(timeMode==="day"?"night":"day");
 addEventListener("keydown",e=>{if(e.code==="KeyN")applyTimeMode(timeMode==="day"?"night":"day")});
@@ -436,6 +459,7 @@ function animate(){
  scene.traverse(o=>{if(o.userData&&o.userData.led&&o.material&&o.material.color){const n=o.position.x*7+o.position.y*3;const v=.12+.18*(.5+.5*Math.sin(t*1.25+n));o.material.color.setHSL(.56,.28,.08+v)}});
  renderer.render(scene,camera);
 }
+applyTimeMode("day");
 renderer.setAnimationLoop(animate);
 addEventListener("resize",()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script>
