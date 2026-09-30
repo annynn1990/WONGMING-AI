@@ -151,7 +151,14 @@ B(70,.12,27,0,.1,3,mat.concrete2);
 
 // ---------- M+ style upside-down T massing ----------
 // podium: broad horizontal base, raised and cantilevered
-B(58,3.8,48,0,4.6,-13,mat.dark);
+// Original M+ massing kept intact; only the podium is converted to a walkable shell.
+B(58,.42,48,0,2.72,-13,mat.dark,false);
+B(58,.42,48,0,6.38,-13,mat.dark,false);
+B(.75,3.25,48,-28.65,4.55,-13,mat.dark);
+B(.75,3.25,48,28.65,4.55,-13,mat.dark);
+B(58,3.25,.75,0,4.55,-36.65,mat.dark);
+B(9.0,3.25,.75,-24.5,4.55,10.62,mat.glassDark);
+B(9.0,3.25,.75,24.5,4.55,10.62,mat.glassDark);
 B(62,1.0,50,0,7.0,-13,mat.ceramic);
 B(66,.55,54,0,9.25,-13,mat.black);
 
@@ -189,7 +196,8 @@ for(let i=0;i<74;i++){const x=2-11.2+i*.305;im2.setMatrixAt(i,new THREE.Matrix4(
 im2.instanceMatrix.needsUpdate=true;scene.add(im2);
 
 // ---------- ground under cantilever / main hall ----------
-B(42,3.0,29,0,1.8,-10,mat.black);
+B(15.5,3.0,29,-13.25,1.8,-10,mat.black);
+B(15.5,3.0,29,13.25,1.8,-10,mat.black);
 for(const x of [-24,-18,-12,-6,0,6,12,18,24]){
  C(.42,5.6,x,2.9,2.4,mat.concrete2,24);
 }
@@ -207,21 +215,18 @@ for(let i=0;i<5;i++)B(17-i*.7,.32,1.05,0,.16+i*.32,15.7-i*1.0,mat.concrete2);
 // Monumental projecting portal canopy, deliberately much taller and deeper.
 B(23,.72,7.8,0,8.45,13.85,mat.black);
 B(19,.18,7.1,0,8.08,10.95,mat.gold);
-B(21,8.15,.70,0,4.25,11.18,mat.glassDark);
+// One front curtain-wall plane. The center is the only opening.
+B(21,6.7,.34,-13.0,4.35,11.02,mat.glassDark);
+B(21,6.7,.34,13.0,4.35,11.02,mat.glassDark);
 
-// Deep glass vestibule: exterior plane + inner plane.
-B(20,7.5,.20,0,3.85,14.15,mat.glass);
-B(20,7.5,.20,0,3.85,7.15,mat.glass);
+// Tall architectural side piers. Nothing occupies the centerline.
+for(const x of [-9.2,9.2])B(.95,8.2,1.15,x,4.25,11.1,mat.concrete2);
 
-// Tall stone portal piers.
-for(const x of [-10.5,10.5])B(.95,8.4,1.15,x,4.30,11.1,mat.concrete2);
-
-// Six-and-three-quarter metre automatic glass doors at the true front entrance.
+// Automatic sliding glass doors on the same plane as the entrance glazing.
 makeSlidingDoor(-1.78);
 makeSlidingDoor(1.78);
 
-// Door mullions, header and sensor.
-for(const x of [-7,-1.78,0,1.78,7])B(.11,6.75,.16,x,3.69,10.70,mat.gold);
+// Header and sensor only; no center mullion.
 B(14.2,.16,.20,0,7.12,10.70,mat.gold);
 const sensorBar=B(13.8,.11,.12,0,7.28,10.58,mat.light,false);
 sensorBar.userData.entranceSensor=true;
@@ -287,18 +292,30 @@ B(14,7,.45,0,4.7,-2.2,mat.glass);
 B(14,7,.45,0,4.7,-23.8,mat.glassDark);
 for(let x=-6;x<=6;x+=3)B(.16,7,.22,x,4.7,-13,mat.gold);
 
-// Grand stair aligned with the central axis.
-const stairMat=mat.concrete2;
-// Central circulation stair: 10 risers, 6 cm each, linking the main floor to the raised rear galleries.
-for(let i=0;i<10;i++){
-  B(5.2,.12,0.62,0,.06+i*.06,-10.9-i*.62,stairMat,false);
+// ---------- REAL SECOND-FLOOR STAIR ----------
+const stairX=7.4;
+const stairZ0=4.2;
+const stairCount=28;
+const stairRun=.33;
+const stairRise=.20;
+for(let i=0;i<stairCount;i++){
+  const z=stairZ0-i*stairRun;
+  const y=.66+(i+1)*stairRise;
+  B(4.8,stairRise,stairRun,stairX,y-stairRise/2,z,mat.concrete2);
 }
-
-for(let i=0;i<16;i++){
-  const w=1.5+i*.22;
-  B(w,.22,1.5,-8+i*.52,.45+i*.27,-5.8-i*.88,stairMat,[0,.03,-.02]);
-  B(w,.22,1.5,8-i*.52,.45+i*.27,-5.8-i*.88,stairMat,[0,-.03,.02]);
+// compact landing at the upper level
+B(4.8,.18,1.8,stairX,.66+stairCount*stairRise+.09,stairZ0-stairCount*stairRun-.65,mat.concrete2,false);
+for(const side of [-1,1]){
+  for(let i=0;i<8;i++){
+    const z=stairZ0-i*stairRun*4;
+    B(.08,.95,.08,stairX+side*2.2,.66+stairCount*stairRise*.55,z,mat.gold,false);
+  }
 }
+// second-floor public gallery deck
+B(22,.18,14,0,6.35,-1.4,mat.ceramic,false);
+B(.08,1.05,14,-10.5,6.9,-1.4,mat.gold,false);
+B(.08,1.05,14,10.5,6.9,-1.4,mat.gold,false);
+B(21.0,.08,.08,0,7.42,-1.4,mat.gold,false);
 
 // Museum circulation spine.
 B(5,.06,46,0,.10,-13,mat.black,false);
@@ -326,46 +343,44 @@ function galleryTexture(g){
   return new THREE.CanvasTexture(c);
 }
 
+function doorPlaqueTexture(g){
+  const c=document.createElement("canvas");c.width=720;c.height=180;
+  const q=c.getContext("2d");q.fillStyle="#17191d";q.fillRect(0,0,720,180);
+  q.strokeStyle="#d1ab61";q.lineWidth=6;q.strokeRect(8,8,704,164);
+  q.textAlign="center";q.fillStyle="#f1ddaa";q.font="700 42px 'Noto Serif TC',serif";q.fillText(g.title,360,76);
+  q.fillStyle="#b9bec4";q.font="19px sans-serif";q.fillText(g.kind,360,114);
+  q.fillStyle="#d3d5d8";q.font="17px sans-serif";q.fillText(g.sub,360,145);
+  return new THREE.CanvasTexture(c);
+}
 function makeGallery(g,x,z,side){
-  const w=10.8,d=6.2,h=5.8;
-  const floor=0.60;
+  const w=10.8,d=6.2,h=4.9,floor=.60;
   B(w,.14,d,x,floor-.07,z,mat.ceramic,false);
-  // Back wall and outer side wall are continuous; the spine-side wall is split for a real doorway.
   B(w,.35,.22,x,floor+h/2,z-d/2,mat.dark);
   B(.22,h,d,x-side*(w/2),floor+h/2,z,mat.dark);
-  const wallSeg=(d-2.8)/2;
-  const spineX=x+side*(w/2);
+  const wallSeg=(d-2.8)/2,spineX=x+side*(w/2);
   B(.22,h,wallSeg,spineX,floor+h/2,z-(2.8+wallSeg)/2,mat.dark);
   B(.22,h,wallSeg,spineX,floor+h/2,z+(2.8+wallSeg)/2,mat.dark);
-  // Actual doorway trim, not a solid gold slab.
   B(.12,h,.18,spineX,floor+h/2,z-1.40,mat.gold,false);
   B(.12,h,.18,spineX,floor+h/2,z+1.40,mat.gold,false);
   B(.12,.14,2.96,spineX,floor+h-.10,z,mat.gold,false);
 
-  // Gallery title plaque mounted above the back-wall display line.
-  add(new THREE.PlaneGeometry(7.8,1.8),
-      new THREE.MeshBasicMaterial({map:galleryTexture(g),transparent:true}),
-      [x,4.35,z+d/2+.13]);
+  // Actual sign above actual doorway, facing the central promenade.
+  add(new THREE.PlaneGeometry(3.8,.86),
+      new THREE.MeshBasicMaterial({map:doorPlaqueTexture(g),side:THREE.DoubleSide}),
+      [spineX-side*.08,floor+4.15,z],[0,side*Math.PI/2,0],false);
 
-  // Two freestanding museum cases: base plinth + glass enclosure + cap.
   for(const px of [x-2.2,x+2.2]){
     B(2.25,.22,1.35,px,floor+.11,z,mat.black,false);
     B(1.95,.95,1.12,px,floor+.70,z,mat.glass,false);
     B(1.55,.07,.78,px,floor+1.22,z,mat.gold,false);
   }
-
-  // Three wall-mounted framed objects.
   for(const px of [x-3.6,x,x+3.6]){
-    B(2.45,2.25,.12,px,2.85,z-d/2-.08,mat.black,false);
-    B(2.15,1.95,.08,px,2.85,z-d/2-.15,mat.white,false);
-    B(1.92,.045,.035,px,3.82,z-d/2-.20,mat.gold,false);
+    B(2.45,2.05,.12,px,2.65,z-d/2-.08,mat.black,false);
+    B(2.15,1.78,.08,px,2.65,z-d/2-.15,mat.white,false);
+    B(1.92,.045,.035,px,3.60,z-d/2-.20,mat.gold,false);
   }
-
-  // Museum bench for visitors.
   B(3.2,.16,.52,x,.95,z+1.25,mat.ceramic,false);
   for(const lx of [x-1.2,x+1.2])B(.10,.78,.10,lx,.55,z+1.25,mat.black,false);
-
-  // Ceiling lighting track and four realistic spot heads.
   B(5.8,.08,.10,x,floor+h-.22,z,mat.black,false);
   for(const px of [x-2.1,x-.7,x+.7,x+2.1]){
     C(.08,.20,px,floor+h-.42,z,mat.black,18);
@@ -389,24 +404,24 @@ for(let i=0;i<9;i++)for(let j=0;j<18;j++){
 }
 
 // ---------- formal arrival sequence ----------
-const carpetMat=new THREE.MeshStandardMaterial({color:0x6e1419,roughness:.72,metalness:.02});
-B(7.2,.035,27.5,0,.055,23.2,carpetMat,false);
-for(let z=9.0;z<=36;z+=3.2){
-  C(.16,.62,-4.7,.35,z,mat.gold,20);
-  C(.16,.62,4.7,.35,z,mat.gold,20);
-}
-B(.06,.025,27.5,-4.7,.69,23.2,mat.gold,false);
-B(.06,.025,27.5,4.7,.69,23.2,mat.gold,false);
-for(let z=18;z<=33;z+=3.75){
-  C(.22,.72,-5.35,.36,z,mat.black,24);
-  C(.22,.72,5.35,.36,z,mat.black,24);
-}
+const carpetMat=new THREE.MeshStandardMaterial({color:0x74171c,roughness:.76,metalness:.02});
+// Continuous carpet from the public plaza to the automatic doors.
+B(6.4,.045,13.8,0,.16,20.9,carpetMat,false);
 
-// Small arrival canopy lamps sit above the route instead of floating in space.
-for(const x of [-3.0,3.0]){
-  B(.10,3.0,.10,x,2.1,18,mat.gold,false);
-  C(.42,.10,x,3.58,18,mat.light,28);
+// Five real risers, with carpet flush on each tread.
+for(let i=0;i<5;i++){
+  const z=15.05-i*.86;
+  const top=(i+1)*.12;
+  B(11.6-i*.32,.12,.86,0,top-.06,z,mat.concrete2);
+  B(6.4,.035,.84,0,top+.018,z,carpetMat,false);
 }
+B(8.0,.05,1.55,0,.64,10.95,mat.concrete2,false);
+B(6.4,.035,1.55,0,.68,10.95,carpetMat,false);
+B(6.4,.035,5.2,0,.68,8.35,carpetMat,false);
+
+// Keep the route visually formal without placing obstacles in the walking line.
+B(.055,.025,18,-3.25,.19,19.8,mat.gold,false);
+B(.055,.025,18,3.25,.19,19.8,mat.gold,false);
 
 // ---------- exterior wayfinding ----------
 function tex(top,sub){
@@ -457,42 +472,49 @@ function updateEntrance(dt){
 
 // Human-scale floor elevations: footsteps and ramps create real vertical movement.
 function groundHeight(x,z){
-  // Five approach steps, each roughly 12 cm higher.
-  if(z<17 && z>11.45){
-    const step=Math.max(0,Math.min(4,Math.floor((16.9-z)/1.02)));
-    return step*0.12;
+  // Entry steps match their physical treads.
+  if(z<15.48 && z>=11.25){
+    const i=Math.max(0,Math.min(4,Math.floor((15.43-z)/.86)));
+    return (i+1)*.12;
   }
-  // Main entry/lobby.
-  if(z<=11.45 && z>=3.5) return 0.48;
-  // Central shallow ramp down to the main floor.
-  if(z<3.5 && z>-2) return 0.48 + ((3.5-z)/5.5)*-0.48;
-  // Main gallery floor.
-  if(z<=-2 && z>=-11.0) return 0;
-  // Central stair/ramp gently rises toward the rear galleries.
-  if(z<-11.0 && z>-16.5) return ((-11.0-z)/5.5)*0.60;
-  // Rear gallery level.
-  return 0.60;
+  // Lobby floor.
+  if(z>4.0) return .48;
+  // Actual second-floor stair: same axis, same rise/run as the geometry above.
+  if(x>4.85 && x<9.95 && z<=4.0 && z>=-5.05){
+    const t=Math.max(0,Math.min(1,(4.18-z)/(28*.33)));
+    return .66+t*(28*.20);
+  }
+  // Upper landing and mezzanine.
+  if(x>4.85 && x<9.95 && z<-5.05 && z>-8.5) return .66+28*.20;
+  // Main exhibition floor.
+  return .60;
 }
 
 // Collision boundaries: solve X/Z separately so the camera cannot tunnel through walls.
 const colliders=[
- // outer side/rear shell of the podium
  {minX:-29.6,maxX:-28.7,minZ:-37,maxZ:11.0},
  {minX:28.7,maxX:29.6,minZ:-37,maxZ:11.0},
  {minX:-29,maxX:29,minZ:-37.6,maxZ:-36.7},
- // front facade: leave a 14 m-wide central portal for the automatic doors
- {minX:-29,maxX:-7.5,minZ:10.35,maxZ:11.15},
- {minX:7.5,maxX:29,minZ:10.35,maxZ:11.15},
- // inner side/rear boundaries of the main gallery shell
- {minX:-28.8,maxX:-28.0,minZ:-35.8,maxZ:9.9},
- {minX:28.0,maxX:28.8,minZ:-35.8,maxZ:9.9}
+ // Front facade: only the central doorway remains open.
+ {minX:-29,maxX:-7.25,minZ:10.65,maxZ:11.18},
+ {minX:7.25,maxX:29,minZ:10.65,maxZ:11.18}
 ];
+for(const z of zRows){
+  colliders.push({minX:-23.5,maxX:-22.9,minZ:z-3.15,maxZ:z+3.15});
+  colliders.push({minX:22.9,maxX:23.5,minZ:z-3.15,maxZ:z+3.15});
+  colliders.push({minX:-23.5,maxX:-12.6,minZ:z-3.18,maxZ:z-2.95});
+  colliders.push({minX:12.6,maxX:23.5,minZ:z-3.18,maxZ:z-2.95});
+  colliders.push({minX:-12.9,maxX:-12.25,minZ:z-3.15,maxZ:z-1.42});
+  colliders.push({minX:-12.9,maxX:-12.25,minZ:z+1.42,maxZ:z+3.15});
+  colliders.push({minX:12.25,maxX:12.9,minZ:z-3.15,maxZ:z-1.42});
+  colliders.push({minX:12.25,maxX:12.9,minZ:z+1.42,maxZ:z+3.15});
+}
 function insideRect(x,z,r){return x>r.minX&&x<r.maxX&&z>r.minZ&&z<r.maxZ;}
 function blockedAt(x,z){
   for(const r of colliders) if(insideRect(x,z,r)) return true;
   // Door leaves themselves are solid while closing; open leaves move to the side.
   for(const d of entranceDoors){
-    if(Math.abs(d.position.x-x)<1.82 && Math.abs(10.72-z)<.20) return true;
+    if(Math.abs(d.position.x-x)<1.82 && Math.abs(10.72-z)<.16) return true;
   }
   return false;
 }
