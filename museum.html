@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>黃名歷史博物館｜Wongming Museum of History</title>
+<style>
+:root{--ink:#eee7d4;--muted:#9ea4ad;--glass:#10131bcc;--line:#b99a5a}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07090d;color:var(--ink);font-family:Inter,"Noto Sans TC","Noto Serif TC",sans-serif}
+canvas{display:block}#brand{position:fixed;z-index:8;top:24px;left:28px;pointer-events:none;text-shadow:0 4px 20px #000}
+#brand h1{margin:0;font:600 28px/1.05 "Noto Serif TC",serif;letter-spacing:.13em}#brand p{margin:8px 0 0;color:#b8bdc5;letter-spacing:.12em;font-size:11px;text-transform:uppercase}
+#panel{position:fixed;z-index:8;right:24px;top:22px;width:260px;padding:14px 16px;background:linear-gradient(180deg,#11151ded,#0a0d13d9);border:1px solid #ffffff18;backdrop-filter:blur(18px);box-shadow:0 14px 40px #0008}
+#panel .eyebrow{font-size:10px;letter-spacing:.17em;color:#bea467;text-transform:uppercase}.title{margin:5px 0 5px;font-size:17px}.desc{margin:0;color:#b4b8be;font-size:12px;line-height:1.7}
+#enter{margin-top:11px;width:100%;padding:10px 12px;border:1px solid #c2a45f;background:#171919;color:#eadcae;cursor:pointer;font-size:12px;letter-spacing:.12em}
+#hint{position:fixed;z-index:8;left:50%;bottom:21px;transform:translateX(-50%);padding:9px 14px;background:#080b10c9;border:1px solid #ffffff18;color:#adb2bb;font-size:11px;letter-spacing:.04em;white-space:nowrap;backdrop-filter:blur(14px)}
+#reticle{position:fixed;z-index:9;left:50%;top:50%;width:7px;height:7px;margin:-3.5px;border:1px solid #e6d8ae;border-radius:50%;opacity:.75;pointer-events:none}
+@media(max-width:700px){#panel{width:220px;right:12px;top:12px}#brand{left:14px;top:14px}.hint{display:none}}
+</style>
+</head>
+<body>
+<div id="brand"><h1>黃名歷史博物館</h1><p>Wongming Museum of History · WebXR</p></div>
+<div id="panel"><div class="eyebrow">ARCHITECTURE / 2026</div><div class="title">以歷史為核心的當代展館</div><p class="desc">一座以懸臂、天井、混凝土與金色光井組成的虛擬博物館。向前走進中央展廳，兩側分別通往帝國沿革與文化藝術展區。</p><button id="enter">ENTER IMMERSIVE VR</button></div>
+<div id="hint">桌面：WASD 移動・拖曳觀看・靠近展品查看　｜　VR：啟用沉浸模式</div>
+<div id="reticle"></div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from "three";
+import {VRButton} from "three/addons/webxr/VRButton.js";
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x07090d);
+scene.fog=new THREE.FogExp2(0x07090d,0.014);
+
+const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.04,220);
+camera.position.set(0,1.72,15);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:"high-performance"});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.xr.enabled=true;
+document.body.appendChild(renderer.domElement);
+
+const mats={
+concrete:new THREE.MeshStandardMaterial({color:0x2b2e33,roughness:.88}),
+dark:new THREE.MeshStandardMaterial({color:0x111419,roughness:.74}),
+black:new THREE.MeshStandardMaterial({color:0x080a0e,roughness:.95}),
+gold:new THREE.MeshStandardMaterial({color:0xb99345,metalness:.72,roughness:.28}),
+glass:new THREE.MeshPhysicalMaterial({color:0x7792a3,metalness:.05,roughness:.08,transmission:.35,transparent:true,opacity:.36}),
+red:new THREE.MeshStandardMaterial({color:0x5a1720,roughness:.58}),
+floor:new THREE.MeshStandardMaterial({color:0x171a20,roughness:.72}),
+white:new THREE.MeshStandardMaterial({color:0xbab6aa,roughness:.62})
+};
+const ambient=new THREE.HemisphereLight(0x9db5d8,0x15110c,1.45); scene.add(ambient);
+const key=new THREE.DirectionalLight(0xffe8b8,2.4); key.position.set(-8,20,13); key.castShadow=true; key.shadow.mapSize.set(2048,2048); scene.add(key);
+function box(w,h,d,x,y,z,mat,rx=0,ry=0,rz=0){
+ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.rotation.set(rx,ry,rz);m.castShadow=true;m.receiveShadow=true;scene.add(m);return m;
+}
+function cyl(r,h,x,y,z,mat,seg=48){
+ const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,seg),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);return m;
+}
+function beam(x,y,z,w,h,d,mat= mats.dark,rx=0,ry=0,rz=0){return box(w,h,d,x,y,z,mat,rx,ry,rz)}
+box(90,.35,90,0,-.18,0,mats.floor);
+box(56,.08,72,0,.02,-17,mats.black);
+
+// monumental facade
+box(34,7,1.2,0,3.5,3.5,mats.concrete);
+box(29,.65,2.7,0,7.15,3.1,mats.dark,0,.0,.08);
+box(18,7,.7,0,3.5,2.95,mats.glass);
+box(8,7,.8,0,3.5,2.5,mats.black);
+for(let x=-13;x<=13;x+=6.5) beam(x,3.4,2.25,1.1,6.8,.9,mats.gold);
+beam(-10,6.5,3.0,20,.18,.18,mats.gold,0,0,.055); beam(10,6.1,3.0,20,.18,.18,mats.gold,0,0,-.055);
+
+// central atrium / ceiling void
+box(22,.55,14,0,8.8,-10,mats.dark);
+beam(-11,4,-10,.55,8.2,16,mats.concrete);
+beam(11,4,-10,.55,8.2,16,mats.concrete);
+for(let x=-9;x<=9;x+=4.5) beam(x,8.0,-10,.16,.16,16,mats.gold);
+
+// side wings
+beam(-17,3,-15,9,6,25,mats.concrete,0,.02,-.03);
+beam(17,3,-15,9,6,25,mats.concrete,0,-.02,.03);
+beam(-16,7,-13,11,.55,20,mats.dark,0,0,.07);
+beam(16,7,-13,11,.55,20,mats.dark,0,0,-.07);
+
+// long history wall and gallery pods
+beam(0,4,-32,32,8,.6,mats.concrete);
+for(let x=-13;x<=13;x+=6.5){
+ beam(x,3.2,-31.4,4.7,5.2,.45,mats.white);
+ beam(x,6.05,-31.15,2.2,.14,.65,mats.gold);
+}
+
+// water court + light sculpture
+const water=new THREE.Mesh(new THREE.BoxGeometry(13,.06,8),new THREE.MeshPhysicalMaterial({color:0x273744,metalness:.1,roughness:.1,transmission:.3,transparent:true,opacity:.75}));
+water.position.set(0,.08,-11);water.receiveShadow=true;scene.add(water);
+for(let i=-3;i<=3;i++){cyl(.055,5, i*1.2,2.5,-11,mats.gold,24)}
+const sunCyl=cyl(2.1,.18,0,6.2,-11,mats.gold,64);
+const glowMat=new THREE.MeshBasicMaterial({color:0xe9c77c});
+for(let i=0;i<10;i++){
+ const a=i*Math.PI*2/10;
+ const p=new THREE.Mesh(new THREE.BoxGeometry(.12,3.2,.12),glowMat);
+ p.position.set(Math.cos(a)*3.2,3.0+Math.sin(a)*.8,-11+Math.sin(a)*3.2);p.rotation.z=a*.25;scene.add(p);
+}
+
+// roof skylights
+for(let x=-8;x<=8;x+=4){
+ const g=box(2.7,.08,11,x,8.55,-10,mats.glass);g.rotation.z=(x/8)*.04;
+}
+// floating golden timeline fragments
+const timeline=[
+ ["1995","成立：黃名帝國建立"],["2013","仁宗即位：慶寧時代"],["2025","第32屆內閣"] ,["NOW","文化、藝術與數位展演"]
+];
+timeline.forEach((it,i)=>{
+ const z=-7-i*7;
+ box(4.8,2.1,.18,0,2.0,z,mats.dark);
+ const c=document.createElement("canvas");c.width=700;c.height=180;
+ const q=c.getContext("2d");q.fillStyle="#111419";q.fillRect(0,0,c.width,c.height);
+ q.fillStyle="#d6b66b";q.font="700 44px serif";q.fillText(it[0],30,62);
+ q.fillStyle="#c7c5bd";q.font="26px sans-serif";q.fillText(it[1],30,120);
+ const t=new THREE.CanvasTexture(c);
+ const s=new THREE.Mesh(new THREE.PlaneGeometry(4.2,1.08),new THREE.MeshBasicMaterial({map:t,transparent:true}));
+ s.position.set(0,2.05,z-.12);scene.add(s);
+});
+
+// art objects
+for(let i=0;i<5;i++){
+ const a=new THREE.Mesh(new THREE.IcosahedronGeometry(1.05,1),new THREE.MeshStandardMaterial({color:0x696b70,metalness:.55,roughness:.25}));
+ a.position.set(-12+i*6,1.15,-45);a.scale.set(1.0+i*.07,.75+i*.05,1.0);a.castShadow=true;scene.add(a);
+}
+beam(-12,3.8,-45,.18,5.2,.18,mats.gold);
+beam(0,3.8,-45,.18,5.2,.18,mats.gold);
+beam(12,3.8,-45,.18,5.2,.18,mats.gold);
+
+// floor guidance lines
+const lineMat=new THREE.MeshBasicMaterial({color:0xa78749});
+for(const x of [-6,6]) box(.035,.035,61,x,.05,-23,lineMat);
+
+// labels as floating plaques
+function plaque(text,sub,x,y,z){
+ const c=document.createElement("canvas");c.width=800;c.height=220;
+ const g=c.getContext("2d");g.fillStyle="rgba(8,10,14,.92)";g.fillRect(0,0,800,220);
+ g.strokeStyle="#a98b4c";g.strokeRect(2,2,796,216);
+ g.fillStyle="#e4d19b";g.font="700 46px serif";g.fillText(text,36,80);
+ g.fillStyle="#a8acb4";g.font="24px sans-serif";g.fillText(sub,36,135);
+ const tex=new THREE.CanvasTexture(c);
+ const mesh=new THREE.Mesh(new THREE.PlaneGeometry(5.4,1.48),new THREE.MeshBasicMaterial({map:tex,transparent:true}));
+ mesh.position.set(x,y,z);scene.add(mesh);
+}
+plaque("中央展廳","CENTRAL ATRIUM · 光井／水庭／當代藝術",0,4.5,-4);
+plaque("帝國沿革展","HISTORY OF WONGMING · 1995—NOW",-8,3.4,-23);
+plaque("文化藝術展","CULTURE & ARTS · MUSIC · DESIGN · CEREMONY",8,3.4,-23);
+plaque("數位典藏","DIGITAL ARCHIVE · WEBXR COLLECTION",0,3.6,-39);
+
+let yaw=0,pitch=0,drag=false,lastX=0,lastY=0;
+const keys={};
+addEventListener("keydown",e=>keys[e.code]=true);addEventListener("keyup",e=>keys[e.code]=false);
+addEventListener("mousedown",e=>{drag=true;lastX=e.clientX;lastY=e.clientY});
+addEventListener("mouseup",()=>drag=false);
+addEventListener("mousemove",e=>{if(!drag||renderer.xr.isPresenting)return; yaw-=(e.clientX-lastX)*.003; pitch-=(e.clientY-lastY)*.002; pitch=Math.max(-1.15,Math.min(1.15,pitch));lastX=e.clientX;lastY=e.clientY});
+
+document.getElementById("enter").onclick=()=>{
+ if(!renderer.xr.isPresenting){
+   const b=VRButton.createButton(renderer);b.style.display="none";document.body.appendChild(b);b.click();
+ }
+};
+
+const clock=new THREE.Clock();
+function animate(){
+ const dt=Math.min(clock.getDelta(),.045);
+ if(!renderer.xr.isPresenting){
+  const forward=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw));
+  const right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
+  const speed=(keys.ShiftLeft?6.2:3.2)*dt;
+  if(keys.KeyW)camera.position.addScaledVector(forward,-speed);
+  if(keys.KeyS)camera.position.addScaledVector(forward,speed);
+  if(keys.KeyA)camera.position.addScaledVector(right,-speed);
+  if(keys.KeyD)camera.position.addScaledVector(right,speed);
+  camera.position.x=Math.max(-23,Math.min(23,camera.position.x));
+  camera.position.z=Math.max(-50,Math.min(18,camera.position.z));
+  camera.rotation.set(pitch,yaw,0,"YXZ");
+ }
+ renderer.render(scene,camera);
+}
+renderer.setAnimationLoop(animate);
+addEventListener("resize",()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script>
+</body>
+</html>
