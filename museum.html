@@ -150,15 +150,10 @@ function makeGrassMaps(){
   return {color,bump,alpha};
 }
 const grassMaps=makeGrassMaps();
-const realisticGrassSurface=new THREE.MeshStandardMaterial({
+const realisticGrassSurface=new THREE.MeshBasicMaterial({
   map:grassMaps.color,
-  bumpMap:grassMaps.bump,
-  bumpScale:.16,
   color:0xffffff,
-  roughness:.985,
-  metalness:0,
-  emissive:0x5a743f,
-  emissiveIntensity:.18
+  toneMapped:false
 });
 // Use the supplied Wongming forum lawn image as the visible ground texture.
 // It is proxied through Vercel to avoid hotlink/CORS issues.
@@ -168,11 +163,8 @@ suppliedGrassTexture.wrapS=suppliedGrassTexture.wrapT=THREE.RepeatWrapping;
 suppliedGrassTexture.repeat.set(4,3);
 suppliedGrassTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
 realisticGrassSurface.map=suppliedGrassTexture;
-realisticGrassSurface.emissiveMap=suppliedGrassTexture;
-realisticGrassSurface.bumpMap=null;
-realisticGrassSurface.bumpScale=0;
-realisticGrassSurface.emissiveIntensity=.28;
 realisticGrassSurface.map.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+realisticGrassSurface.needsUpdate=true;
 
 const grassBladeGeo=(()=>{
   const p=new Float32Array([
