@@ -158,6 +158,16 @@ const realisticGrassSurface=new THREE.MeshStandardMaterial({
   roughness:.985,
   metalness:0
 });
+// Use the supplied Wongming forum lawn image as the visible ground texture.
+// It is proxied through Vercel to avoid hotlink/CORS issues.
+const suppliedGrassTexture=new THREE.TextureLoader().load("/api/museum-grass");
+suppliedGrassTexture.colorSpace=THREE.SRGBColorSpace;
+suppliedGrassTexture.wrapS=suppliedGrassTexture.wrapT=THREE.RepeatWrapping;
+suppliedGrassTexture.repeat.set(4,3);
+suppliedGrassTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+realisticGrassSurface.map=suppliedGrassTexture;
+realisticGrassSurface.bumpMap=null;
+realisticGrassSurface.bumpScale=0;
 realisticGrassSurface.map.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
 
 const grassBladeGeo=(()=>{
