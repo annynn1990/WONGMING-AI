@@ -232,15 +232,26 @@ for(const x of [-6,-2,2,6])entranceLights.push(B(1.35,.07,3.0,x,7.38,11.55,mat.l
 const sensorIndicator=B(.20,.20,.08,0,7.12,10.56,mat.light,false);
 entranceLights.push(sensorIndicator);
 
-// Large readable entrance title facing the plaza.
-function entranceTexture(){
-  const c=document.createElement("canvas");c.width=1400;c.height=320;
-  const g=c.getContext("2d");g.clearRect(0,0,c.width,c.height);g.textAlign="center";
-  g.fillStyle="#ead8a7";g.font="700 92px serif";g.fillText("帝國歷史博物館",700,125);
-  g.fillStyle="#d0d4d8";g.font="34px sans-serif";g.letterSpacing="8px";g.fillText("WONGMING MUSEUM OF HISTORY",700,205);
+// Physical entrance marquee: deep red field, gold frame, bilingual museum identity.
+function makeEntranceMarqueeTexture(){
+  const c=document.createElement("canvas");c.width=1600;c.height=420;
+  const g=c.getContext("2d");
+  g.clearRect(0,0,c.width,c.height);
+  const grd=g.createLinearGradient(0,0,0,c.height);
+  grd.addColorStop(0,"#5f1618");grd.addColorStop(.5,"#831f22");grd.addColorStop(1,"#4a1013");
+  g.fillStyle=grd;g.fillRect(0,0,c.width,c.height);
+  g.strokeStyle="#d9b56d";g.lineWidth=10;g.strokeRect(22,22,c.width-44,c.height-44);
+  g.strokeStyle="#8f6b36";g.lineWidth=2;g.strokeRect(38,38,c.width-76,c.height-76);
+  g.textAlign="center";
+  g.fillStyle="#f3dfac";g.font="700 106px 'Noto Serif TC',serif";g.fillText("帝國歷史博物館",800,185);
+  g.fillStyle="#e5d2a2";g.font="32px sans-serif";g.fillText("WONGMING EMPIRE · IMPERIAL HISTORY MUSEUM",800,270);
+  g.fillStyle="#f0c76c";g.font="24px sans-serif";g.fillText("HISTORY · HERITAGE · MEMORY",800,325);
   return new THREE.CanvasTexture(c);
 }
-add(new THREE.PlaneGeometry(15.5,3.55),new THREE.MeshBasicMaterial({map:entranceTexture(),transparent:true}),[0,6.35,10.38]);
+const marquee=B(17.6,3.9,.34,0,6.05,10.32,mat.black,false);
+add(new THREE.PlaneGeometry(16.6,3.45),new THREE.MeshBasicMaterial({map:makeEntranceMarqueeTexture(),transparent:false}),[0,6.08,10.12], [0,0,0], false);
+for(const x of [-8.9,8.9])B(.22,4.15,.42,x,6.05,10.20,mat.gold);
+B(17.9,.18,.50,0,4.02,10.18,mat.gold,false);
 
 // Roofline spotlights over the entrance.
 for(const x of [-8,-4,0,4,8]) {
@@ -271,6 +282,11 @@ for(let x=-6;x<=6;x+=3)B(.16,7,.22,x,4.7,-13,mat.gold);
 
 // Grand stair aligned with the central axis.
 const stairMat=mat.concrete2;
+// Central circulation stair: 10 risers, 6 cm each, linking the main floor to the raised rear galleries.
+for(let i=0;i<10;i++){
+  B(5.2,.12,0.62,0,.06+i*.06,-10.9-i*.62,stairMat,false);
+}
+
 for(let i=0;i<16;i++){
   const w=1.5+i*.22;
   B(w,.22,1.5,-8+i*.52,.45+i*.27,-5.8-i*.88,stairMat,[0,.03,-.02]);
@@ -305,27 +321,48 @@ function galleryTexture(g){
 
 function makeGallery(g,x,z,side){
   const w=10.8,d=6.2,h=5.8;
-  // Floor and walls create an unmistakable room instead of loose props.
-  B(w,.12,d,x,.18,z,mat.ceramic,false);
-  B(w,.35,.22,x,h/2+.2,z-d/2,mat.dark);
-  B(.22,h,d,x-w/2,h/2+.2,z,mat.dark);
-  B(.22,h,d,x+w/2,h/2+.2,z,mat.dark);
-  B(w,.22,.22,x,h+.08,z-d/2,mat.black,false);
+  const floor=0.60;
+  B(w,.14,d,x,floor-.07,z,mat.ceramic,false);
+  // Back wall and outer side wall are continuous; the spine-side wall is split for a real doorway.
+  B(w,.35,.22,x,floor+h/2,z-d/2,mat.dark);
+  B(.22,h,d,x-side*(w/2),floor+h/2,z,mat.dark);
+  const wallSeg=(d-2.8)/2;
+  const spineX=x+side*(w/2);
+  B(.22,h,wallSeg,spineX,floor+h/2,z-(2.8+wallSeg)/2,mat.dark);
+  B(.22,h,wallSeg,spineX,floor+h/2,z+(2.8+wallSeg)/2,mat.dark);
+  // Actual doorway trim, not a solid gold slab.
+  B(.12,h,.18,spineX,floor+h/2,z-1.40,mat.gold,false);
+  B(.12,h,.18,spineX,floor+h/2,z+1.40,mat.gold,false);
+  B(.12,.14,2.96,spineX,floor+h-.10,z,mat.gold,false);
 
-  // Open side portal toward the central spine.
-  const doorX=side<0?x+w/2+.12:x-w/2-.12;
-  B(2.8,5.2,.28,doorX,2.8,z,mat.gold,false);
+  // Gallery title plaque mounted above the back-wall display line.
+  add(new THREE.PlaneGeometry(7.8,1.8),
+      new THREE.MeshBasicMaterial({map:galleryTexture(g),transparent:true}),
+      [x,4.35,z+d/2+.13]);
 
-  // Entrance plaque and two display cases.
-  add(new THREE.PlaneGeometry(7.8,1.8),new THREE.MeshBasicMaterial({map:galleryTexture(g),transparent:true}),[x,4.35,z+d/2+.125]);
+  // Two freestanding museum cases: base plinth + glass enclosure + cap.
   for(const px of [x-2.2,x+2.2]){
-    B(2.1,1.1,1.35,px,.78,z,mat.glass,false);
-    B(1.4,.08,.8,px,1.36,z,mat.gold,false);
+    B(2.25,.22,1.35,px,floor+.11,z,mat.black,false);
+    B(1.95,.95,1.12,px,floor+.70,z,mat.glass,false);
+    B(1.55,.07,.78,px,floor+1.22,z,mat.gold,false);
   }
-  // Back-wall artwork panels.
+
+  // Three wall-mounted framed objects.
   for(const px of [x-3.6,x,x+3.6]){
-    B(2.35,2.15,.10,px,2.65,z-d/2-.08,mat.white,false);
-    B(1.9,.05,.04,px,3.72,z-d/2-.14,mat.gold,false);
+    B(2.45,2.25,.12,px,2.85,z-d/2-.08,mat.black,false);
+    B(2.15,1.95,.08,px,2.85,z-d/2-.15,mat.white,false);
+    B(1.92,.045,.035,px,3.82,z-d/2-.20,mat.gold,false);
+  }
+
+  // Museum bench for visitors.
+  B(3.2,.16,.52,x,.95,z+1.25,mat.ceramic,false);
+  for(const lx of [x-1.2,x+1.2])B(.10,.78,.10,lx,.55,z+1.25,mat.black,false);
+
+  // Ceiling lighting track and four realistic spot heads.
+  B(5.8,.08,.10,x,floor+h-.22,z,mat.black,false);
+  for(const px of [x-2.1,x-.7,x+.7,x+2.1]){
+    C(.08,.20,px,floor+h-.42,z,mat.black,18);
+    C(.13,.08,px,floor+h-.54,z,mat.light,20);
   }
 }
 
@@ -342,6 +379,26 @@ B(21,12,.10,2,22.0,0.82,led,false);
 for(let i=0;i<9;i++)for(let j=0;j<18;j++){
  const p=B(1.4,.34,.05,-6+i*2,15.2+j*.75,0.72,new THREE.MeshBasicMaterial({color:0x1b2630}),false);
  p.userData.led=true;
+}
+
+// ---------- formal arrival sequence ----------
+const carpetMat=new THREE.MeshStandardMaterial({color:0x6e1419,roughness:.72,metalness:.02});
+B(7.2,.035,27.5,0,.055,23.2,carpetMat,false);
+for(let z=9.0;z<=36;z+=3.2){
+  C(.16,.62,-4.7,.35,z,mat.gold,20);
+  C(.16,.62,4.7,.35,z,mat.gold,20);
+}
+B(.06,.025,27.5,-4.7,.69,23.2,mat.gold,false);
+B(.06,.025,27.5,4.7,.69,23.2,mat.gold,false);
+for(let z=18;z<=33;z+=3.75){
+  C(.22,.72,-5.35,.36,z,mat.black,24);
+  C(.22,.72,5.35,.36,z,mat.black,24);
+}
+
+// Small arrival canopy lamps sit above the route instead of floating in space.
+for(const x of [-3.0,3.0]){
+  B(.10,3.0,.10,x,2.1,18,mat.gold,false);
+  C(.42,.10,x,3.58,18,mat.light,28);
 }
 
 // ---------- exterior wayfinding ----------
@@ -389,6 +446,25 @@ function updateEntrance(dt){
   }
   const pulse=detected ? .78+.18*Math.sin(performance.now()*.009) : .32;
   for(const l of entranceLights)if(l.material?.color)l.material.color.setScalar(pulse);
+}
+
+// Human-scale floor elevations: footsteps and ramps create real vertical movement.
+function groundHeight(x,z){
+  // Five approach steps, each roughly 12 cm higher.
+  if(z<17 && z>11.45){
+    const step=Math.max(0,Math.min(4,Math.floor((16.9-z)/1.02)));
+    return step*0.12;
+  }
+  // Main entry/lobby.
+  if(z<=11.45 && z>=3.5) return 0.48;
+  // Central shallow ramp down to the main floor.
+  if(z<3.5 && z>-2) return 0.48 + ((3.5-z)/5.5)*-0.48;
+  // Main gallery floor.
+  if(z<=-2 && z>=-11.0) return 0;
+  // Central stair/ramp gently rises toward the rear galleries.
+  if(z<-11.0 && z>-16.5) return ((-11.0-z)/5.5)*0.60;
+  // Rear gallery level.
+  return 0.60;
 }
 
 // Collision boundaries: solve X/Z separately so the camera cannot tunnel through walls.
@@ -513,7 +589,9 @@ function animate(){
    if(keys.KeyA||keys.ArrowLeft){mdx+=-r.x*sp;mdz+=-r.z*sp;}
    if(keys.KeyD||keys.ArrowRight){mdx+=r.x*sp;mdz+=r.z*sp;}
    moveWithCollision(mdx,mdz);
-   camera.position.y=1.7;camera.position.x=Math.max(-37,Math.min(37,camera.position.x));camera.position.z=Math.max(-74,Math.min(41,camera.position.z));
+   const floorY=groundHeight(camera.position.x,camera.position.z);
+   camera.position.y += ((floorY+1.68)-camera.position.y)*Math.min(1,dt*10);
+   camera.position.x=Math.max(-37,Math.min(37,camera.position.x));camera.position.z=Math.max(-74,Math.min(41,camera.position.z));
    camera.rotation.set(pitch,yaw,0,"YXZ");
  }
  const t=performance.now()*.001;
