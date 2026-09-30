@@ -13,7 +13,9 @@ canvas{display:block;touch-action:none;cursor:crosshair}
 #brand p{margin:8px 0 0;font-size:10px;letter-spacing:.18em;color:#bdc1c5;text-transform:uppercase}
 #panel{position:fixed;z-index:20;top:22px;right:24px;width:292px;padding:17px 17px 16px;background:linear-gradient(180deg,#10151be8,#080b0fd7);border:1px solid #fff2;box-shadow:0 18px 60px #0008;backdrop-filter:blur(18px)}
 .kicker{font-size:9px;letter-spacing:.22em;color:var(--gold);text-transform:uppercase}.title{margin:7px 0 6px;font-size:18px}.copy{margin:0;color:#b8bdc3;font-size:12px;line-height:1.75}
-#enter{width:100%;margin-top:13px;height:39px;border:1px solid #bf9c57;background:#17191a;color:#eadbad;cursor:pointer;letter-spacing:.16em;font-size:11px}
+#enter,#timeBtn{width:100%;height:39px;border:1px solid #bf9c57;background:#17191a;color:#eadbad;cursor:pointer;letter-spacing:.14em;font-size:11px}
+#enter{margin-top:13px}
+#timeBtn{margin-top:8px;border-color:#fff3c6;color:#d8d4c8;background:#101318}
 #hint{position:fixed;z-index:20;bottom:18px;left:50%;transform:translateX(-50%);padding:9px 14px;background:#090c10cf;border:1px solid #fff2;color:#acb3ba;font-size:11px;white-space:nowrap;backdrop-filter:blur(13px)}
 #reticle{position:fixed;z-index:20;left:50%;top:50%;width:7px;height:7px;margin:-3.5px;border:1px solid #eedba7;border-radius:50%;pointer-events:none}
 #info{position:fixed;z-index:21;left:50%;bottom:70px;transform:translateX(-50%);display:none;max-width:min(560px,88vw);padding:13px 18px;background:#080b10ee;border:1px solid #fff2;color:#c9ccd1;font-size:12px;line-height:1.75;box-shadow:0 18px 50px #0009}
@@ -27,9 +29,9 @@ canvas{display:block;touch-action:none;cursor:crosshair}
 <div class="kicker">ARCHITECTURAL REFERENCE · M+</div>
 <div class="title">以現實博物館建築為藍本</div>
 <p class="copy">本館採用香港 M+ 的核心空間邏輯作為黃名版本：懸臂式大型基座、上升的縱向塔樓、公共屋頂花園、中央採光井與開放展覽空間。</p>
-<button id="enter">ENTER IMMERSIVE VR</button>
+<button id="enter">ENTER IMMERSIVE VR</button><button id="timeBtn">切換至夜景 · NIGHT</button>
 </div>
-<div id="hint">WASD 移動・Shift 加速・滑鼠拖曳觀看・點擊展區　｜　VR：Enter Immersive</div>
+<div id="hint">WASD 移動・Shift 加速・N 日夜切換・點擊展區　｜　VR：Enter Immersive</div>
 <div id="reticle"></div><div id="info"></div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
 <script type="module">
@@ -38,6 +40,9 @@ import {VRButton} from "three/addons/webxr/VRButton.js";
 import {HDRLoader} from "three/addons/loaders/HDRLoader.js";
 
 const scene=new THREE.Scene();
+const nightSkyColor=new THREE.Color(0x02050d);
+let daySky=null;
+let timeMode="day";
 scene.background=new THREE.Color(0x080a0d);
 scene.backgroundBlurriness=0.12;
 scene.backgroundIntensity=0.72;
@@ -96,6 +101,23 @@ const key=new THREE.DirectionalLight(0xffdca0,2.25);key.position.set(-28,42,30);
 const fill=new THREE.DirectionalLight(0x8ea4c7,.42);fill.position.set(32,18,-35);scene.add(fill);
 const rim=new THREE.DirectionalLight(0xdde8ff,.3);rim.position.set(-30,12,-55);scene.add(rim);
 
+const nightLights=[];
+for(const x of [-7,-3.5,0,3.5,7]){
+ const pl=new THREE.PointLight(0xffd27a,0,18,2);pl.position.set(x,5.5,2.1);scene.add(pl);nightLights.push(pl);
+}
+for(const p of [[-24,3,14],[-12,3,14],[0,3,14],[12,3,14],[24,3,14]]){
+ const pl=new THREE.PointLight(0xc7d9ff,0,12,2);pl.position.set(...p);scene.add(pl);nightLights.push(pl);
+}
+const starGeo=new THREE.BufferGeometry();
+const starPos=new Float32Array(1100*3);
+for(let i=0;i<1100;i++){
+ const a=i*12.9898,b=i*78.233,u=(Math.sin(a)*.5+.5)*2-1,t=(Math.sin(b)*.5+.5)*Math.PI*2,r=175,q=Math.sqrt(1-u*u);
+ starPos[i*3]=r*q*Math.cos(t);starPos[i*3+1]=Math.max(18,r*u);starPos[i*3+2]=r*q*Math.sin(t);
+}
+starGeo.setAttribute("position",new THREE.BufferAttribute(starPos,3));
+const stars=new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xffffff,size:.36,sizeAttenuation:true,transparent:true,opacity:0}));
+scene.add(stars);
+
 function add(g,m,p=[0,0,0],r=[0,0,0],cast=true){
  const o=new THREE.Mesh(g,m);o.position.set(...p);o.rotation.set(...r);o.castShadow=cast;o.receiveShadow=true;scene.add(o);return o;
 }
@@ -106,7 +128,7 @@ function C(r,h,x,y,z,m=mat.concrete,seg=28){return add(new THREE.CylinderGeometr
 const entranceDoors=[];
 const entranceLights=[];
 function makeSlidingDoor(x0){
-  const door=add(new THREE.BoxGeometry(3.35,4.9,.12),mat.glass,[x0,2.95,2.18]);
+  const door=add(new THREE.BoxGeometry(3.55,6.65,.12),mat.glass,[x0,3.64,2.18]);
   door.userData.closedX=x0;
   door.userData.side=x0<0?-1:1;
   entranceDoors.push(door);
@@ -200,11 +222,11 @@ entranceLights.push(sensorBar);
 // Threshold and interior welcome light.
 B(15.2,.07,3.25,0,.06,2.20,mat.black,false);
 for(const x of [-6,-2,2,6]){
-  entranceLights.push(B(1.35,.07,2.2,x,5.63,2.25,mat.light,false));
+  entranceLights.push(B(1.35,.07,2.2,x,7.30,2.25,mat.light,false));
 }
 
 // Small status indicator: amber = standby, bright = detecting/opening.
-const sensorIndicator=B(.20,.20,.08,0,5.48,2.04,mat.light,false);
+const sensorIndicator=B(.20,.20,.08,0,7.04,2.04,mat.light,false);
 entranceLights.push(sensorIndicator);
 
 // hanging pendant lights under overhang
@@ -268,7 +290,7 @@ function tex(top,sub){
  g.fillStyle="#c2c6cb";g.font="28px sans-serif";g.fillText(sub,450,165);
  return new THREE.CanvasTexture(c);
 }
-add(new THREE.PlaneGeometry(11,3.2),new THREE.MeshBasicMaterial({map:tex("黃名歷史博物館","WONGMING MUSEUM OF HISTORY"),transparent:true}),[0,4.9,2.05]);
+add(new THREE.PlaneGeometry(11,3.2),new THREE.MeshBasicMaterial({map:tex("黃名歷史博物館","WONGMING MUSEUM OF HISTORY"),transparent:true}),[0,6.25,2.05]);
 
 // ---------- plaza objects and paths ----------
 for(let x=-30;x<=30;x+=10){
@@ -308,6 +330,41 @@ function updateEntrance(dt){
     if(l.material?.color) l.material.color.setScalar(pulse);
   }
 }
+
+// Collision boundaries: solve X/Z separately so the camera cannot tunnel through walls.
+const colliders=[
+ {minX:-29.6,maxX:-28.7,minZ:-37,maxZ:11.2},
+ {minX:28.7,maxX:29.6,minZ:-37,maxZ:11.2},
+ {minX:-29,maxX:29,minZ:-37.5,maxZ:-36.6},
+ {minX:-29,maxX:-7.4,minZ:4.15,maxZ:4.85},
+ {minX:7.4,maxX:29,minZ:4.15,maxZ:4.85}
+];
+function insideRect(x,z,r){return x>r.minX&&x<r.maxX&&z>r.minZ&&z<r.maxZ;}
+function blockedAt(x,z){
+ for(const r of colliders)if(insideRect(x,z,r))return true;
+ for(const d of entranceDoors)if(Math.abs(d.position.x-x)<1.84&&Math.abs(2.18-z)<.20)return true;
+ return false;
+}
+function moveWithCollision(dx,dz){
+ const nx=camera.position.x+dx;if(!blockedAt(nx,camera.position.z))camera.position.x=nx;
+ const nz=camera.position.z+dz;if(!blockedAt(camera.position.x,nz))camera.position.z=nz;
+}
+
+function applyTimeMode(mode){
+ timeMode=mode;const night=mode==="night";
+ if(night){
+  scene.background=nightSkyColor;scene.backgroundIntensity=.72;scene.environmentIntensity=.2;scene.fog.color.set(0x030711);
+  key.intensity=.26;fill.intensity=.08;rim.intensity=.16;stars.material.opacity=.92;
+  nightLights.forEach(l=>{l.intensity=l.color.r>.8?28:8;});
+  document.getElementById("timeBtn").textContent="切換至日景 · DAY";
+ }else{
+  scene.background=daySky||new THREE.Color(0x80a0bf);scene.backgroundIntensity=.66;scene.environmentIntensity=.9;scene.fog.color.set(0x080a0d);
+  key.intensity=2.25;fill.intensity=.42;rim.intensity=.30;stars.material.opacity=0;nightLights.forEach(l=>l.intensity=0);
+  document.getElementById("timeBtn").textContent="切換至夜景 · NIGHT";
+ }
+}
+document.getElementById("timeBtn").onclick=()=>applyTimeMode(timeMode==="day"?"night":"day");
+addEventListener("keydown",e=>{if(e.code==="KeyN")applyTimeMode(timeMode==="day"?"night":"day")});
 
 // navigation
 let yaw=0,pitch=0,drag=false,lastX=0,lastY=0,locked=false;
@@ -366,8 +423,12 @@ function animate(){
  if(!renderer.xr.isPresenting){
    const f=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw)),r=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
    const sp=(keys.ShiftLeft?6.4:3.1)*dt;
-   if(keys.KeyW||keys.ArrowUp)camera.position.addScaledVector(f,-sp);if(keys.KeyS||keys.ArrowDown)camera.position.addScaledVector(f,sp);
-   if(keys.KeyA||keys.ArrowLeft)camera.position.addScaledVector(r,-sp);if(keys.KeyD||keys.ArrowRight)camera.position.addScaledVector(r,sp);
+   let mdx=0,mdz=0;
+   if(keys.KeyW||keys.ArrowUp){mdx+=-f.x*sp;mdz+=-f.z*sp;}
+   if(keys.KeyS||keys.ArrowDown){mdx+=f.x*sp;mdz+=f.z*sp;}
+   if(keys.KeyA||keys.ArrowLeft){mdx+=-r.x*sp;mdz+=-r.z*sp;}
+   if(keys.KeyD||keys.ArrowRight){mdx+=r.x*sp;mdz+=r.z*sp;}
+   moveWithCollision(mdx,mdz);
    camera.position.y=1.7;camera.position.x=Math.max(-37,Math.min(37,camera.position.x));camera.position.z=Math.max(-74,Math.min(41,camera.position.z));
    camera.rotation.set(pitch,yaw,0,"YXZ");
  }
