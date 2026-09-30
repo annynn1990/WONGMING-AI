@@ -99,7 +99,7 @@ const rim=new THREE.DirectionalLight(0xdde8ff,.3);rim.position.set(-30,12,-55);s
 function add(g,m,p=[0,0,0],r=[0,0,0],cast=true){
  const o=new THREE.Mesh(g,m);o.position.set(...p);o.rotation.set(...r);o.castShadow=cast;o.receiveShadow=true;scene.add(o);return o;
 }
-function B(w,h,d,x,y,z,m=mat.concrete,r=[0,0,0]){return add(new THREE.BoxGeometry(w,h,d),m,[x,y,z],r)}
+function B(w,h,d,x,y,z,m=mat.concrete,r=[0,0,0]){const cast=r===false?false:true;const rot=r===false?[0,0,0]:r;return add(new THREE.BoxGeometry(w,h,d),m,[x,y,z],rot,cast)}
 function C(r,h,x,y,z,m=mat.concrete,seg=28){return add(new THREE.CylinderGeometry(r,r,h,seg),m,[x,y,z])}
 
 B(110,.4,130,0,-.2,-22,mat.ground);
