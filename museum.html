@@ -102,6 +102,17 @@ function add(g,m,p=[0,0,0],r=[0,0,0],cast=true){
 function B(w,h,d,x,y,z,m=mat.concrete,r=[0,0,0]){const cast=r===false?false:true;const rot=r===false?[0,0,0]:r;return add(new THREE.BoxGeometry(w,h,d),m,[x,y,z],rot,cast)}
 function C(r,h,x,y,z,m=mat.concrete,seg=28){return add(new THREE.CylinderGeometry(r,r,h,seg),m,[x,y,z])}
 
+// ---------- intelligent entrance ----------
+const entranceDoors=[];
+const entranceLights=[];
+function makeSlidingDoor(x0){
+  const door=add(new THREE.BoxGeometry(3.35,4.9,.12),mat.glass,[x0,2.95,2.18]);
+  door.userData.closedX=x0;
+  door.userData.side=x0<0?-1:1;
+  entranceDoors.push(door);
+}
+
+
 B(110,.4,130,0,-.2,-22,mat.ground);
 
 // public lawn / promenade
@@ -161,10 +172,40 @@ for(const x of [-24,-18,-12,-6,0,6,12,18,24]){
 }
 for(const x of [-21,-14,-7,0,7,14,21])C(.3,5.8,x,2.9,-23.8,mat.ceramic,24);
 
-// grand glass entrances
-B(19,5.2,.35,0,3.3,2.35,mat.glass);
-B(12,5.2,.35,0,3.3,-24.9,mat.glassDark);
-for(let x=-8;x<=8;x+=4)B(.2,5.2,.48,x,3.3,2.1,mat.gold);
+// grand entrance vestibule + sensor-operated automatic glass doors
+B(21,6.6,.55,0,4.0,3.25,mat.glassDark);
+B(24,.58,7.4,0,6.9,3.45,mat.black);
+B(21,.18,7.0,0,6.56,3.45,mat.gold);
+
+// Deep glazed vestibule gives the entrance a real architectural threshold.
+B(20,5.45,.22,0,3.05,1.35,mat.glass);
+B(20,5.45,.22,0,3.05,4.45,mat.glass);
+
+// Slim entrance piers.
+for(const x of [-10.2,10.2])B(.72,6.1,1.0,x,3.3,3.1,mat.concrete2);
+
+// Automatic sliding glass door leaves.
+makeSlidingDoor(-3.35);
+makeSlidingDoor(3.35);
+
+// Door mullions and motor/header housing.
+for(const x of [-7,-3.35,0,3.35,7])B(.10,4.95,.15,x,2.95,2.18,mat.gold);
+B(14.2,.13,.16,0,5.49,2.18,mat.gold);
+
+// Infrared/radar sensor bar above the doors.
+const sensorBar=B(13.6,.10,.12,0,5.60,2.05,mat.light,false);
+sensorBar.userData.entranceSensor=true;
+entranceLights.push(sensorBar);
+
+// Threshold and interior welcome light.
+B(15.2,.07,3.25,0,.06,2.20,mat.black,false);
+for(const x of [-6,-2,2,6]){
+  entranceLights.push(B(1.35,.07,2.2,x,5.63,2.25,mat.light,false));
+}
+
+// Small status indicator: amber = standby, bright = detecting/opening.
+const sensorIndicator=B(.20,.20,.08,0,5.48,2.04,mat.light,false);
+entranceLights.push(sensorIndicator);
 
 // hanging pendant lights under overhang
 for(let x=-18;x<=18;x+=6)for(let z=-1;z<=8;z+=4.5){
@@ -250,6 +291,24 @@ const hotspots=[
 const ringMat=new THREE.MeshBasicMaterial({color:0xd1af63});
 hotspots.forEach(h=>{const r=new THREE.Mesh(new THREE.RingGeometry(.72,.82,36),ringMat);r.rotation.x=-Math.PI/2;r.position.set(h.p.x,.09,h.p.z);r.userData=h;scene.add(r)});
 
+// Automatic sensor door controller.
+function updateEntrance(dt){
+  const distanceZ=Math.abs(camera.position.z-2.1);
+  const distanceX=Math.abs(camera.position.x);
+  const detected=distanceZ<8.2 && distanceX<9.0;
+
+  for(const d of entranceDoors){
+    const target=d.userData.closedX + (detected ? d.userData.side*3.75 : 0);
+    const diff=target-d.position.x;
+    d.position.x += THREE.MathUtils.clamp(diff,-3.2*dt,3.2*dt);
+  }
+
+  const pulse=detected ? 0.78+0.18*Math.sin(performance.now()*0.009) : 0.32;
+  for(const l of entranceLights){
+    if(l.material?.color) l.material.color.setScalar(pulse);
+  }
+}
+
 // navigation
 let yaw=0,pitch=0,drag=false,lastX=0,lastY=0,locked=false;
 const keys=Object.create(null);
@@ -303,6 +362,7 @@ document.getElementById("enter").onclick=()=>{
 const clock=new THREE.Clock();
 function animate(){
  const dt=Math.min(clock.getDelta(),.045);
+ updateEntrance(dt);
  if(!renderer.xr.isPresenting){
    const f=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw)),r=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
    const sp=(keys.ShiftLeft?6.4:3.1)*dt;
