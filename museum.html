@@ -83,125 +83,34 @@ new HDRLoader()
   });
 
 // HDR sky/environment is loaded above; materials below are lit by both image-based light and a directional sun.
-// ---------- realistic procedural grass ----------
-// The old lawn was a flat green box. Replace it with a textured, slightly undulating
-// grass surface plus instanced 3D blades so it reads as real landscaping without
-// adding an external asset dependency.
-function makeGrassMaps(){
-  const W=768,H=512;
-  const colorCanvas=document.createElement("canvas");
-  colorCanvas.width=W;colorCanvas.height=H;
-  const g=colorCanvas.getContext("2d");
-  g.fillStyle="#2f4927";g.fillRect(0,0,W,H);
-  const image=g.getImageData(0,0,W,H);
-  const data=image.data;
-  for(let i=0;i<W*H;i++){
-    const n=Math.random();
-    const r=35+Math.floor(n*22);
-    const gg=56+Math.floor(n*42);
-    const b=24+Math.floor(n*18);
-    const j=i*4;data[j]=r;data[j+1]=gg;data[j+2]=b;data[j+3]=255;
-  }
-  g.putImageData(image,0,0);
-  g.globalAlpha=.23;
-  for(let i=0;i<15000;i++){
-    const x=Math.random()*W,y=Math.random()*H;
-    const h=2+Math.random()*7;
-    g.strokeStyle=Math.random()>.52?"#88a95f":"#203c1e";
-    g.lineWidth=.45+Math.random()*.7;
-    g.beginPath();g.moveTo(x,y);g.lineTo(x+(Math.random()-.5)*1.8,y-h);g.stroke();
-  }
-  g.globalAlpha=1;
-
-  const bumpCanvas=document.createElement("canvas");
-  bumpCanvas.width=W;bumpCanvas.height=H;
-  const b=bumpCanvas.getContext("2d");
-  b.fillStyle="#7b7b7b";b.fillRect(0,0,W,H);
-  for(let i=0;i<9000;i++){
-    const x=Math.random()*W,y=Math.random()*H;
-    const v=80+Math.floor(Math.random()*120);
-    b.fillStyle="rgb("+v+","+v+","+v+")";
-    b.fillRect(x,y,1+Math.random()*2,1+Math.random()*2);
-  }
-
-  const alphaCanvas=document.createElement("canvas");
-  alphaCanvas.width=48;alphaCanvas.height=160;
-  const a=alphaCanvas.getContext("2d");
-  const grad=a.createLinearGradient(0,0,0,160);
-  grad.addColorStop(0,"rgba(255,255,255,0)");
-  grad.addColorStop(.10,"rgba(255,255,255,.72)");
-  grad.addColorStop(.22,"#fff");
-  grad.addColorStop(.80,"#fff");
-  grad.addColorStop(1,"rgba(255,255,255,.9)");
-  a.fillStyle=grad;
-  a.beginPath();
-  a.moveTo(24,4);a.quadraticCurveTo(7,52,11,116);a.quadraticCurveTo(15,148,24,158);
-  a.quadraticCurveTo(33,148,37,116);a.quadraticCurveTo(41,52,24,4);a.fill();
-
-  const color=new THREE.CanvasTexture(colorCanvas);
-  color.colorSpace=THREE.SRGBColorSpace;
-  color.wrapS=color.wrapT=THREE.RepeatWrapping;
-  color.repeat.set(14,8);
-  const bump=new THREE.CanvasTexture(bumpCanvas);
-  bump.wrapS=bump.wrapT=THREE.RepeatWrapping;
-  bump.repeat.set(18,11);
-  const alpha=new THREE.CanvasTexture(alphaCanvas);
-  alpha.wrapS=alpha.wrapT=THREE.ClampToEdgeWrapping;
-  return {color,bump,alpha};
-}
-const grassMaps=makeGrassMaps();
-const realisticGrassSurface=new THREE.MeshBasicMaterial({
-  map:grassMaps.color,
-  color:0xffffff,
-  toneMapped:false
+// ---------- realistic museum lawn ----------
+// Outdoor ground uses the supplied Wongming forum grass image directly.
+// It is intentionally unlit so architectural shadows cannot turn the lawn black.
+const grassTexture=new THREE.TextureLoader().load("/api/museum-grass",(tex)=>{
+  tex.colorSpace=THREE.SRGBColorSpace;
+  tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+  tex.repeat.set(5,5);
+  tex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+  realisticGrassSurface.map=tex;
+  realisticGrassSurface.needsUpdate=true;
+},undefined,(err)=>{
+  console.warn("Museum grass texture unavailable; using natural green fallback.",err);
 });
-// Use the supplied Wongming forum lawn image as the visible ground texture.
-// It is proxied through Vercel to avoid hotlink/CORS issues.
-const suppliedGrassTexture=new THREE.TextureLoader().load("/api/museum-grass");
-suppliedGrassTexture.colorSpace=THREE.SRGBColorSpace;
-suppliedGrassTexture.wrapS=suppliedGrassTexture.wrapT=THREE.RepeatWrapping;
-suppliedGrassTexture.repeat.set(4,3);
-suppliedGrassTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
-realisticGrassSurface.map=suppliedGrassTexture;
-realisticGrassSurface.map.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
-realisticGrassSurface.needsUpdate=true;
 
-const grassBladeGeo=(()=>{
-  const p=new Float32Array([
-    -.05,0,0,  .05,0,0,  -.025,.68,0,  .025,.68,0,
-     0,0,-.05, 0,0,.05, 0,.68,-.025, 0,.68,.025
-  ]);
-  const uv=new Float32Array([
-    0,0, 1,0, 0,1, 1,1,
-    0,0, 1,0, 0,1, 1,1
-  ]);
-  const idx=[0,1,2,1,3,2,4,5,6,5,7,6];
-  const geo=new THREE.BufferGeometry();
-  geo.setAttribute("position",new THREE.BufferAttribute(p,3));
-  geo.setAttribute("uv",new THREE.BufferAttribute(uv,2));
-  geo.setIndex(idx);
-  geo.computeVertexNormals();
-  return geo;
-})();
-const grassBladeMat=new THREE.MeshStandardMaterial({
-  color:0x5f8d39,
-  roughness:1,
-  metalness:0,
-  alphaMap:grassMaps.alpha,
-  transparent:true,
-  alphaTest:.32,
-  side:THREE.DoubleSide,
-  depthWrite:true,
-  vertexColors:true
+const realisticGrassSurface=new THREE.MeshBasicMaterial({
+  color:0x6d914f,
+  toneMapped:false
 });
 
 function createGrassSurface(width,depth,x,y,z){
-  const geo=new THREE.PlaneGeometry(width,depth,96,64);
+  const geo=new THREE.PlaneGeometry(width,depth,96,72);
   const pos=geo.attributes.position;
   for(let i=0;i<pos.count;i++){
     const px=pos.getX(i),py=pos.getY(i);
-    const wave=Math.sin(px*.38+z*.12)*.020+Math.cos(py*.46+x*.08)*.017+
-               Math.sin((px+py)*.82)*.010;
+    const wave=
+      Math.sin(px*.36+z*.11)*.018+
+      Math.cos(py*.43+x*.08)*.014+
+      Math.sin((px-py)*.72)*.008;
     pos.setZ(i,wave);
   }
   pos.needsUpdate=true;
@@ -209,48 +118,9 @@ function createGrassSurface(width,depth,x,y,z){
   geo.rotateX(-Math.PI/2);
   const mesh=new THREE.Mesh(geo,realisticGrassSurface);
   mesh.position.set(x,y,z);
-  mesh.receiveShadow=true;
+  mesh.receiveShadow=false;
   scene.add(mesh);
   return mesh;
-}
-
-function createGrassBlades(width,depth,x,y,z,count,seed,valid){
-  let state=seed>>>0;
-  const rand=()=>{
-    state=(state*1664525+1013904223)>>>0;
-    return state/4294967296;
-  };
-  const inst=new THREE.InstancedMesh(grassBladeGeo,grassBladeMat,count);
-  inst.castShadow=false;inst.receiveShadow=true;
-  const m=new THREE.Matrix4();
-  const q=new THREE.Quaternion();
-  const s=new THREE.Vector3();
-  const p=new THREE.Vector3();
-  const col=new THREE.Color();
-  let placed=0,attempts=0;
-  while(placed<count && attempts<count*8){
-    attempts++;
-    const px=x-width/2+rand()*width;
-    const pz=z-depth/2+rand()*depth;
-    if(valid && !valid(px,pz))continue;
-    const h=.48+rand()*.58;
-    const w=.72+rand()*.62;
-    p.set(px,y+.025,pz);
-    q.setFromAxisAngle(new THREE.Vector3(0,1,0),rand()*Math.PI);
-    s.set(w,h,w);
-    m.compose(p,q,s);
-    inst.setMatrixAt(placed,m);
-    col.setHSL(.24+rand()*.07,.34+.18*rand(),.25+.15*rand());
-    inst.setColorAt(placed,col);
-    placed++;
-  }
-  for(let i=placed;i<count;i++){
-    p.set(x,y-.4,z);q.identity();s.set(0,0,0);m.compose(p,q,s);inst.setMatrixAt(i,m);
-  }
-  inst.instanceMatrix.needsUpdate=true;
-  if(inst.instanceColor)inst.instanceColor.needsUpdate=true;
-  scene.add(inst);
-  return inst;
 }
 
 const mat={
@@ -306,18 +176,13 @@ function makeSlidingDoor(x0){
   door.userData.side=x0<0?-1:1;
   entranceDoors.push(door);
 }
-B(110,.4,130,0,-.2,-22,mat.ground);
-
-// public lawn / promenade — realistic textured lawn with 3D grass blades
-createGrassSurface(82,42,0,.07,24);
-for(let i=-30;i<=30;i+=8)B(5,.12,35,i,.11,24,mat.ground);
+// One continuous outdoor lawn. No concrete slab underneath it.
+createGrassSurface(110,106,0,.07,-10);
 
 
 // harbor water behind
 B(92,.08,18,0,.03,-72,mat.water,false);
 
-// plaza paving
-B(70,.12,27,0,.1,3,mat.concrete2);
 
 // ---------- M+ style upside-down T massing ----------
 // podium: broad horizontal base, raised and cantilevered
@@ -378,10 +243,6 @@ for(const x of [-24,-18,-12,-6,0,6,12,18,24]){
 for(const x of [-21,-14,-7,0,7,14,21])C(.3,5.8,x,2.9,-23.8,mat.ceramic,24);
 
 // ---------- MAIN ENTRANCE / MONUMENTAL PORTAL ----------
-// Long approach axis from the public plaza.
-B(14,.08,31,0,.13,24,mat.black,false);
-for(const x of [-5.4,5.4])B(.18,.08,27,x,.22,23,mat.gold,false);
-for(let z=23;z>12;z-=2.2)B(12,.08,.95,0,.21,z,mat.concrete2,false);
 
 // Broad arrival steps.
 for(let i=0;i<5;i++)B(17-i*.7,.32,1.05,0,.16+i*.32,15.7-i*1.0,mat.concrete2);
@@ -448,8 +309,6 @@ for(const x of [-8,-4,0,4,8]) {
 
 //// ---------- roof garden / public roof deck ----------
 createGrassSurface(52,38,0,9.755,-13);
-for(let x=-20;x<=20;x+=10)B(2.5,.22,30,x,9.82,-13,mat.concrete2,false);
-for(let z=-27;z<=1;z+=7)B(48,.18,1.8,0,9.86,z,mat.concrete2,false);
 for(let x=-20;x<=20;x+=8){
  for(let z=-26;z<=0;z+=8)C(.65,1.0,x,10.45,z,mat.ceramic,20);
 }
@@ -616,7 +475,6 @@ for(let i=0;i<5;i++){
   B(11.6-i*.32,.12,.86,0,top-.06,z,mat.concrete2);
   B(6.4,.035,.84,0,top+.035,z,carpetMat,false);
 }
-B(8.0,.05,1.55,0,.64,10.95,mat.concrete2,false);
 B(6.4,.04,1.55,0,.72,10.95,carpetMat,false);
 B(6.4,.04,5.2,0,.72,8.35,carpetMat,false);
 
