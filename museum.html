@@ -41,9 +41,10 @@ import {HDRLoader} from "three/addons/loaders/HDRLoader.js";
 
 const scene=new THREE.Scene();
 const nightSkyColor=new THREE.Color(0x02050d);
+const dayFallbackColor=new THREE.Color(0x7f9db8);
 let daySky=null;
 let timeMode="day";
-scene.background=new THREE.Color(0x080a0d);
+scene.background=dayFallbackColor.clone();
 scene.backgroundBlurriness=0.12;
 scene.backgroundIntensity=0.72;
 scene.environmentIntensity=0.82;
@@ -70,11 +71,13 @@ new HDRLoader()
   .setPath("https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/equirectangular/")
   .load("venice_sunset_1k.hdr",(hdr)=>{
     hdr.mapping=THREE.EquirectangularReflectionMapping;
-    scene.background=hdr;
+    daySky=hdr;
     scene.environment=hdr;
-    scene.backgroundIntensity=0.66;
-    scene.environmentIntensity=0.9;
-    hdr.dispose = hdr.dispose || (()=>{});
+    if(timeMode==="day"){
+      scene.background=daySky;
+      scene.backgroundIntensity=0.66;
+    }
+    scene.environmentIntensity=timeMode==="day" ? 0.9 : 0.2;
   },undefined,(err)=>{
     console.warn("HDR sky failed; using procedural fallback.",err);
   });
@@ -374,7 +377,7 @@ function applyTimeMode(mode){
     nightLights.forEach(l=>{l.intensity=l.color.r>.8?28:8;});
     document.getElementById("timeBtn").textContent="切換至日景 · DAY";
   }else{
-    scene.background=daySky||new THREE.Color(0x80a0bf);
+    scene.background=daySky || dayFallbackColor;
     scene.backgroundIntensity=.66;
     scene.environmentIntensity=.90;
     scene.fog.color.set(0x080a0d);
@@ -382,7 +385,7 @@ function applyTimeMode(mode){
     fill.intensity=.42;
     rim.intensity=.30;
     stars.material.opacity=0;
-    nightLights.forEach(l=>l.intensity=0);
+    nightLights.forEach(l=>{l.intensity=0;});
     document.getElementById("timeBtn").textContent="切換至夜景 · NIGHT";
   }
 }
