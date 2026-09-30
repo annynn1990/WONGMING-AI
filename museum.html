@@ -35,10 +35,14 @@ canvas{display:block}
 <script type="module">
 import * as THREE from "three";
 import {VRButton} from "three/addons/webxr/VRButton.js";
+import {HDRLoader} from "three/addons/loaders/HDRLoader.js";
 
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x080a0d);
-scene.fog=new THREE.Fog(0x080a0d,35,145);
+scene.backgroundBlurriness=0.12;
+scene.backgroundIntensity=0.72;
+scene.environmentIntensity=0.82;
+scene.fog=new THREE.Fog(0x080a0d,34,150);
 
 const camera=new THREE.PerspectiveCamera(68,innerWidth/innerHeight,.05,260);
 camera.position.set(0,1.7,30);
@@ -54,7 +58,23 @@ renderer.toneMappingExposure=1.05;
 renderer.xr.enabled=true;
 document.body.appendChild(renderer.domElement);
 
-const mat={
+renderer.domElement.style.background="#080a0d";
+const pmrem=new THREE.PMREMGenerator(renderer);
+pmrem.compileEquirectangularShader();
+new HDRLoader()
+  .setPath("https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/equirectangular/")
+  .load("venice_sunset_1k.hdr",(hdr)=>{
+    hdr.mapping=THREE.EquirectangularReflectionMapping;
+    scene.background=hdr;
+    scene.environment=hdr;
+    scene.backgroundIntensity=0.66;
+    scene.environmentIntensity=0.9;
+    hdr.dispose = hdr.dispose || (()=>{});
+  },undefined,(err)=>{
+    console.warn("HDR sky failed; using procedural fallback.",err);
+  });
+
+// HDR sky/environment is loaded above; materials below are lit by both image-based light and a directional sun.\nconst mat={
 ground:new THREE.MeshStandardMaterial({color:0x34353a,roughness:.8}),
 grass:new THREE.MeshStandardMaterial({color:0x33412f,roughness:.98}),
 concrete:new THREE.MeshStandardMaterial({color:0x55565a,roughness:.86}),
@@ -71,8 +91,9 @@ light:new THREE.MeshBasicMaterial({color:0xf1d17d})
 };
 
 scene.add(new THREE.HemisphereLight(0xaebed1,0x100b07,1.15));
-const key=new THREE.DirectionalLight(0xffe8bb,1.7);key.position.set(-25,35,28);key.castShadow=true;key.shadow.mapSize.set(2048,2048);scene.add(key);
-const fill=new THREE.DirectionalLight(0x8ea4c7,.5);fill.position.set(28,20,-30);scene.add(fill);
+const key=new THREE.DirectionalLight(0xffdca0,2.25);key.position.set(-28,42,30);key.castShadow=true;key.shadow.mapSize.set(3072,3072);key.shadow.camera.near=1;key.shadow.camera.far=160;key.shadow.camera.left=-70;key.shadow.camera.right=70;key.shadow.camera.top=70;key.shadow.camera.bottom=-70;key.shadow.bias=-0.00025;scene.add(key);
+const fill=new THREE.DirectionalLight(0x8ea4c7,.42);fill.position.set(32,18,-35);scene.add(fill);
+const rim=new THREE.DirectionalLight(0xdde8ff,.3);rim.position.set(-30,12,-55);scene.add(rim);
 
 function add(g,m,p=[0,0,0],r=[0,0,0],cast=true){
  const o=new THREE.Mesh(g,m);o.position.set(...p);o.rotation.set(...r);o.castShadow=cast;o.receiveShadow=true;scene.add(o);return o;
