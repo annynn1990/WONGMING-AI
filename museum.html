@@ -304,14 +304,6 @@ B(110,.4,130,0,-.2,-22,mat.ground);
 
 // public lawn / promenade — realistic textured lawn with 3D grass blades
 createGrassSurface(82,42,0,.07,24);
-createGrassBlades(82,42,0,.075,24,7600,0x21a7,
-  (px,pz)=>{
-    if(pz<16.7)return false;
-    if(Math.abs(px)<3.9 && pz<29)return false;
-    const nearest=Math.round(px/8)*8;
-    return Math.abs(px-nearest)>2.65;
-  }
-);
 for(let i=-30;i<=30;i+=8)B(5,.12,35,i,.11,24,mat.ground);
 
 
@@ -450,13 +442,6 @@ for(const x of [-8,-4,0,4,8]) {
 
 //// ---------- roof garden / public roof deck ----------
 createGrassSurface(52,38,0,9.755,-13);
-createGrassBlades(52,38,0,9.76,-13,4600,0x7c91,
-  (px,pz)=>{
-    const nearestX=Math.round(px/10)*10;
-    const nearestZ=Math.round((pz+13)/7)*7-13;
-    return Math.abs(px-nearestX)>1.55 && Math.abs(pz-nearestZ)>1.05;
-  }
-);
 for(let x=-20;x<=20;x+=10)B(2.5,.22,30,x,9.82,-13,mat.concrete2,false);
 for(let z=-27;z<=1;z+=7)B(48,.18,1.8,0,9.86,z,mat.concrete2,false);
 for(let x=-20;x<=20;x+=8){
