@@ -7,7 +7,7 @@
 <style>
 :root{--ink:#eee7d5;--muted:#9ea4aa;--gold:#cfb16b;--glass:#11161bd4}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080a0d;color:var(--ink);font-family:Inter,"Noto Sans TC","Noto Serif TC",sans-serif}
-canvas{display:block;touch-action:none;cursor:crosshair}
+canvas{display:block;touch-action:none;cursor:grab}
 #brand{position:fixed;z-index:20;top:24px;left:28px;text-shadow:0 4px 25px #000;pointer-events:none}
 #brand h1{margin:0;font:600 29px/1 "Noto Serif TC",serif;letter-spacing:.15em}
 #brand p{margin:8px 0 0;font-size:10px;letter-spacing:.18em;color:#bdc1c5;text-transform:uppercase}
@@ -17,7 +17,19 @@ canvas{display:block;touch-action:none;cursor:crosshair}
 #enter{margin-top:13px}
 #timeBtn{margin-top:8px;border-color:#fff3c6;color:#d8d4c8;background:#101318}
 #hint{position:fixed;z-index:20;bottom:18px;left:50%;transform:translateX(-50%);padding:9px 14px;background:#090c10cf;border:1px solid #fff2;color:#acb3ba;font-size:11px;white-space:nowrap;backdrop-filter:blur(13px)}
-#reticle{position:fixed;z-index:20;left:50%;top:50%;width:7px;height:7px;margin:-3.5px;border:1px solid #eedba7;border-radius:50%;pointer-events:none}
+#reticle{display:none}
+#interact{position:fixed;z-index:22;left:50%;bottom:84px;transform:translateX(-50%);display:none;padding:9px 15px;background:#10151bd9;border:1px solid #cfb16b;color:#eadbad;font-size:11px;letter-spacing:.12em;backdrop-filter:blur(12px);pointer-events:none}
+#joystick{position:fixed;z-index:23;left:18px;bottom:18px;width:108px;height:108px;border:1px solid #fff5;border-radius:50%;background:#10151b88;display:none;touch-action:none}
+#stick{position:absolute;left:50%;top:50%;width:42px;height:42px;margin:-21px;border:1px solid #eadbad99;border-radius:50%;background:#eadbad22}
+#jump{position:fixed;z-index:23;right:18px;bottom:24px;width:72px;height:72px;border:1px solid #eadbad77;border-radius:50%;background:#10151b99;color:#eadbad;display:none;font-size:11px;letter-spacing:.08em;touch-action:none}
+#worldTag{position:fixed;z-index:21;left:50%;top:18px;transform:translateX(-50%);padding:7px 12px;border:1px solid #fff2;background:#0a0f14b8;color:#d9c78f;font-size:10px;letter-spacing:.14em;text-transform:uppercase;backdrop-filter:blur(10px)}
+@media(max-width:700px){
+  #panel{right:10px;top:10px;width:225px}
+  #brand{left:12px;top:12px}
+  #hint{display:none}
+  #joystick,#jump{display:block}
+  #worldTag{top:auto;bottom:132px}
+}
 #info{position:fixed;z-index:21;left:50%;bottom:70px;transform:translateX(-50%);display:none;max-width:min(560px,88vw);padding:13px 18px;background:#080b10ee;border:1px solid #fff2;color:#c9ccd1;font-size:12px;line-height:1.75;box-shadow:0 18px 50px #0009}
 #info strong{color:#e5d19b}
 @media(max-width:700px){#panel{right:10px;top:10px;width:225px}#brand{left:12px;top:12px}#hint{display:none}}
@@ -28,11 +40,13 @@ canvas{display:block;touch-action:none;cursor:crosshair}
 <div id="panel">
 <div class="kicker">ARCHITECTURAL REFERENCE · M+</div>
 <div class="title">以現實博物館建築為藍本</div>
-<p class="copy">本館採用香港 M+ 的核心空間邏輯作為黃名版本：懸臂式大型基座、上升的縱向塔樓、公共屋頂花園、中央採光井與開放展覽空間。</p>
+<p class="copy">以可探索的 3D 博物館作為核心：操控角色行走、跳躍，在空間中的展廳與互動點自然閱讀歷史內容。</p>
 <button id="enter">ENTER IMMERSIVE VR</button><button id="timeBtn">切換至夜景 · NIGHT</button>
 </div>
-<div id="hint">WASD 移動・Shift 加速・N 日夜切換・點擊展區　｜　VR：Enter Immersive</div>
-<div id="reticle"></div><div id="info"></div>
+<div id="worldTag">WMMOH · EXPLORE THE MUSEUM</div>
+<div id="hint">WASD 移動・Shift 加速・Space 跳躍・拖曳旋轉視角・E 互動　｜　手機：左下搖桿・右下跳躍</div>
+<div id="reticle"></div><div id="interact">E　互動</div><div id="info"></div>
+<div id="joystick"><div id="stick"></div></div><button id="jump" type="button">JUMP</button>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from "three";
@@ -600,8 +614,8 @@ B(1,1,38,26.5,10.25,-13,mat.black);
 
 // Automatic sensor door controller.
 function updateEntrance(dt){
-  const dz=Math.abs(camera.position.z-10.8);
-  const dx=Math.abs(camera.position.x);
+  const dz=Math.abs(player.position.z-10.8);
+  const dx=Math.abs(player.position.x);
   const detected=dz<12.5 && dx<8.5;
   for(const d of entranceDoors){
     const target=d.userData.closedX + (detected ? d.userData.side*3.75 : 0);
@@ -741,47 +755,1173 @@ function applyTimeMode(mode){
 document.getElementById("timeBtn").onclick=()=>applyTimeMode(timeMode==="day"?"night":"day");
 addEventListener("keydown",e=>{if(e.code==="KeyN")applyTimeMode(timeMode==="day"?"night":"day")});
 
-// navigation
-let yaw=0,pitch=0,drag=false,lastX=0,lastY=0,locked=false;
+// ---------- EXPLORE THE MUSEUM LIKE A 3D WORLD ----------
+const player=new THREE.Group();
+player.position.set(0,.07,27.5);
+player.userData={velocityY:0,onGround:true};
+scene.add(player);
+
+const avatarSkin=new THREE.MeshStandardMaterial({color:0xd3a27c,roughness:.82});
+const avatarCloth=new THREE.MeshStandardMaterial({color:0x445e86,roughness:.78});
+const avatarShirt=new THREE.MeshStandardMaterial({color:0xe9e2d2,roughness:.72});
+const avatarDark=new THREE.MeshStandardMaterial({color:0x1f2730,roughness:.78});
+
+const avatarBody=new THREE.Mesh(new THREE.BoxGeometry(.62,.72,.36),avatarShirt);
+avatarBody.position.y=1.02;
+player.add(avatarBody);
+
+const avatarHead=new THREE.Mesh(new THREE.SphereGeometry(.29,20,16),avatarSkin);
+avatarHead.position.y=1.62;
+player.add(avatarHead);
+
+const avatarHair=new THREE.Mesh(new THREE.SphereGeometry(.305,20,12,0,Math.PI*2,0,Math.PI*.48),avatarDark);
+avatarHair.position.y=1.73;
+player.add(avatarHair);
+
+for(const sx of [-.18,.18]){
+  const leg=new THREE.Mesh(new THREE.BoxGeometry(.20,.65,.22),avatarCloth);
+  leg.position.set(sx,.34,0);
+  player.add(leg);
+}
+for(const sx of [-.2,.2]){
+  const shoe=new THREE.Mesh(new THREE.BoxGeometry(.25,.12,.42),avatarDark);
+  shoe.position.set(sx,.055,-.04);
+  player.add(shoe);
+}
+for(const sx of [-.43,.43]){
+  const arm=new THREE.Mesh(new THREE.BoxGeometry(.16,.58,.17),avatarShirt);
+  arm.position.set(sx,.99,0);
+  player.add(arm);
+}
+player.userData.parts={avatarBody,avatarHead};
+
+let yaw=0;
+let pitch=.34;
+let drag=false;
+let lastX=0,lastY=0;
+let jumpPressed=false;
+let joyX=0,joyY=0;
+let activeHotspot=null;
 const keys=Object.create(null);
 const canvas=renderer.domElement;
 canvas.tabIndex=0;
-canvas.addEventListener("click",()=>{
-  if(renderer.xr.isPresenting)return;
-  if(document.pointerLockElement!==canvas) canvas.requestPointerLock?.();
-  const f=new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
-  let best=null,bd=99;
-  for(const h of hotspots){
-    const d=camera.position.distanceTo(h.p);
-    if(d<8){
-      const t=h.p.clone().sub(camera.position).normalize();
-      if(t.dot(f)>.5&&d<bd){best=h;bd=d;}
-    }
+
+function setJump(){
+  if(player.userData.onGround){
+    player.userData.velocityY=5.4;
+    player.userData.onGround=false;
   }
-  if(best){const el=document.getElementById("info");el.innerHTML="<strong>"+best.title+"</strong><br>"+best.text;el.style.display="block";clearTimeout(window.__inf);window.__inf=setTimeout(()=>el.style.display="none",5000);}
+}
+document.getElementById("jump").addEventListener("pointerdown",e=>{e.preventDefault();setJump();});
+
+canvas.addEventListener("pointerdown",e=>{
+  if(renderer.xr.isPresenting)return;
+  drag=true;lastX=e.clientX;lastY=e.clientY;
+  canvas.style.cursor="grabbing";
 });
-document.addEventListener("pointerlockchange",()=>{locked=document.pointerLockElement===canvas;canvas.style.cursor=locked?"none":"crosshair";});
-document.addEventListener("mousemove",e=>{
-  if(renderer.xr.isPresenting)return;
-  if(locked){
-    yaw-=e.movementX*.0025;
-    pitch-=e.movementY*.0020;
-    pitch=Math.max(-1.15,Math.min(1.15,pitch));
-  }else if(drag){
-    yaw-=(e.clientX-lastX)*.003;
-    pitch-=(e.clientY-lastY)*.002;
-    pitch=Math.max(-1.15,Math.min(1.15,pitch));
-  }
+document.addEventListener("pointerup",()=>{drag=false;canvas.style.cursor="grab";});
+document.addEventListener("pointermove",e=>{
+  if(!drag||renderer.xr.isPresenting)return;
+  yaw-=(e.clientX-lastX)*.004;
+  pitch-= (e.clientY-lastY)*.0025;
+  pitch=THREE.MathUtils.clamp(pitch,.08,.82);
   lastX=e.clientX;lastY=e.clientY;
 });
-canvas.addEventListener("mousedown",e=>{drag=true;lastX=e.clientX;lastY=e.clientY;});
-document.addEventListener("mouseup",()=>drag=false);
+
 addEventListener("keydown",e=>{
   keys[e.code]=true;
-  if(["KeyW","KeyA","KeyS","KeyD","ShiftLeft","ShiftRight","Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.code)) e.preventDefault();
+  if(e.code==="Space" && !e.repeat)jumpPressed=true;
+  if(["KeyW","KeyA","KeyS","KeyD","ShiftLeft","ShiftRight","Space","KeyE","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.code))e.preventDefault();
 });
 addEventListener("keyup",e=>{keys[e.code]=false;});
 
+function bindJoystick(){
+  const pad=document.getElementById("joystick");
+  const stick=document.getElementById("stick");
+  let active=false;
+  const update=e=>{
+    const r=pad.getBoundingClientRect();
+    const cx=r.left+r.width/2,cy=r.top+r.height/2;
+    let dx=e.clientX-cx,dy=e.clientY-cy;
+    const max=32;
+    const len=Math.hypot(dx,dy)||1;
+    if(len>max){dx=dx/len*max;dy=dy/len*max;}
+    joyX=dx/max;
+    joyY=dy/max;
+    stick.style.transform=\`translate(\${dx}px,\${dy}px)\`;
+  };
+  pad.addEventListener("pointerdown",e=>{active=true;pad.setPointerCapture(e.pointerId);update(e);});
+  pad.addEventListener("pointermove",e=>{if(active)update(e);});
+  const end=()=>{active=false;joyX=joyY=0;stick.style.transform="translate(0,0)";};
+  pad.addEventListener("pointerup",end);
+  pad.addEventListener("pointercancel",end);
+}
+bindJoystick();
+
+function movePlayerWithCollision(dx,dz){
+  const nx=player.position.x+dx;
+  const nz=player.position.z+dz;
+  const corridorNow =
+    player.position.z > 7.0 && player.position.z < 24.0 &&
+    Math.abs(player.position.x) < 8.2;
+  const corridorNext =
+    nz > 7.0 && nz < 24.0 &&
+    Math.abs(nx) < 8.2;
+
+  if(corridorNow||corridorNext){
+    player.position.x=THREE.MathUtils.clamp(nx,-8.15,8.15);
+    player.position.z=nz;
+    return;
+  }
+  if(!blockedAt(nx,player.position.z))player.position.x=nx;
+  if(!blockedAt(player.position.x,nz))player.position.z=nz;
+}
+
+function getInputVector(){
+  let ix=0,iy=0;
+  if(keys.KeyW||keys.ArrowUp)iy-=1;
+  if(keys.KeyS||keys.ArrowDown)iy+=1;
+  if(keys.KeyA||keys.ArrowLeft)ix-=1;
+  if(keys.KeyD||keys.ArrowRight)ix+=1;
+  ix+=joyX;iy+=joyY;
+  const len=Math.hypot(ix,iy);
+  if(len>1){ix/=len;iy/=len;}
+  return {ix,iy};
+}
+
+function showHotspot(h){
+  activeHotspot=h;
+  const el=document.getElementById("interact");
+  el.style.display=h?"block":"none";
+  if(h)el.textContent="E　"+h.title;
+}
+function interactNearest(){
+  if(!activeHotspot)return;
+  const el=document.getElementById("info");
+  el.innerHTML="<strong>"+activeHotspot.title+"</strong><br>"+activeHotspot.text;
+  el.style.display="block";
+  clearTimeout(window.__inf);
+  window.__inf=setTimeout(()=>el.style.display="none",5000);
+}
+
+addEventListener("keydown",e=>{
+  if(e.code==="KeyE"&&!e.repeat)interactNearest();
+});
+
+document.getElementById("interact").addEventListener("click",interactNearest);
+
+function updateNearestHotspot(){
+  let best=null,bd=4.5;
+  for(const h of hotspots){
+    const dx=h.p.x-player.position.x;
+    const dz=h.p.z-player.position.z;
+    const d=Math.hypot(dx,dz);
+    if(d<bd){bd=d;best=h;}
+  }
+  showHotspot(best);
+}
+
+function updatePlayer(dt){
+  const input=getInputVector();
+  const moving=Math.hypot(input.ix,input.iy)>.08;
+  const speed=(keys.ShiftLeft||keys.ShiftRight?5.4:3.4)*dt;
+  const forward=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw));
+  const right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
+  const mdx=(-forward.x*input.iy + right.x*input.ix)*speed;
+  const mdz=(-forward.z*input.iy + right.z*input.ix)*speed;
+
+  if(moving){
+    movePlayerWithCollision(mdx,mdz);
+    const targetRotation=Math.atan2(mdx,-mdz);
+    player.rotation.y=THREE.MathUtils.lerp(player.rotation.y,targetRotation,.28);
+    const bob=Math.sin(performance.now()*.012)*.035;
+    avatarBody.position.y=1.02+bob;
+    avatarHead.position.y=1.62+bob;
+  }
+
+  if(jumpPressed){setJump();jumpPressed=false;}
+  player.userData.velocityY-=16.5*dt;
+  const floorY=groundHeight(player.position.x,player.position.z);
+  player.position.y+=player.userData.velocityY*dt;
+  if(player.position.y<=floorY){
+    player.position.y=floorY;
+    player.userData.velocityY=0;
+    player.userData.onGround=true;
+  }else{
+    player.userData.onGround=false;
+  }
+
+  player.position.x=THREE.MathUtils.clamp(player.position.x,-37,37);
+  player.position.z=THREE.MathUtils.clamp(player.position.z,-74,41);
+}
+
+function updateFollowCamera(dt){
+  const distance=6.4;
+  const target=player.position.clone().add(new THREE.Vector3(0,1.05,0));
+  const horizontal=Math.cos(pitch)*distance;
+  const desired=new THREE.Vector3(
+    target.x+Math.sin(yaw)*horizontal,
+    target.y+1.25+Math.sin(pitch)*distance,
+    target.z+Math.cos(yaw)*horizontal
+  );
+  camera.position.lerp(desired,1-Math.pow(.0001,dt));
+  camera.lookAt(target);
+}
+
+// immersive
+document.getElementById("enter").onclick=()=>{
+ if(renderer.xr.isPresenting)return;
+ const b=VRButton.createButton(renderer);
+ b.style.position="fixed";b.style.bottom="48px";b.style.left="50%";b.style.transform="translateX(-50%)";b.style.zIndex="50";
+ document.body.appendChild(b);b.click();
+};
+
+const clock=new THREE.Clock();
+function animate(){
+  const dt=Math.min(clock.getDelta(),.045);
+  updateEntrance(dt);
+  if(!renderer.xr.isPresenting){
+    updatePlayer(dt);
+    updateFollowCamera(dt);
+    updateNearestHotspot();
+  }
+  const t=performance.now()*.001;
+  scene.traverse(o=>{
+    if(o.userData&&o.userData.led&&o.material&&o.material.color){
+      const n=o.position.x*7+o.position.y*3;
+      const v=.12+.18*(.5+.5*Math.sin(t*1.25+n));
+      o.material.color.setHSL(.56,.28,.08+v);
+    }
+  });
+  renderer.render(scene,camera);
+}
+applyTimeMode("day");
+renderer.setAnimationLoop(animate);
+addEventListener("resize",()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+<script type="module">
+import * as THREE from "three";
+import {VRButton} from "three/addons/webxr/VRButton.js";
+import {HDRLoader} from "three/addons/loaders/HDRLoader.js";
+import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
+
+const scene=new THREE.Scene();
+const nightSkyColor=new THREE.Color(0x02050d);
+const dayFallbackColor=new THREE.Color(0x7f9db8);
+let daySky=null;
+let timeMode="day";
+scene.background=dayFallbackColor.clone();
+scene.backgroundBlurriness=0.12;
+scene.backgroundIntensity=0.72;
+scene.environmentIntensity=0.82;
+scene.fog=new THREE.Fog(0x080a0d,34,150);
+
+const camera=new THREE.PerspectiveCamera(68,innerWidth/innerHeight,.05,260);
+camera.position.set(0,1.7,32);
+
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:"high-performance"});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.05;
+renderer.xr.enabled=true;
+document.body.appendChild(renderer.domElement);
+
+renderer.domElement.style.background="#080a0d";
+const pmrem=new THREE.PMREMGenerator(renderer);
+pmrem.compileEquirectangularShader();
+new HDRLoader()
+  .setPath("https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/equirectangular/")
+  .load("venice_sunset_1k.hdr",(hdr)=>{
+    hdr.mapping=THREE.EquirectangularReflectionMapping;
+    daySky=hdr;
+    scene.environment=hdr;
+    if(timeMode==="day"){
+      scene.background=daySky;
+      scene.backgroundIntensity=0.66;
+    }
+    scene.environmentIntensity=timeMode==="day" ? 0.9 : 0.2;
+  },undefined,(err)=>{
+    console.warn("HDR sky failed; using procedural fallback.",err);
+  });
+
+// HDR sky/environment is loaded above; materials below are lit by both image-based light and a directional sun.
+// ---------- realistic museum lawn ----------
+// Outdoor ground uses the supplied Wongming forum grass image directly.
+// It is intentionally unlit so architectural shadows cannot turn the lawn black.
+const grassTexture=new THREE.TextureLoader().load(
+  "https://cdn.jsdelivr.net/gh/annynn1990/wk@main/assets/gress2k.jpg",
+  (tex)=>{
+    tex.colorSpace=THREE.SRGBColorSpace;
+    tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+    tex.repeat.set(5,5);
+    tex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+    realisticGrassSurface.map=tex;
+    realisticGrassSurface.needsUpdate=true;
+  },
+  undefined,
+  (err)=>{
+    console.warn("wk/assets/gress2k.jpg unavailable; using natural green fallback.",err);
+  }
+);
+
+const realisticGrassSurface=new THREE.MeshBasicMaterial({
+  color:0x6d914f,
+  toneMapped:false,
+  side:THREE.DoubleSide
+});
+
+function createGrassSurface(width,depth,x,y,z){
+  const geo=new THREE.PlaneGeometry(width,depth,96,72);
+  const pos=geo.attributes.position;
+  for(let i=0;i<pos.count;i++){
+    const px=pos.getX(i),py=pos.getY(i);
+    const wave=
+      Math.sin(px*.36+z*.11)*.018+
+      Math.cos(py*.43+x*.08)*.014+
+      Math.sin((px-py)*.72)*.008;
+    pos.setZ(i,wave);
+  }
+  pos.needsUpdate=true;
+  geo.computeVertexNormals();
+  geo.rotateX(-Math.PI/2);
+  const mesh=new THREE.Mesh(geo,realisticGrassSurface);
+  mesh.position.set(x,y,z);
+  mesh.receiveShadow=false;
+  scene.add(mesh);
+  return mesh;
+}
+
+const mat={
+ground:new THREE.MeshStandardMaterial({color:0x34353a,roughness:.8}),
+grass:new THREE.MeshStandardMaterial({color:0x33412f,roughness:.98}),
+concrete:new THREE.MeshStandardMaterial({color:0x55565a,roughness:.86}),
+concrete2:new THREE.MeshStandardMaterial({color:0x8d8e8a,roughness:.8}),
+concreteLight:new THREE.MeshStandardMaterial({color:0xb3b0a6,roughness:.72}),
+ceramic:new THREE.MeshStandardMaterial({color:0x6c6258,roughness:.56,metalness:.10}),
+dark:new THREE.MeshStandardMaterial({color:0x2b3036,roughness:.72}),
+glass:new THREE.MeshPhysicalMaterial({color:0x7793a4,roughness:.1,transmission:.42,transparent:true,opacity:.38,side:THREE.DoubleSide}),
+glassDark:new THREE.MeshPhysicalMaterial({color:0x435762,roughness:.2,transmission:.35,transparent:true,opacity:.34,side:THREE.DoubleSide}),
+gold:new THREE.MeshStandardMaterial({color:0xc5a15a,metalness:.78,roughness:.24}),
+white:new THREE.MeshStandardMaterial({color:0xb8b5ad,roughness:.62}),
+black:new THREE.MeshStandardMaterial({color:0x171b20,roughness:.84}),
+water:new THREE.MeshPhysicalMaterial({color:0x203747,roughness:.07,transmission:.52,transparent:true,opacity:.7}),
+light:new THREE.MeshBasicMaterial({color:0xf1d17d})
+};
+
+scene.add(new THREE.HemisphereLight(0xaebed1,0x100b07,1.15));
+const key=new THREE.DirectionalLight(0xffdca0,2.25);key.position.set(-28,42,30);key.castShadow=true;key.shadow.mapSize.set(3072,3072);key.shadow.camera.near=1;key.shadow.camera.far=160;key.shadow.camera.left=-70;key.shadow.camera.right=70;key.shadow.camera.top=70;key.shadow.camera.bottom=-70;key.shadow.bias=-0.00025;scene.add(key);
+const fill=new THREE.DirectionalLight(0x8ea4c7,.42);fill.position.set(32,18,-35);scene.add(fill);
+const rim=new THREE.DirectionalLight(0xdde8ff,.3);rim.position.set(-30,12,-55);scene.add(rim);
+
+const nightLights=[];
+for(const x of [-7,-3.5,0,3.5,7]){
+ const pl=new THREE.PointLight(0xffd27a,0,18,2);pl.position.set(x,5.5,2.1);scene.add(pl);nightLights.push(pl);
+}
+for(const p of [[-24,3,14],[-12,3,14],[0,3,14],[12,3,14],[24,3,14]]){
+ const pl=new THREE.PointLight(0xc7d9ff,0,12,2);pl.position.set(...p);scene.add(pl);nightLights.push(pl);
+}
+const starGeo=new THREE.BufferGeometry();
+const starPos=new Float32Array(1100*3);
+for(let i=0;i<1100;i++){
+ const a=i*12.9898,b=i*78.233,u=(Math.sin(a)*.5+.5)*2-1,t=(Math.sin(b)*.5+.5)*Math.PI*2,r=175,q=Math.sqrt(1-u*u);
+ starPos[i*3]=r*q*Math.cos(t);starPos[i*3+1]=Math.max(18,r*u);starPos[i*3+2]=r*q*Math.sin(t);
+}
+starGeo.setAttribute("position",new THREE.BufferAttribute(starPos,3));
+const stars=new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xffffff,size:.36,sizeAttenuation:true,transparent:true,opacity:0}));
+scene.add(stars);
+
+function add(g,m,p=[0,0,0],r=[0,0,0],cast=true){
+ const o=new THREE.Mesh(g,m);o.position.set(...p);o.rotation.set(...r);o.castShadow=cast;o.receiveShadow=true;scene.add(o);return o;
+}
+function B(w,h,d,x,y,z,m=mat.concrete,r=[0,0,0]){const cast=r===false?false:true;const rot=r===false?[0,0,0]:r;return add(new THREE.BoxGeometry(w,h,d),m,[x,y,z],rot,cast)}
+function C(r,h,x,y,z,m=mat.concrete,seg=28){return add(new THREE.CylinderGeometry(r,r,h,seg),m,[x,y,z])}
+
+// ---------- monumental automatic entrance ----------
+const entranceDoors=[];
+const entranceLights=[];
+function makeSlidingDoor(x0){
+  const door=add(new THREE.BoxGeometry(3.55,6.75,.12),mat.glass,[x0,3.69,10.72]);
+  door.userData.closedX=x0;
+  door.userData.side=x0<0?-1:1;
+  entranceDoors.push(door);
+}
+// One continuous outdoor lawn. No concrete slab underneath it.
+createGrassSurface(110,106,0,.07,-10);
+
+
+// harbor water behind
+B(92,.08,18,0,.03,-72,mat.water,false);
+
+
+// ---------- M+ style upside-down T massing ----------
+// podium: broad horizontal base, raised and cantilevered
+// Original M+ massing kept intact; only the podium is converted to a walkable shell.
+// Lower podium underside: keep the central entrance axis completely open.
+ // Side masses remain intact while the visitor route stays bright and unobstructed.
+B(20,.42,48,-19,2.72,-13,mat.dark,false);
+B(20,.42,48,19,2.72,-13,mat.dark,false);
+B(58,.42,48,0,6.38,-13,mat.dark,false);
+B(.75,3.25,48,-28.65,4.55,-13,mat.dark);
+B(.75,3.25,48,28.65,4.55,-13,mat.dark);
+B(58,3.25,.75,0,4.55,-36.65,mat.dark);
+B(9.0,3.25,.75,-24.5,4.55,10.62,mat.glassDark);
+B(9.0,3.25,.75,24.5,4.55,10.62,mat.glassDark);
+B(62,1.0,50,0,7.0,-13,mat.ceramic);
+B(66,.55,54,0,9.25,-13,mat.black);
+
+// tower: slim vertical block fused into podium
+B(22,27,21,2,22.0,-10,mat.dark);
+B(24,.8,23,2,35.8,-10,mat.black);
+B(23,1.0,22,2,8.9,-10,mat.ceramic);
+
+// slight offset creates distinctive monolithic silhouette
+B(3,24,15.0,14.2,22,-10,mat.black);
+
+// ---------- facade terracotta / vertical fins ----------
+const finGeo=new THREE.BoxGeometry(.22,3.15,.34);
+const finMat=new THREE.MeshStandardMaterial({color:0x73685d,roughness:.58,metalness:.08});
+function finsFront(y,z,width,step,top){
+ const n=Math.floor(width/step);
+ const im=new THREE.InstancedMesh(finGeo,finMat,n);im.castShadow=true;
+ for(let i=0;i<n;i++){
+  const x=-width/2+i*step;
+  const m=new THREE.Matrix4().makeTranslation(x,y,z);
+  im.setMatrixAt(i,m);
+ }
+ im.instanceMatrix.needsUpdate=true;scene.add(im);
+}
+for(let y=8.3;y<35.6;y+=3.3)finsFront(y,-21.7,59,0.48,0);
+for(let y=9;y<35.6;y+=3.4)finsFront(y,1.2,59,0.48,0);
+
+// tower vertical louvers
+const towerFinGeo=new THREE.BoxGeometry(.16,25,.34);
+const towerFinCount=54, towerFinStep=.415, towerFinStart=2-11.2;
+const im1=new THREE.InstancedMesh(towerFinGeo,mat.ceramic,towerFinCount);im1.castShadow=true;
+for(let i=0;i<towerFinCount;i++){const x=towerFinStart+i*towerFinStep;im1.setMatrixAt(i,new THREE.Matrix4().makeTranslation(x,22,-20.7))}
+im1.instanceMatrix.needsUpdate=true;scene.add(im1);
+const im2=new THREE.InstancedMesh(towerFinGeo,mat.ceramic,towerFinCount);im2.castShadow=true;
+for(let i=0;i<towerFinCount;i++){const x=towerFinStart+i*towerFinStep;im2.setMatrixAt(i,new THREE.Matrix4().makeTranslation(x,22,0.7))}
+im2.instanceMatrix.needsUpdate=true;scene.add(im2);
+
+// ---------- COMPLETE INTERIOR REBUILD ----------
+const groundFloorTop=.72;
+const groundFloorSlabY=groundFloorTop-.09;
+const interiorFloorMat=new THREE.MeshStandardMaterial({color:0xc8c5bc,roughness:.74});
+const interiorWallMat=new THREE.MeshStandardMaterial({color:0xd8d4ca,roughness:.78});
+const interiorTrimMat=new THREE.MeshStandardMaterial({color:0x9b7a4f,metalness:.16,roughness:.42});
+const walnutMat=new THREE.MeshStandardMaterial({color:0x654b39,roughness:.64});
+const galleryAccentMat=new THREE.MeshStandardMaterial({color:0x8d7561,roughness:.68});
+const displayGlassMat=new THREE.MeshPhysicalMaterial({color:0xc7d7dc,roughness:.08,transmission:.30,transparent:true,opacity:.48,side:THREE.DoubleSide});
+const ceilingMat=new THREE.MeshStandardMaterial({color:0xe2dfd7,roughness:.9});
+const warmLightMat=new THREE.MeshBasicMaterial({color:0xffd889});
+const signMat=new THREE.MeshStandardMaterial({color:0x8b6f47,metalness:.18,roughness:.46});
+
+// Base foundation stays below the new interior and is no longer used as a visual floor.
+const foundationMat=mat.concrete2;
+B(58,.34,43.2,0,.25,-13.0,foundationMat,false,true);
+B(18.0,.22,4.8,-20.0,.42,8.25,foundationMat,false,true);
+B(18.0,.22,4.8,20.0,.42,8.25,foundationMat,false,true);
+B(13.2,.22,3.6,0,.42,8.15,foundationMat,false,true);
+
+// ---------- GROUND FLOOR: open public hall ----------
+B(54,.18,44,0,groundFloorSlabY,-12.8,interiorFloorMat,false);
+
+// Clean light ceiling panels hide the dark structural underside while preserving the central void.
+B(19.2,.10,38,-17.1,6.08,-14.0,ceilingMat,false);
+B(19.2,.10,38,17.1,6.08,-14.0,ceilingMat,false);
+B(13.2,.10,8.0,0,6.08,7.0,ceilingMat,false);
+B(13.2,.10,7.2,0,6.08,-30.0,ceilingMat,false);
+
+// Perimeter structure only. No full-height black blocks in the public interior.
+for(const x of [-25,-19,19,25])C(.30,5.15,x,3.25,-14.0,interiorTrimMat,24);
+for(const z of [-33,-26,-19,-12,-5])C(.22,4.85,-25,3.05,z,interiorTrimMat,20);
+for(const z of [-33,-26,-19,-12,-5])C(.22,4.85,25,3.05,z,interiorTrimMat,20);
+
+// ---------- MAIN ENTRANCE / MONUMENTAL PORTAL ----------
+B(23,.72,7.8,0,8.45,13.85,mat.black);
+B(19,.18,7.1,0,8.08,10.95,mat.gold);
+B(21,6.7,.34,-13.0,4.35,11.02,mat.glass);
+B(21,6.7,.34,13.0,4.35,11.02,mat.glass);
+
+// No entrance pillars in the center approach.
+makeSlidingDoor(-1.78);
+makeSlidingDoor(1.78);
+
+B(14.2,.16,.20,0,7.12,10.70,mat.gold);
+const sensorBar=B(13.8,.11,.12,0,7.28,10.58,mat.light,false);
+sensorBar.userData.entranceSensor=true;
+entranceLights.push(sensorBar);
+
+// Central main light stays exactly in the entrance axis.
+const centralLampLight=new THREE.PointLight(0xffd89a,68,24,1.7);
+centralLampLight.position.set(0,6.35,8.0);
+centralLampLight.castShadow=false;
+scene.add(centralLampLight);
+
+const centralLampGroup=new THREE.Group();
+centralLampGroup.position.set(0,6.55,8.0);
+scene.add(centralLampGroup);
+
+const t0LampPlate=add(
+  new THREE.BoxGeometry(5.8,.16,1.18),
+  new THREE.MeshStandardMaterial({color:0xc9a85f,metalness:.45,roughness:.28}),
+  [0,6.88,8.02],[0,0,0],false
+);
+const t0LampGlow=add(
+  new THREE.BoxGeometry(4.6,.045,.62),
+  new THREE.MeshBasicMaterial({color:0xffdda0,transparent:true,opacity:.92}),
+  [0,6.76,8.02],[0,0,0],false
+);
+const t0LampPoint=new THREE.PointLight(0xffd28a,28,16,1.8);
+t0LampPoint.position.set(0,6.55,8.0);
+scene.add(t0LampPoint);
+
+for(const x of [-5.8,5.8]){
+  const glow=B(3.0,2.5,.045,x,4.0,10.92,new THREE.MeshBasicMaterial({color:0xffd58a,transparent:true,opacity:.55,side:THREE.DoubleSide}),false);
+  glow.material.depthWrite=false;
+}
+for(const x of [-5.8,0,5.8]){
+  const pl=new THREE.PointLight(0xffc978,10,13,1.8);
+  pl.position.set(x,4.8,9.0);
+  scene.add(pl);
+}
+
+const centralLampLoader=new GLTFLoader();
+centralLampLoader.load(
+  "https://cdn.jsdelivr.net/gh/annynn1990/wk@main/assets/750221_and_750223_favo_lightstar_ceiling_lamp.glb",
+  (gltf)=>{
+    const lamp=gltf.scene;
+    lamp.traverse((o)=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+    const box=new THREE.Box3().setFromObject(lamp);
+    const size=box.getSize(new THREE.Vector3());
+    const maxDim=Math.max(size.x,size.y,size.z);
+    if(maxDim>0)lamp.scale.setScalar(4.4/maxDim);
+    const scaledBox=new THREE.Box3().setFromObject(lamp);
+    const center=scaledBox.getCenter(new THREE.Vector3());
+    lamp.position.sub(center);
+    centralLampGroup.add(lamp);
+  },
+  undefined,
+  (err)=>console.warn("Central ceiling lamp GLB failed to load.",err)
+);
+
+const sensorIndicator=B(.20,.20,.08,0,7.12,10.56,mat.light,false);
+entranceLights.push(sensorIndicator);
+
+// Entrance marquee.
+function makeFallbackMarquee(){
+  const cc=document.createElement("canvas");cc.width=1600;cc.height=420;
+  const g=cc.getContext("2d");g.textAlign="center";
+  g.fillStyle="#68181b";g.fillRect(0,0,cc.width,cc.height);
+  g.strokeStyle="#d9b56d";g.lineWidth=10;g.strokeRect(22,22,cc.width-44,cc.height-44);
+  g.fillStyle="#f3dfac";g.font="700 106px serif";g.fillText("帝國歷史博物館",800,185);
+  g.fillStyle="#e5d2a2";g.font="32px sans-serif";g.fillText("WONGMING MUSEUM OF HISTORY",800,270);
+  g.fillStyle="#f0c76c";g.font="24px sans-serif";g.fillText("WMMOH",800,325);
+  return new THREE.CanvasTexture(cc);
+}
+const marqueeMaterial=new THREE.MeshBasicMaterial({map:makeFallbackMarquee(),side:THREE.DoubleSide});
+const marquee=add(new THREE.PlaneGeometry(16.6,3.45),marqueeMaterial,[0,6.08,10.12],[0,0,0],false);
+new THREE.TextureLoader().load("/api/museum-banner",(tex)=>{
+  tex.colorSpace=THREE.SRGBColorSpace;
+  marqueeMaterial.map=tex;
+  marqueeMaterial.needsUpdate=true;
+},undefined,(err)=>console.warn("Forum banner unavailable; fallback marquee remains.",err));
+
+// ---------- FIRST FLOOR EXHIBITION DESIGN ----------
+function addFirstFloorGallery(x,z,title,side){
+  const w=9.4,d=5.8,h=3.25;
+  const backX=x+side*(w/2);
+  const innerX=x-side*(w/2);
+  // Back feature wall, intentionally low enough to preserve sight lines.
+  B(.22,h,d,backX,groundFloorTop+h/2,z,interiorWallMat);
+  // Short side fins define the gallery without closing the hall.
+  B(.16,2.65,2.25,innerX+side*.05,groundFloorTop+1.325,z-1.77,interiorWallMat);
+  B(.16,2.65,2.25,innerX+side*.05,groundFloorTop+1.325,z+1.77,interiorWallMat);
+  // Warm wood display spine.
+  B(.18,2.35,4.2,backX-side*.18,groundFloorTop+1.18,z,walnutMat);
+  // Three independent vitrines.
+  for(const dz of [-1.7,0,1.7]){
+    B(1.7,.14,1.05,x-side*.9,groundFloorTop+.07,z+dz,interiorTrimMat,false);
+    B(1.42,.82,.82,x-side*.9,groundFloorTop+.55,z+dz,displayGlassMat,false);
+    B(1.1,.05,.64,x-side*.9,groundFloorTop+.98,z+dz,mat.gold,false);
+  }
+  // Floating identification plaque facing the central aisle.
+  const cc=document.createElement("canvas");cc.width=1000;cc.height=240;
+  const q=cc.getContext("2d");q.clearRect(0,0,1000,240);q.textAlign="center";
+  q.fillStyle="#f1dfb2";q.font='700 44px "Microsoft JhengHei","Noto Serif TC",serif';q.fillText(title,500,96);
+  q.fillStyle="#c5c9cd";q.font="20px Arial,sans-serif";q.fillText("FEATURED COLLECTION",500,138);
+  const plaque=add(new THREE.PlaneGeometry(3.9,.92),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cc),side:THREE.DoubleSide}),[innerX+side*.20,groundFloorTop+2.35,z],[0,side*Math.PI/2,0],false);
+  plaque.userData.galleryTitle=title;
+}
+const firstFloorRows=[
+  ["黃名宮廷文物", -18,-5,-1],
+  ["帝國早期文獻", -18,-16,-1],
+  ["國家文化收藏", -18,-27,-1],
+  ["黃名外交史料", 18,-5,1],
+  ["微國珍藏展", 18,-16,1],
+  ["帝國現代史", 18,-27,1]
+];
+for(const g of firstFloorRows)addFirstFloorGallery(g[1],g[2],g[0],g[3]);
+
+// Open central hall: reception, sculpture, orientation.
+C(1.55,1.0,10.0,1.15,3.55,walnutMat,40);
+C(1.25,.16,10.0,1.67,3.55,mat.gold,40);
+B(2.5,.16,1.15,10.0,.82,3.55,interiorTrimMat,false);
+
+C(.78,1.25,0,1.34,-13.8,interiorTrimMat,40);
+C(1.05,.11,0,1.03,-13.8,mat.gold,40);
+// Central sculpture mast / timeline.
+for(const y of [2.2,3.1,4.0])C(.08,.7,0,y,-13.8,mat.gold,20);
+
+// Low orientation walls, not full partitions.
+B(.18,2.1,4.8,-5.9,groundFloorTop+1.05,3.0,interiorWallMat,false);
+B(.18,2.1,4.8,5.9,groundFloorTop+1.05,3.0,interiorWallMat,false);
+
+// Atrium edge railings with clear views to the first floor.
+const atriumRailMat=new THREE.MeshStandardMaterial({color:0xc2a262,metalness:.68,roughness:.28});
+for(const x of [-7.15,7.15]){
+  B(.07,1.08,26.0,x,level2Y+.54,-15.0,atriumRailMat,false);
+  for(let z=-27;z<=-3;z+=2.4)B(.05,.92,.05,x,level2Y+.46,z,atriumRailMat,false);
+}
+B(14.2,1.08,.07,0,level2Y+.54,-4.15,atriumRailMat,false);
+B(14.2,1.08,.07,0,level2Y+.54,-26.05,atriumRailMat,false);
+
+// ---------- REAL GRAND STAIR / LEVEL 2 CONNECTION ----------
+const stairX=-7.6;
+const stairStartZ=4.25;
+const stairSteps=24;
+const stairRun=.34;
+const stairRise=.23875;
+const level2Y=groundFloorTop+stairSteps*stairRise;
+const level2FloorTop=level2Y;
+const level2FloorSlabY=level2FloorTop-.11;
+
+for(let i=0;i<stairSteps;i++){
+  const z=stairStartZ-(i+1)*stairRun;
+  const top=groundFloorTop+(i+1)*stairRise;
+  B(5.2,stairRise,stairRun,stairX,top-stairRise/2,z,mat.concreteLight);
+}
+B(5.2,.12,1.35,stairX,groundFloorTop+.06,4.72,mat.concreteLight,false);
+B(5.2,.18,2.1,stairX,level2FloorTop-.09,stairStartZ-stairSteps*stairRun-.78,mat.concreteLight,false);
+
+for(const side of [-1,1]){
+  const x=stairX+side*2.42;
+  for(let i=0;i<9;i++){
+    const t=i/8;
+    const z=stairStartZ-t*(stairSteps*stairRun);
+    const y=groundFloorTop+1.0+t*(stairSteps*stairRise);
+    B(.07,1.05,.07,x,y-.5,z,mat.gold,false);
+  }
+  const railLen=Math.hypot(stairSteps*stairRise,stairSteps*stairRun);
+  const railAngle=-Math.atan2(stairSteps*stairRise,stairSteps*stairRun);
+  B(.10,.10,railLen,x,groundFloorTop+1.0+(stairSteps*stairRise)/2,stairStartZ-(stairSteps*stairRun)/2,mat.gold,[railAngle,0,0],false);
+}
+
+// ---------- LEVEL 2: coherent wings + central atrium ----------
+const floorMat=new THREE.MeshStandardMaterial({color:0xb7b2a8,roughness:.72});
+B(19.8,.22,38,-17.0,level2FloorSlabY,-14.0,floorMat,false);
+B(19.8,.22,38,17.0,level2FloorSlabY,-14.0,floorMat,false);
+B(14.3,.22,8.0,0,level2FloorSlabY,-.15,floorMat,false);
+B(14.3,.22,8.0,0,level2FloorSlabY,-29.9,floorMat,false);
+
+// Soft ceiling above the Level 2 galleries.
+B(19.2,.10,37.0,-17.1,8.92,-14.0,ceilingMat,false);
+B(19.2,.10,37.0,17.1,8.92,-14.0,ceilingMat,false);
+B(15.0,.12,21.0,0,8.32,-14.0,new THREE.MeshPhysicalMaterial({color:0xbcced2,roughness:.18,transmission:.22,transparent:true,opacity:.5,side:THREE.DoubleSide}),false);
+
+// Atrium framing / skylight mullions.
+for(const x of [-6.4,-3.2,0,3.2,6.4])B(.06,.06,21.0,x,8.26,-14.0,mat.gold,false);
+
+const galleryData=[
+ {title:"帝國紀念廳",sub:"紀念本國功勛人士",kind:"MEMORIAL"},
+ {title:"黃名歷史廳",sub:"黃名帝國歷史展覽",kind:"WONGMING HISTORY"},
+ {title:"微國歷史廳",sub:"微國歷史展覽",kind:"MICRONATION HISTORY"},
+ {title:"黃名專題廳",sub:"黃名帝國專題歷史介紹",kind:"SPECIAL COLLECTION"},
+ {title:"黃名文物廳",sub:"黃名帝國文物展覽",kind:"ARTIFACTS"},
+ {title:"微國專題廳",sub:"微國專題歷史介紹",kind:"MICRONATION TOPICS"},
+ {title:"微國文物廳",sub:"微國文物展覽",kind:"MICRONATION ARTIFACTS"},
+ {title:"歷史回顧廳",sub:"討論黃名或微國歷史故事",kind:"HISTORICAL REVIEW"},
+ {title:"文化景區中心",sub:"全國歷史建築與景區導覽中心",kind:"CULTURAL SITES"},
+ {title:"歷史文物局辦公室",sub:"本國歷史研究及文物事務部門",kind:"HERITAGE OFFICE"}
+];
+
+function doorPlaqueTexture(g){
+  const cc=document.createElement("canvas");cc.width=900;cc.height=200;
+  const q=cc.getContext("2d");
+  q.fillStyle="#332920";q.fillRect(0,0,900,200);
+  q.strokeStyle="#d3b06d";q.lineWidth=5;q.strokeRect(10,10,880,180);
+  q.textAlign="center";
+  q.fillStyle="#f2dfaa";q.font='700 39px "Microsoft JhengHei","Noto Serif TC",sans-serif';q.fillText(g.title,450,76);
+  q.fillStyle="#d1d5d9";q.font="18px Arial,sans-serif";q.fillText(g.kind,450,113);
+  q.fillStyle="#c8cdd2";q.font='17px "Microsoft JhengHei","Noto Sans TC",sans-serif';q.fillText(g.sub,450,148);
+  return new THREE.CanvasTexture(cc);
+}
+function makeGallery(g,x,z,side){
+  const w=10.6,d=5.8,h=2.82;
+  const floor=level2FloorTop;
+  const outerX=x+side*(w/2);
+  const innerX=x-side*(w/2);
+  // Floor edge / room platform.
+  B(w,.14,d,x,floor-.07,z,interiorWallMat,false);
+  // Outer wall and two side returns.
+  B(.20,h,d,outerX,floor+h/2,z,interiorWallMat);
+  B(w,.20,.20,x,floor+h/2,z-d/2,interiorWallMat);
+  B(w,.20,.20,x,floor+h/2,z+d/2,interiorWallMat);
+  // Inner wall split around a generous double door.
+  const sideDepth=(d-2.8)/2;
+  B(.20,h,sideDepth,innerX,floor+h/2,z-(2.8+sideDepth)/2,interiorWallMat);
+  B(.20,h,sideDepth,innerX,floor+h/2,z+(2.8+sideDepth)/2,interiorWallMat);
+
+  B(1.22,2.28,.12,innerX, floor+1.14,z-.68,walnutMat,false);
+  B(1.22,2.28,.12,innerX, floor+1.14,z+.68,walnutMat,false);
+
+  add(new THREE.PlaneGeometry(4.2,.86),
+      new THREE.MeshBasicMaterial({map:doorPlaqueTexture(g),side:THREE.DoubleSide}),
+      [innerX-side*.10,floor+2.45,z],[0,side*Math.PI/2,0],false);
+
+  // Interior displays sit against the outer wall, leaving a clear 2.9m gallery aisle.
+  for(const dz of [-1.55,0,1.55]){
+    B(1.65,.14,.92,x+side*.9,floor+.07,z+dz,interiorTrimMat,false);
+    B(1.4,.82,.72,x+side*.9,floor+.55,z+dz,displayGlassMat,false);
+    B(1.08,.05,.56,x+side*.9,floor+.98,z+dz,mat.gold,false);
+  }
+}
+const zRows=[-2,-9,-16,-23,-30];
+for(let i=0;i<5;i++){
+  makeGallery(galleryData[i],-18,zRows[i],-1);
+  makeGallery(galleryData[i+5],18,zRows[i],1);
+}
+
+// Level 2 wayfinding and history wall.
+const wayCanvas=document.createElement("canvas");wayCanvas.width=1100;wayCanvas.height=190;
+const wayctx=wayCanvas.getContext("2d");wayctx.fillStyle="#332920";wayctx.fillRect(0,0,1100,190);wayctx.textAlign="center";
+wayctx.fillStyle="#f0dda8";wayctx.font='700 46px "Microsoft JhengHei","Noto Sans TC","Noto Serif TC",sans-serif';wayctx.fillText("LEVEL 2 · 展廳",550,80);
+wayctx.fillStyle="#c8cdd2";wayctx.font="19px Arial,sans-serif";wayctx.fillText("十個歷史展廳　／　HISTORY GALLERIES",550,124);
+add(new THREE.PlaneGeometry(6.8,1.16),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(wayCanvas),side:THREE.DoubleSide}),[stairX,level2FloorTop+1.7,stairStartZ-stairSteps*stairRun-.25],[0,Math.PI,0],false);
+
+const historyMat=new THREE.MeshStandardMaterial({color:0x7c6a58,roughness:.62});
+B(20.0,4.4,.16,2.0,8.0,.72,historyMat,false);
+B(18.0,3.8,.08,2.0,8.0,.60,mat.gold,false);
+for(let i=0;i<8;i++)B(1.5,.28,.04,-5.5+i*2.1,7.15,.52,new THREE.MeshBasicMaterial({color:0xcbb06a}),false);
+
+// Level 2 circulation markers.
+for(const z of [-2,-9,-16,-23,-30])B(4.2,.035,.06,0,level2FloorTop+.14,z,mat.gold,false);
+
+// ---------- formal arrival sequence ----------
+const carpetMat=new THREE.MeshStandardMaterial({color:0x74171c,roughness:.76,metalness:.02});
+B(6.4,.035,13.8,0,.70,20.9,carpetMat,false);
+for(let i=0;i<5;i++){
+  const z=15.05-i*.86;
+  const top=groundFloorTop-(4-i)*.12;
+  B(11.6-i*.32,.12,.86,0,top-.06,z,mat.concrete2);
+  B(6.4,.035,.84,0,top+.035,z,carpetMat,false);
+}
+B(6.4,.04,1.55,0,groundFloorTop,10.95,carpetMat,false);
+B(6.4,.04,5.2,0,groundFloorTop,8.35,carpetMat,false);
+B(13.6,.08,7.8,0,groundFloorTop,6.55,mat.concreteLight,false);
+B(13.0,.08,7.0,0,groundFloorTop,9.15,mat.concreteLight,false);
+
+// ---------- exhibition hotspots ----------
+const hotspots=[
+ {p:new THREE.Vector3(-18,1.5,-5),title:"黃名宮廷文物",text:"一樓特色展區，展示黃名帝國宮廷與歷史文物。"},
+ {p:new THREE.Vector3(-18,1.5,-16),title:"帝國早期文獻",text:"一樓特色展區，展示帝國早期文獻與檔案。"},
+ {p:new THREE.Vector3(-18,1.5,-27),title:"國家文化收藏",text:"一樓特色展區，展示國家文化與社會記憶。"},
+ {p:new THREE.Vector3(18,1.5,-5),title:"黃名外交史料",text:"一樓特色展區，展示外交、條約與國際往來史料。"},
+ {p:new THREE.Vector3(18,1.5,-16),title:"微國珍藏展",text:"一樓特色展區，展示世界微型國家的文化與收藏。"},
+ {p:new THREE.Vector3(18,1.5,-27),title:"帝國現代史",text:"一樓特色展區，展示近現代黃名帝國發展歷程。"},
+ {p:new THREE.Vector3(0,1.45,-13.8),title:"中央中庭",text:"中央開放中庭是全館的視覺核心，二樓展廳環繞於兩側。"},
+ {p:new THREE.Vector3(10,1.5,3.55),title:"服務台",text:"入口大堂的服務與導覽櫃台。"},
+ {p:new THREE.Vector3(-18,7.8,-2),title:"帝國紀念廳",text:"二樓展廳。"},
+ {p:new THREE.Vector3(-18,7.8,-9),title:"黃名歷史廳",text:"二樓展廳。"},
+ {p:new THREE.Vector3(-18,7.8,-16),title:"微國歷史廳",text:"二樓展廳。"},
+ {p:new THREE.Vector3(-18,7.8,-23),title:"黃名專題廳",text:"二樓展廳。"},
+ {p:new THREE.Vector3(-18,7.8,-30),title:"黃名文物廳",text:"二樓展廳。"},
+ {p:new THREE.Vector3(18,7.8,-2),title:"微國專題廳",text:"二樓展廳。"},
+ {p:new THREE.Vector3(18,7.8,-9),title:"微國文物廳",text:"二樓展廳。"},
+ {p:new THREE.Vector3(18,7.8,-16),title:"歷史回顧廳",text:"二樓展廳。"},
+ {p:new THREE.Vector3(18,7.8,-23),title:"文化景區中心",text:"二樓展廳。"},
+ {p:new THREE.Vector3(18,7.8,-30),title:"歷史文物局辦公室",text:"二樓展廳。"}
+];
+const ringMat=new THREE.MeshBasicMaterial({color:0xd1af63});
+hotspots.forEach(h=>{
+  const r=new THREE.Mesh(new THREE.RingGeometry(.72,.82,36),ringMat);
+  r.rotation.x=-Math.PI/2;
+  r.position.set(h.p.x,h.p.y<5?.725:level2FloorTop+.13,h.p.z);
+  r.userData=h;
+  scene.add(r);
+});
+
+// Roof garden / upper exterior retained unchanged.
+createGrassSurface(52,38,0,9.755,-13);
+for(let x=-20;x<=20;x+=8)for(let z=-26;z<=0;z+=8)C(.65,1.0,x,10.45,z,mat.ceramic,20);
+B(54,1.0,1,0,10.25,5.2,mat.black);
+B(54,1.0,1,0,10.25,-31.2,mat.black);
+B(1,1,38,-26.5,10.25,-13,mat.black);
+B(1,1,38,26.5,10.25,-13,mat.black);
+
+// Automatic sensor door controller.
+function updateEntrance(dt){
+  const dz=Math.abs(player.position.z-10.8);
+  const dx=Math.abs(player.position.x);
+  const detected=dz<12.5 && dx<8.5;
+  for(const d of entranceDoors){
+    const target=d.userData.closedX + (detected ? d.userData.side*3.75 : 0);
+    d.position.x += THREE.MathUtils.clamp(target-d.position.x,-3.6*dt,3.6*dt);
+  }
+  const pulse=detected ? .78+.18*Math.sin(performance.now()*.009) : .32;
+  for(const l of entranceLights)if(l.material?.color)l.material.color.setScalar(pulse);
+}
+
+// Human-scale floor elevations: footsteps and ramps create real vertical movement.
+let currentLevel=0;
+function stairProgress(x,z){
+  if(x>stairX-2.7&&x<stairX+2.7&&z<=stairStartZ&&z>=stairStartZ-stairSteps*stairRun){
+    return Math.max(0,Math.min(1,(stairStartZ-z)/(stairSteps*stairRun)));
+  }
+  return -1;
+}
+function entranceStepHeight(x,z){
+  if(Math.abs(x)>5.9)return -1;
+  for(let i=0;i<5;i++){
+    const centerZ=15.05-i*.86;
+    const halfZ=.43;
+    const width=(11.6-i*.32)/2;
+    if(Math.abs(z-centerZ)<=halfZ && Math.abs(x)<=width){
+      return (i+1)*.12+.035;
+    }
+  }
+  // The red-carpet vestibule is a single raised landing.
+  if(Math.abs(x)<=6.5 && z>=5.35 && z<=11.9)return groundFloorTop;
+  return -1;
+}
+function groundHeight(x,z){
+  const p=stairProgress(x,z);
+  if(p>=0){
+    if(currentLevel===0&&p>.92)currentLevel=1;
+    if(currentLevel===1&&p<.08)currentLevel=0;
+    return .56+p*(level2Y-.56);
+  }
+
+  const entranceH=entranceStepHeight(x,z);
+  if(entranceH>=0)return entranceH;
+
+  if(currentLevel===1)return level2Y;
+
+  // Entire ground-floor interior uses the single finished-floor elevation.
+  if(z>9.2 || x<-28 || x>28)return .07;
+
+  return groundFloorTop;
+}
+function upperFloorWalkable(x,z){
+  // Side wings are continuous from the outer walls to the atrium edge.
+  if(x<-7.15||x>7.15)return x>-28.2&&x<28.2&&z>-33.0&&z<5.0;
+  // Only the two bridges cross the central atrium.
+  return (z>=-4.25&&z<=3.75)||(z>=-34.0&&z<=-26.0);
+}
+
+// Collision boundaries: solve X/Z separately so the camera cannot tunnel through walls.
+const colliders=[
+ {minX:-29.6,maxX:-28.7,minZ:-37,maxZ:11.0},
+ {minX:28.7,maxX:29.6,minZ:-37,maxZ:11.0},
+ {minX:-29,maxX:29,minZ:-37.6,maxZ:-36.7},
+ // Front facade: only the central doorway remains open.
+ {minX:-29,maxX:-7.25,minZ:10.65,maxZ:11.18},
+ {minX:7.25,maxX:29,minZ:10.65,maxZ:11.18}
+];
+for(const z of zRows){
+  colliders.push({minX:-23.5,maxX:-22.9,minZ:z-3.15,maxZ:z+3.15});
+  colliders.push({minX:22.9,maxX:23.5,minZ:z-3.15,maxZ:z+3.15});
+  colliders.push({minX:-23.5,maxX:-12.6,minZ:z-3.18,maxZ:z-2.95});
+  colliders.push({minX:12.6,maxX:23.5,minZ:z-3.18,maxZ:z-2.95});
+  colliders.push({minX:-12.9,maxX:-12.25,minZ:z-3.15,maxZ:z-1.42});
+  colliders.push({minX:-12.9,maxX:-12.25,minZ:z+1.42,maxZ:z+3.15});
+  colliders.push({minX:12.25,maxX:12.9,minZ:z-3.15,maxZ:z-1.42});
+  colliders.push({minX:12.25,maxX:12.9,minZ:z+1.42,maxZ:z+3.15});
+}
+function insideRect(x,z,r){return x>r.minX&&x<r.maxX&&z>r.minZ&&z<r.maxZ;}
+function blockedAt(x,z){
+  if(currentLevel===1&&stairProgress(x,z)<0&&!upperFloorWalkable(x,z))return true;
+  for(const r of colliders)if(x>r.minX&&x<r.maxX&&z>r.minZ&&z<r.maxZ)return true;
+  // Automatic doors are visual/animated only. Never trap the player at the threshold.
+  // The facade colliders above already define the actual entrance opening.
+
+  return false;
+}
+function moveWithCollision(dx,dz){
+  const nx=camera.position.x+dx;
+  const nz=camera.position.z+dz;
+
+  // Main entrance corridor: force a clear path through the original center opening.
+  // This is deliberately checked before general collision so the old facade never
+  // traps the camera outside the museum.
+  const portalNow =
+    camera.position.z > 7.0 && camera.position.z < 24.0 &&
+    Math.abs(camera.position.x) < 8.2;
+
+  const portalNext =
+    nz > 7.0 && nz < 24.0 &&
+    Math.abs(nx) < 8.2;
+
+  if(portalNow || portalNext){
+    camera.position.x = THREE.MathUtils.clamp(nx,-8.15,8.15);
+    camera.position.z = nz;
+    return;
+  }
+
+  if(!blockedAt(nx,camera.position.z)) camera.position.x=nx;
+  if(!blockedAt(camera.position.x,nz)) camera.position.z=nz;
+}
+
+function applyTimeMode(mode){
+  timeMode=mode;
+  const night=mode==="night";
+  if(night){
+    scene.background=nightSkyColor;
+    scene.backgroundIntensity=.72;
+    scene.environmentIntensity=.20;
+    scene.fog.color.set(0x030711);
+    key.intensity=.26;
+    fill.intensity=.08;
+    rim.intensity=.16;
+    stars.material.opacity=.92;
+    nightLights.forEach(l=>{l.intensity=l.color.r>.8?28:8;});
+    document.getElementById("timeBtn").textContent="切換至日景 · DAY";
+  }else{
+    scene.background=daySky || dayFallbackColor;
+    scene.backgroundIntensity=.66;
+    scene.environmentIntensity=.90;
+    scene.fog.color.set(0x080a0d);
+    key.intensity=2.25;
+    fill.intensity=.42;
+    rim.intensity=.30;
+    stars.material.opacity=0;
+    nightLights.forEach(l=>{l.intensity=0;});
+    document.getElementById("timeBtn").textContent="切換至夜景 · NIGHT";
+  }
+}
+document.getElementById("timeBtn").onclick=()=>applyTimeMode(timeMode==="day"?"night":"day");
+addEventListener("keydown",e=>{if(e.code==="KeyN")applyTimeMode(timeMode==="day"?"night":"day")});
+
+// ---------- EXPLORE THE MUSEUM LIKE A 3D WORLD ----------
+const player=new THREE.Group();
+player.position.set(0,.07,27.5);
+player.userData={velocityY:0,onGround:true};
+scene.add(player);
+
+const avatarSkin=new THREE.MeshStandardMaterial({color:0xd3a27c,roughness:.82});
+const avatarCloth=new THREE.MeshStandardMaterial({color:0x445e86,roughness:.78});
+const avatarShirt=new THREE.MeshStandardMaterial({color:0xe9e2d2,roughness:.72});
+const avatarDark=new THREE.MeshStandardMaterial({color:0x1f2730,roughness:.78});
+
+const avatarBody=new THREE.Mesh(new THREE.BoxGeometry(.62,.72,.36),avatarShirt);
+avatarBody.position.y=1.02;
+player.add(avatarBody);
+
+const avatarHead=new THREE.Mesh(new THREE.SphereGeometry(.29,20,16),avatarSkin);
+avatarHead.position.y=1.62;
+player.add(avatarHead);
+
+const avatarHair=new THREE.Mesh(new THREE.SphereGeometry(.305,20,12,0,Math.PI*2,0,Math.PI*.48),avatarDark);
+avatarHair.position.y=1.73;
+player.add(avatarHair);
+
+for(const sx of [-.18,.18]){
+  const leg=new THREE.Mesh(new THREE.BoxGeometry(.20,.65,.22),avatarCloth);
+  leg.position.set(sx,.34,0);
+  player.add(leg);
+}
+for(const sx of [-.2,.2]){
+  const shoe=new THREE.Mesh(new THREE.BoxGeometry(.25,.12,.42),avatarDark);
+  shoe.position.set(sx,.055,-.04);
+  player.add(shoe);
+}
+for(const sx of [-.43,.43]){
+  const arm=new THREE.Mesh(new THREE.BoxGeometry(.16,.58,.17),avatarShirt);
+  arm.position.set(sx,.99,0);
+  player.add(arm);
+}
+player.userData.parts={avatarBody,avatarHead};
+
+let yaw=0;
+let pitch=.34;
+let drag=false;
+let lastX=0,lastY=0;
+let jumpPressed=false;
+let joyX=0,joyY=0;
+let activeHotspot=null;
+const keys=Object.create(null);
+const canvas=renderer.domElement;
+canvas.tabIndex=0;
+
+function setJump(){
+  if(player.userData.onGround){
+    player.userData.velocityY=5.4;
+    player.userData.onGround=false;
+  }
+}
+document.getElementById("jump").addEventListener("pointerdown",e=>{e.preventDefault();setJump();});
+
+canvas.addEventListener("pointerdown",e=>{
+  if(renderer.xr.isPresenting)return;
+  drag=true;lastX=e.clientX;lastY=e.clientY;
+  canvas.style.cursor="grabbing";
+});
+document.addEventListener("pointerup",()=>{drag=false;canvas.style.cursor="grab";});
+document.addEventListener("pointermove",e=>{
+  if(!drag||renderer.xr.isPresenting)return;
+  yaw-=(e.clientX-lastX)*.004;
+  pitch-= (e.clientY-lastY)*.0025;
+  pitch=THREE.MathUtils.clamp(pitch,.08,.82);
+  lastX=e.clientX;lastY=e.clientY;
+});
+
+addEventListener("keydown",e=>{
+  keys[e.code]=true;
+  if(e.code==="Space" && !e.repeat)jumpPressed=true;
+  if(["KeyW","KeyA","KeyS","KeyD","ShiftLeft","ShiftRight","Space","KeyE","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.code))e.preventDefault();
+});
+addEventListener("keyup",e=>{keys[e.code]=false;});
+
+function bindJoystick(){
+  const pad=document.getElementById("joystick");
+  const stick=document.getElementById("stick");
+  let active=false;
+  const update=e=>{
+    const r=pad.getBoundingClientRect();
+    const cx=r.left+r.width/2,cy=r.top+r.height/2;
+    let dx=e.clientX-cx,dy=e.clientY-cy;
+    const max=32;
+    const len=Math.hypot(dx,dy)||1;
+    if(len>max){dx=dx/len*max;dy=dy/len*max;}
+    joyX=dx/max;
+    joyY=dy/max;
+    stick.style.transform=\`translate(\${dx}px,\${dy}px)\`;
+  };
+  pad.addEventListener("pointerdown",e=>{active=true;pad.setPointerCapture(e.pointerId);update(e);});
+  pad.addEventListener("pointermove",e=>{if(active)update(e);});
+  const end=()=>{active=false;joyX=joyY=0;stick.style.transform="translate(0,0)";};
+  pad.addEventListener("pointerup",end);
+  pad.addEventListener("pointercancel",end);
+}
+bindJoystick();
+
+function movePlayerWithCollision(dx,dz){
+  const nx=player.position.x+dx;
+  const nz=player.position.z+dz;
+  const corridorNow =
+    player.position.z > 7.0 && player.position.z < 24.0 &&
+    Math.abs(player.position.x) < 8.2;
+  const corridorNext =
+    nz > 7.0 && nz < 24.0 &&
+    Math.abs(nx) < 8.2;
+
+  if(corridorNow||corridorNext){
+    player.position.x=THREE.MathUtils.clamp(nx,-8.15,8.15);
+    player.position.z=nz;
+    return;
+  }
+  if(!blockedAt(nx,player.position.z))player.position.x=nx;
+  if(!blockedAt(player.position.x,nz))player.position.z=nz;
+}
+
+function getInputVector(){
+  let ix=0,iy=0;
+  if(keys.KeyW||keys.ArrowUp)iy-=1;
+  if(keys.KeyS||keys.ArrowDown)iy+=1;
+  if(keys.KeyA||keys.ArrowLeft)ix-=1;
+  if(keys.KeyD||keys.ArrowRight)ix+=1;
+  ix+=joyX;iy+=joyY;
+  const len=Math.hypot(ix,iy);
+  if(len>1){ix/=len;iy/=len;}
+  return {ix,iy};
+}
+
+function showHotspot(h){
+  activeHotspot=h;
+  const el=document.getElementById("interact");
+  el.style.display=h?"block":"none";
+  if(h)el.textContent="E　"+h.title;
+}
+function interactNearest(){
+  if(!activeHotspot)return;
+  const el=document.getElementById("info");
+  el.innerHTML="<strong>"+activeHotspot.title+"</strong><br>"+activeHotspot.text;
+  el.style.display="block";
+  clearTimeout(window.__inf);
+  window.__inf=setTimeout(()=>el.style.display="none",5000);
+}
+
+addEventListener("keydown",e=>{
+  if(e.code==="KeyE"&&!e.repeat)interactNearest();
+});
+
+document.getElementById("interact").addEventListener("click",interactNearest);
+
+function updateNearestHotspot(){
+  let best=null,bd=4.5;
+  for(const h of hotspots){
+    const dx=h.p.x-player.position.x;
+    const dz=h.p.z-player.position.z;
+    const d=Math.hypot(dx,dz);
+    if(d<bd){bd=d;best=h;}
+  }
+  showHotspot(best);
+}
+
+function updatePlayer(dt){
+  const input=getInputVector();
+  const moving=Math.hypot(input.ix,input.iy)>.08;
+  const speed=(keys.ShiftLeft||keys.ShiftRight?5.4:3.4)*dt;
+  const forward=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw));
+  const right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
+  const mdx=(-forward.x*input.iy + right.x*input.ix)*speed;
+  const mdz=(-forward.z*input.iy + right.z*input.ix)*speed;
+
+  if(moving){
+    movePlayerWithCollision(mdx,mdz);
+    const targetRotation=Math.atan2(mdx,-mdz);
+    player.rotation.y=THREE.MathUtils.lerp(player.rotation.y,targetRotation,.28);
+    const bob=Math.sin(performance.now()*.012)*.035;
+    avatarBody.position.y=1.02+bob;
+    avatarHead.position.y=1.62+bob;
+  }
+
+  if(jumpPressed){setJump();jumpPressed=false;}
+  player.userData.velocityY-=16.5*dt;
+  const floorY=groundHeight(player.position.x,player.position.z);
+  player.position.y+=player.userData.velocityY*dt;
+  if(player.position.y<=floorY){
+    player.position.y=floorY;
+    player.userData.velocityY=0;
+    player.userData.onGround=true;
+  }else{
+    player.userData.onGround=false;
+  }
+
+  player.position.x=THREE.MathUtils.clamp(player.position.x,-37,37);
+  player.position.z=THREE.MathUtils.clamp(player.position.z,-74,41);
+}
+
+function updateFollowCamera(dt){
+  const distance=6.4;
+  const target=player.position.clone().add(new THREE.Vector3(0,1.05,0));
+  const horizontal=Math.cos(pitch)*distance;
+  const desired=new THREE.Vector3(
+    target.x+Math.sin(yaw)*horizontal,
+    target.y+1.25+Math.sin(pitch)*distance,
+    target.z+Math.cos(yaw)*horizontal
+  );
+  camera.position.lerp(desired,1-Math.pow(.0001,dt));
+  camera.lookAt(target);
+}
 
 // immersive
 document.getElementById("enter").onclick=()=>{
