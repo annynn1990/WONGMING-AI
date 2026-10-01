@@ -86,16 +86,21 @@ new HDRLoader()
 // ---------- realistic museum lawn ----------
 // Outdoor ground uses the supplied Wongming forum grass image directly.
 // It is intentionally unlit so architectural shadows cannot turn the lawn black.
-const grassTexture=new THREE.TextureLoader().load("/api/museum-grass",(tex)=>{
-  tex.colorSpace=THREE.SRGBColorSpace;
-  tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
-  tex.repeat.set(5,5);
-  tex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
-  realisticGrassSurface.map=tex;
-  realisticGrassSurface.needsUpdate=true;
-},undefined,(err)=>{
-  console.warn("Museum grass texture unavailable; using natural green fallback.",err);
-});
+const grassTexture=new THREE.TextureLoader().load(
+  "https://raw.githubusercontent.com/annynn1990/wk/main/assets/gress2k.jpg",
+  (tex)=>{
+    tex.colorSpace=THREE.SRGBColorSpace;
+    tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+    tex.repeat.set(5,5);
+    tex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+    realisticGrassSurface.map=tex;
+    realisticGrassSurface.needsUpdate=true;
+  },
+  undefined,
+  (err)=>{
+    console.warn("wk/assets/gress2k.jpg unavailable; using natural green fallback.",err);
+  }
+);
 
 const realisticGrassSurface=new THREE.MeshBasicMaterial({
   color:0x6d914f,
