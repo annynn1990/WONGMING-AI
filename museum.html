@@ -38,6 +38,7 @@ canvas{display:block;touch-action:none;cursor:crosshair}
 import * as THREE from "three";
 import {VRButton} from "three/addons/webxr/VRButton.js";
 import {HDRLoader} from "three/addons/loaders/HDRLoader.js";
+import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 
 const scene=new THREE.Scene();
 const nightSkyColor=new THREE.Color(0x02050d);
@@ -272,8 +273,43 @@ const sensorBar=B(13.8,.11,.12,0,7.28,10.58,mat.light,false);
 sensorBar.userData.entranceSensor=true;
 entranceLights.push(sensorBar);
 
-// Ceiling light strips and entrance status indicator.
-for(const x of [-6,-2,2,6])entranceLights.push(B(1.35,.07,3.0,x,7.38,11.55,mat.light,false));
+// Central main ceiling lamp — supplied GLB from wk/assets.
+const centralLampLight=new THREE.PointLight(0xffd89a,42,22,1.8);
+centralLampLight.position.set(0,5.65,7.6);
+centralLampLight.castShadow=false;
+scene.add(centralLampLight);
+
+const centralLampGroup=new THREE.Group();
+centralLampGroup.position.set(0,5.95,7.6);
+scene.add(centralLampGroup);
+
+const centralLampLoader=new GLTFLoader();
+centralLampLoader.load(
+  "https://raw.githubusercontent.com/annynn1990/wk/main/assets/750221_and_750223_favo_lightstar_ceiling_lamp.glb",
+  (gltf)=>{
+    const lamp=gltf.scene;
+    lamp.traverse((o)=>{
+      if(o.isMesh){
+        o.castShadow=true;
+        o.receiveShadow=true;
+      }
+    });
+
+    // Normalize the source model so the fixture reads as a single architectural focal light.
+    const box=new THREE.Box3().setFromObject(lamp);
+    const size=box.getSize(new THREE.Vector3());
+    const maxDim=Math.max(size.x,size.y,size.z);
+    if(maxDim>0)lamp.scale.setScalar(3.2/maxDim);
+
+    const scaledBox=new THREE.Box3().setFromObject(lamp);
+    const center=scaledBox.getCenter(new THREE.Vector3());
+    lamp.position.sub(center);
+    centralLampGroup.add(lamp);
+  },
+  undefined,
+  (err)=>console.warn("Central ceiling lamp GLB failed to load.",err)
+);
+
 const sensorIndicator=B(.20,.20,.08,0,7.12,10.56,mat.light,false);
 entranceLights.push(sensorIndicator);
 
