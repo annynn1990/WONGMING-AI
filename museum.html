@@ -409,6 +409,9 @@ const stairSteps=26;
 const stairRun=.30;
 const stairRise=.225;
 const level2Y=.60+stairSteps*stairRise;
+// One authoritative top surface for every Level 2 floor, gallery and landing.
+const level2FloorTop=level2Y+.12;
+const level2FloorSlabY=level2FloorTop-.11;
 
 for(let i=0;i<stairSteps;i++){
   const z=stairStartZ-(i+1)*stairRun;
@@ -416,7 +419,7 @@ for(let i=0;i<stairSteps;i++){
   B(5.2,stairRise,stairRun,stairX,y-stairRise/2,z,mat.concrete2);
 }
 B(5.2,.12,1.35,stairX,.66,4.9,mat.concreteLight,false);
-B(5.2,.18,2.0,stairX,level2Y+.09,stairStartZ-stairSteps*stairRun-.68,mat.concreteLight,false);
+B(5.2,.18,2.0,stairX,level2FloorTop-.09,stairStartZ-stairSteps*stairRun-.68,mat.concreteLight,false);
 
 for(const side of [-1,1]){
   const x=stairX+side*2.42;
@@ -431,20 +434,23 @@ for(const side of [-1,1]){
   B(.10,.10,railLen,x,.95+(stairSteps*stairRise)/2,stairStartZ-(stairSteps*stairRun)/2,mat.gold,[railAngle,0,0],false);
 }
 
-// Level 2 floor: side gallery wings + front/rear bridges around a real atrium void.
+// Level 2 floor: two side wings around a real 14-unit central atrium,
+ // with only front/rear bridges crossing the atrium.
 const floorMat=new THREE.MeshStandardMaterial({color:0x9b9488,roughness:.68});
-B(31,.22,38,-15.0,level2Y,-14.0,floorMat,false);
-B(31,.22,38,15.0,level2Y,-14.0,floorMat,false);
-B(14,.22,7,0,level2Y,-.25,floorMat,false);
-B(14,.22,8,0,level2Y,-30.0,floorMat,false);
+// Side wings run wall-to-atrium edge: x≈[-27,-7] and [7,27].
+B(19.8,.22,38,-17.0,level2FloorSlabY,-14.0,floorMat,false);
+B(19.8,.22,38,17.0,level2FloorSlabY,-14.0,floorMat,false);
+// Front and rear bridges are the only Level 2 floor across the atrium.
+B(14.3,.22,8.0,0,level2FloorSlabY,-.25,floorMat,false);
+B(14.3,.22,8.0,0,level2FloorSlabY,-30.0,floorMat,false);
 
 for(const x of [-7.15,7.15]){
-  B(.08,1.10,27,x,level2Y+.55,-15.0,mat.gold,false);
-  for(let z=-28;z<=-2;z+=2.4)B(.06,.92,.06,x,level2Y+.46,z,mat.gold,false);
+  B(.08,1.10,27,x,level2FloorTop+.55,-15.0,mat.gold,false);
+  for(let z=-28;z<=-2;z+=2.4)B(.06,.92,.06,x,level2FloorTop+.46,z,mat.gold,false);
 }
-for(const z of [-28.2,-1.8]){
-  B(14.3,1.10,.08,0,level2Y+.55,z,mat.gold,false);
-  for(let x=-7.0;x<=7.0;x+=2.3)B(.06,.92,.06,x,level2Y+.46,z,mat.gold,false);
+for(const z of [-28.0,-2.0]){
+  B(14.3,1.10,.08,0,level2FloorTop+.55,z,mat.gold,false);
+  for(let x=-7.0;x<=7.0;x+=2.3)B(.06,.92,.06,x,level2FloorTop+.46,z,mat.gold,false);
 }
 
 // Level 2 wayfinding sign at the stair landing.
@@ -452,10 +458,10 @@ const wayCanvas=document.createElement("canvas");wayCanvas.width=1100;wayCanvas.
 const wayctx=wayCanvas.getContext("2d");wayctx.fillStyle="#171a1e";wayctx.fillRect(0,0,1100,190);wayctx.textAlign="center";
 wayctx.fillStyle="#f0dda8";wayctx.font='700 48px "Microsoft JhengHei","Noto Sans TC","Noto Serif TC",sans-serif';wayctx.fillText("LEVEL 2 · 展廳",550,80);
 wayctx.fillStyle="#c8cdd2";wayctx.font="19px Arial,sans-serif";wayctx.fillText("十個歷史展廳　／　HISTORY GALLERIES",550,125);
-add(new THREE.PlaneGeometry(6.8,1.18),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(wayCanvas),side:THREE.DoubleSide}),[stairX,level2Y+1.8,stairStartZ-stairSteps*stairRun-.2],[0,Math.PI,0],false);
+add(new THREE.PlaneGeometry(6.8,1.18),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(wayCanvas),side:THREE.DoubleSide}),[stairX,level2FloorTop+1.8,stairStartZ-stairSteps*stairRun-.2],[0,Math.PI,0],false);
 
 // Level 2 circulation markers
-for(const z of [-2,-9,-16,-23,-30])B(4.6,.035,.06,0,level2Y+.14,z,mat.gold,false);
+for(const z of [-2,-9,-16,-23,-30])B(4.6,.035,.06,0,level2FloorTop+.14,z,mat.gold,false);
 
 const galleryData=[
  {title:"帝國紀念廳",sub:"紀念本國功勛人士",kind:"MEMORIAL"},
@@ -491,7 +497,7 @@ function doorPlaqueTexture(g){
 }
 function makeGallery(g,x,z,side){
   const w=10.8,d=6.2,h=2.95;
-  const floor=level2Y+.12;
+  const floor=level2FloorTop;
   B(w,.16,d,x,floor-.08,z,mat.white,false);
   B(w,.30,.22,x,floor+h/2,z-d/2,mat.white);
   B(.22,h,d,x+side*(w/2),floor+h/2,z,mat.white);
@@ -644,8 +650,10 @@ function groundHeight(x,z){
   return .56;
 }
 function upperFloorWalkable(x,z){
+  // Side wings are continuous from the outer walls to the atrium edge.
   if(x<-7.15||x>7.15)return x>-28.2&&x<28.2&&z>-33.0&&z<5.0;
-  return z>-2.0||z<-28.0;
+  // In the central atrium only the front/rear bridges are walkable.
+  return (z>=-4.25&&z<=3.75)||(z>=-34.0&&z<=-26.0);
 }
 
 // Collision boundaries: solve X/Z separately so the camera cannot tunnel through walls.
