@@ -240,6 +240,16 @@ for(let i=0;i<towerFinCount;i++){const x=towerFinStart+i*towerFinStep;im2.setMat
 im2.instanceMatrix.needsUpdate=true;scene.add(im2);
 
 // ---------- ground under cantilever / main hall ----------
+// T0 foundation correction: a low continuous plinth ties the two side wings,
+// main hall and entrance base together instead of leaving the building visually floating.
+const foundationMat=mat.concrete2;
+B(58,.34,43.2,0,.25,-13.0,foundationMat,false,true);
+// Front foundation shoulder stops behind the stair/ramp axis so the lawn and red carpet remain visible.
+B(18.0,.22,4.8,-20.0,.42,8.25,foundationMat,false,true);
+B(18.0,.22,4.8,20.0,.42,8.25,foundationMat,false,true);
+// Central vestibule plinth receives the existing entrance glazing and stairs.
+B(13.2,.22,3.6,0,.42,8.15,foundationMat,false,true);
+
 // Continuous interior floor: no floating/void walking on the ground level.
 B(54,.18,44,0,.47,-12.8,mat.concrete2,false);
 B(12,.06,9,0,.575,10.8,mat.ceramic,false);
