@@ -195,7 +195,10 @@ B(92,.08,18,0,.03,-72,mat.water,false);
 // ---------- M+ style upside-down T massing ----------
 // podium: broad horizontal base, raised and cantilevered
 // Original M+ massing kept intact; only the podium is converted to a walkable shell.
-B(58,.42,48,0,2.72,-13,mat.dark,false);
+// Lower podium underside: keep the central entrance axis completely open.
+ // Side masses remain intact while the visitor route stays bright and unobstructed.
+B(20,.42,48,-19,2.72,-13,mat.dark,false);
+B(20,.42,48,19,2.72,-13,mat.dark,false);
 B(58,.42,48,0,6.38,-13,mat.dark,false);
 B(.75,3.25,48,-28.65,4.55,-13,mat.dark);
 B(.75,3.25,48,28.65,4.55,-13,mat.dark);
@@ -252,8 +255,9 @@ B(13.2,.22,3.6,0,.42,8.15,foundationMat,false,true);
 
 // Continuous interior floor: no floating/void walking on the ground level.
 B(54,.18,44,0,.47,-12.8,mat.concrete2,false);
-// T0 entrance floor: light continuous finished floor, never the black podium material.
-B(12,.06,9,0,.575,10.8,mat.concreteLight,false);
+// T0 entrance floor: one continuous light finished floor through the doorway.
+B(13.0,.08,9.2,0,.68,10.8,mat.concreteLight,false);
+B(13.0,.08,5.8,0,.68,7.6,mat.concreteLight,false);
 // ---------- ground under cantilever / main hall ----------
 B(15.5,3.0,29,-13.25,1.8,-10,mat.black);
 B(15.5,3.0,29,13.25,1.8,-10,mat.black);
@@ -553,8 +557,9 @@ for(let i=0;i<5;i++){
 B(6.4,.04,1.55,0,.72,10.95,carpetMat,false);
 B(6.4,.04,5.2,0,.72,8.35,carpetMat,false);
 B(13.6,.08,7.8,0,.54,6.55,mat.concreteLight,false);
-// Keep the entrance approach on the same light finished-floor palette.
-B(13.0,.06,7.0,0,.59,9.15,mat.concreteLight,false);
+// Keep the full approach on the same light finished-floor palette.
+B(13.6,.08,7.8,0,.68,6.55,mat.concreteLight,false);
+B(13.0,.08,7.0,0,.68,9.15,mat.concreteLight,false);
 
 // Keep the route visually formal without placing obstacles in the walking line.
 // ---------- exterior wayfinding ----------
@@ -616,7 +621,7 @@ function entranceStepHeight(x,z){
     }
   }
   // The red-carpet vestibule is a single raised landing.
-  if(Math.abs(x)<=3.25 && z>=5.65 && z<=11.75)return .72;
+  if(Math.abs(x)<=6.5 && z>=5.35 && z<=11.9)return .72;
   return -1;
 }
 function groundHeight(x,z){
