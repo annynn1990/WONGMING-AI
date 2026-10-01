@@ -88,7 +88,7 @@ new HDRLoader()
 // Outdoor ground uses the supplied Wongming forum grass image directly.
 // It is intentionally unlit so architectural shadows cannot turn the lawn black.
 const grassTexture=new THREE.TextureLoader().load(
-  "https://raw.githubusercontent.com/annynn1990/wk/main/assets/gress2k.jpg",
+  "https://cdn.jsdelivr.net/gh/annynn1990/wk@main/assets/gress2k.jpg",
   (tex)=>{
     tex.colorSpace=THREE.SRGBColorSpace;
     tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
@@ -105,7 +105,8 @@ const grassTexture=new THREE.TextureLoader().load(
 
 const realisticGrassSurface=new THREE.MeshBasicMaterial({
   color:0x6d914f,
-  toneMapped:false
+  toneMapped:false,
+  side:THREE.DoubleSide
 });
 
 function createGrassSurface(width,depth,x,y,z){
@@ -285,6 +286,13 @@ const centralLampGroup=new THREE.Group();
 centralLampGroup.position.set(0,6.55,8.0);
 scene.add(centralLampGroup);
 
+// T0 reference: visible warm-gold horizontal fixture under the entrance canopy.
+const t0LampPlate=add(new THREE.BoxGeometry(5.8,.16,1.18),new THREE.MeshStandardMaterial({color:0xc9a85f,metalness:.45,roughness:.28}),[0,6.88,8.02],[0,0,0],false);
+const t0LampGlow=add(new THREE.BoxGeometry(4.6,.045,.62),new THREE.MeshBasicMaterial({color:0xffdda0,transparent:true,opacity:.92}),[0,6.76,8.02],[0,0,0],false);
+const t0LampPoint=new THREE.PointLight(0xffd28a,28,16,1.8);
+t0LampPoint.position.set(0,6.55,8.0);
+scene.add(t0LampPoint);
+
 for(const x of [-6.6,6.6]){
   const glow=B(3.8,2.8,.045,x,4.0,10.92,new THREE.MeshBasicMaterial({color:0xffd58a,transparent:true,opacity:.72,side:THREE.DoubleSide}),false);
   glow.material.depthWrite=false;
@@ -297,7 +305,7 @@ for(const x of [-6.6,0,6.6]){
 
 const centralLampLoader=new GLTFLoader();
 centralLampLoader.load(
-  "https://raw.githubusercontent.com/annynn1990/wk/main/assets/750221_and_750223_favo_lightstar_ceiling_lamp.glb",
+  "https://cdn.jsdelivr.net/gh/annynn1990/wk@main/assets/750221_and_750223_favo_lightstar_ceiling_lamp.glb",
   (gltf)=>{
     const lamp=gltf.scene;
     lamp.traverse((o)=>{
@@ -631,16 +639,16 @@ function moveWithCollision(dx,dz){
   // Main entrance corridor: force a clear path through the original center opening.
   // This is deliberately checked before general collision so the old facade never
   // traps the camera outside the museum.
-  const corridorNow =
-    camera.position.z > 9.5 && camera.position.z < 22.5 &&
-    Math.abs(camera.position.x) < 7.9;
+  const portalNow =
+    camera.position.z > 7.0 && camera.position.z < 24.0 &&
+    Math.abs(camera.position.x) < 8.2;
 
-  const corridorNext =
-    nz > 9.1 && nz < 22.8 &&
-    Math.abs(nx) < 7.9;
+  const portalNext =
+    nz > 7.0 && nz < 24.0 &&
+    Math.abs(nx) < 8.2;
 
-  if(corridorNow || corridorNext){
-    camera.position.x = THREE.MathUtils.clamp(nx,-7.85,7.85);
+  if(portalNow || portalNext){
+    camera.position.x = THREE.MathUtils.clamp(nx,-8.15,8.15);
     camera.position.z = nz;
     return;
   }
