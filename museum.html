@@ -133,14 +133,15 @@ const mat={
 ground:new THREE.MeshStandardMaterial({color:0x34353a,roughness:.8}),
 grass:new THREE.MeshStandardMaterial({color:0x33412f,roughness:.98}),
 concrete:new THREE.MeshStandardMaterial({color:0x55565a,roughness:.86}),
-concrete2:new THREE.MeshStandardMaterial({color:0x777875,roughness:.8}),
-ceramic:new THREE.MeshStandardMaterial({color:0x4a443e,roughness:.52,metalness:.12}),
-dark:new THREE.MeshStandardMaterial({color:0x101317,roughness:.75}),
+concrete2:new THREE.MeshStandardMaterial({color:0x8d8e8a,roughness:.8}),
+concreteLight:new THREE.MeshStandardMaterial({color:0xb3b0a6,roughness:.72}),
+ceramic:new THREE.MeshStandardMaterial({color:0x6c6258,roughness:.56,metalness:.10}),
+dark:new THREE.MeshStandardMaterial({color:0x2b3036,roughness:.72}),
 glass:new THREE.MeshPhysicalMaterial({color:0x7793a4,roughness:.1,transmission:.42,transparent:true,opacity:.38,side:THREE.DoubleSide}),
-glassDark:new THREE.MeshPhysicalMaterial({color:0x34444e,roughness:.18,transmission:.2,transparent:true,opacity:.5,side:THREE.DoubleSide}),
+glassDark:new THREE.MeshPhysicalMaterial({color:0x435762,roughness:.2,transmission:.35,transparent:true,opacity:.34,side:THREE.DoubleSide}),
 gold:new THREE.MeshStandardMaterial({color:0xc5a15a,metalness:.78,roughness:.24}),
 white:new THREE.MeshStandardMaterial({color:0xb8b5ad,roughness:.62}),
-black:new THREE.MeshStandardMaterial({color:0x07090c,roughness:.92}),
+black:new THREE.MeshStandardMaterial({color:0x171b20,roughness:.84}),
 water:new THREE.MeshPhysicalMaterial({color:0x203747,roughness:.07,transmission:.52,transparent:true,opacity:.7}),
 light:new THREE.MeshBasicMaterial({color:0xf1d17d})
 };
@@ -213,7 +214,7 @@ B(3,24,15.0,14.2,22,-10,mat.black);
 
 // ---------- facade terracotta / vertical fins ----------
 const finGeo=new THREE.BoxGeometry(.22,3.15,.34);
-const finMat=mat.ceramic;
+const finMat=new THREE.MeshStandardMaterial({color:0x73685d,roughness:.58,metalness:.08});
 function finsFront(y,z,width,step,top){
  const n=Math.floor(width/step);
  const im=new THREE.InstancedMesh(finGeo,finMat,n);im.castShadow=true;
@@ -228,12 +229,13 @@ for(let y=8.3;y<35.6;y+=3.3)finsFront(y,-21.7,59,0.48,0);
 for(let y=9;y<35.6;y+=3.4)finsFront(y,1.2,59,0.48,0);
 
 // tower vertical louvers
-const towerFinGeo=new THREE.BoxGeometry(.18,25,.38);
-const im1=new THREE.InstancedMesh(towerFinGeo,mat.ceramic,74);im1.castShadow=true;
-for(let i=0;i<74;i++){const x=2-11.2+i*.305;im1.setMatrixAt(i,new THREE.Matrix4().makeTranslation(x,22,-20.7))}
+const towerFinGeo=new THREE.BoxGeometry(.16,25,.34);
+const towerFinCount=54, towerFinStep=.415, towerFinStart=2-11.2;
+const im1=new THREE.InstancedMesh(towerFinGeo,mat.ceramic,towerFinCount);im1.castShadow=true;
+for(let i=0;i<towerFinCount;i++){const x=towerFinStart+i*towerFinStep;im1.setMatrixAt(i,new THREE.Matrix4().makeTranslation(x,22,-20.7))}
 im1.instanceMatrix.needsUpdate=true;scene.add(im1);
-const im2=new THREE.InstancedMesh(towerFinGeo,mat.ceramic,74);im2.castShadow=true;
-for(let i=0;i<74;i++){const x=2-11.2+i*.305;im2.setMatrixAt(i,new THREE.Matrix4().makeTranslation(x,22,0.7))}
+const im2=new THREE.InstancedMesh(towerFinGeo,mat.ceramic,towerFinCount);im2.castShadow=true;
+for(let i=0;i<towerFinCount;i++){const x=towerFinStart+i*towerFinStep;im2.setMatrixAt(i,new THREE.Matrix4().makeTranslation(x,22,0.7))}
 im2.instanceMatrix.needsUpdate=true;scene.add(im2);
 
 // ---------- ground under cantilever / main hall ----------
@@ -257,8 +259,8 @@ for(let i=0;i<5;i++)B(17-i*.7,.32,1.05,0,.16+i*.32,15.7-i*1.0,mat.concrete2);
 B(23,.72,7.8,0,8.45,13.85,mat.black);
 B(19,.18,7.1,0,8.08,10.95,mat.gold);
 // One front curtain-wall plane. The center is the only opening.
-B(21,6.7,.34,-13.0,4.35,11.02,mat.glassDark);
-B(21,6.7,.34,13.0,4.35,11.02,mat.glassDark);
+B(21,6.7,.34,-13.0,4.35,11.02,mat.glass);
+B(21,6.7,.34,13.0,4.35,11.02,mat.glass);
 
 // Tall architectural side piers. Nothing occupies the centerline.
 for(const x of [-9.2,9.2])B(.95,8.2,1.15,x,4.25,11.1,mat.concrete2);
@@ -274,14 +276,24 @@ sensorBar.userData.entranceSensor=true;
 entranceLights.push(sensorBar);
 
 // Central main ceiling lamp — supplied GLB from wk/assets.
-const centralLampLight=new THREE.PointLight(0xffd89a,42,22,1.8);
-centralLampLight.position.set(0,5.65,7.6);
+const centralLampLight=new THREE.PointLight(0xffd89a,68,24,1.7);
+centralLampLight.position.set(0,6.35,8.0);
 centralLampLight.castShadow=false;
 scene.add(centralLampLight);
 
 const centralLampGroup=new THREE.Group();
-centralLampGroup.position.set(0,5.95,7.6);
+centralLampGroup.position.set(0,6.55,8.0);
 scene.add(centralLampGroup);
+
+for(const x of [-6.6,6.6]){
+  const glow=B(3.8,2.8,.045,x,4.0,10.92,new THREE.MeshBasicMaterial({color:0xffd58a,transparent:true,opacity:.72,side:THREE.DoubleSide}),false);
+  glow.material.depthWrite=false;
+}
+for(const x of [-6.6,0,6.6]){
+  const pl=new THREE.PointLight(0xffc978,11,14,1.8);
+  pl.position.set(x,4.7,9.2);
+  scene.add(pl);
+}
 
 const centralLampLoader=new GLTFLoader();
 centralLampLoader.load(
@@ -299,7 +311,7 @@ centralLampLoader.load(
     const box=new THREE.Box3().setFromObject(lamp);
     const size=box.getSize(new THREE.Vector3());
     const maxDim=Math.max(size.x,size.y,size.z);
-    if(maxDim>0)lamp.scale.setScalar(3.2/maxDim);
+    if(maxDim>0)lamp.scale.setScalar(4.4/maxDim);
 
     const scaledBox=new THREE.Box3().setFromObject(lamp);
     const center=scaledBox.getCenter(new THREE.Vector3());
@@ -507,7 +519,7 @@ for(let i=0;i<9;i++)for(let j=0;j<18;j++){
 // ---------- formal arrival sequence ----------
 const carpetMat=new THREE.MeshStandardMaterial({color:0x74171c,roughness:.76,metalness:.02});
 // Continuous carpet from the public plaza to the automatic doors.
-B(6.4,.055,13.8,0,.205,20.9,carpetMat,false);
+B(6.4,.035,13.8,0,.12,20.9,carpetMat,false);
 
 // Five real risers, with carpet flush on each tread.
 for(let i=0;i<5;i++){
@@ -518,6 +530,8 @@ for(let i=0;i<5;i++){
 }
 B(6.4,.04,1.55,0,.72,10.95,carpetMat,false);
 B(6.4,.04,5.2,0,.72,8.35,carpetMat,false);
+B(13.6,.08,7.8,0,.54,6.55,mat.concreteLight,false);
+B(13.0,.06,7.0,0,.59,9.15,mat.ceramic,false);
 
 // Keep the route visually formal without placing obstacles in the walking line.
 // ---------- exterior wayfinding ----------
@@ -528,11 +542,7 @@ function tex(top,sub){
  return new THREE.CanvasTexture(c);
 }
 // ---------- exterior wayfinding ----------
-// Keep the arrival axis visually clear: no poles or rails directly in front of the entrance.
-for(const x of [-30,-22,22,30]){
-  C(.06,1.8,x,.9,20.5,mat.gold,18);
-  C(.28,.06,x,1.82,20.5,mat.light,24);
-}
+// Main arrival axis left open; no decorative poles.
 
 // ---------- exhibition hotspots ----------
 const hotspots=[
