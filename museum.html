@@ -5,596 +5,754 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>黃名歷史博物館｜Wongming Museum of History</title>
 <style>
-:root{
-  --paper:#e9e1cf;
-  --gold:#d2b06a;
-  --gold2:#f0d99e;
-  --ink:#172027;
-  --glass:rgba(9,14,18,.78);
-}
-*{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#071018;color:var(--paper);font-family:Inter,"Noto Sans TC","Noto Serif TC",sans-serif}
-body{touch-action:none}
-canvas{display:block;position:fixed;inset:0}
-#hud{position:fixed;inset:0;z-index:10;pointer-events:none}
-.brand{position:absolute;left:28px;top:24px;text-shadow:0 4px 24px #0008}
-.brand h1{margin:0;font:700 27px/1.1 "Noto Serif TC",serif;letter-spacing:.12em}
-.brand p{margin:8px 0 0;font-size:9px;letter-spacing:.22em;color:#c3c9cf}
-.card{position:absolute;right:24px;top:22px;width:310px;padding:17px 18px 16px;background:linear-gradient(180deg,#0f171eea,#080d12dc);border:1px solid #fff2;box-shadow:0 22px 80px #0009;backdrop-filter:blur(16px);pointer-events:auto}
-.kicker{font-size:9px;letter-spacing:.25em;color:var(--gold);text-transform:uppercase}
-.card h2{margin:7px 0 8px;font:600 18px/1.3 "Noto Serif TC",serif}
-.card p{margin:0;color:#b9c0c6;font-size:12px;line-height:1.75}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px}
-button{height:39px;border:1px solid #b89655;background:#171a1c;color:#ead8a7;cursor:pointer;font-size:11px;letter-spacing:.12em}
-button:hover{background:#24282b}
-#hint{position:absolute;left:50%;bottom:17px;transform:translateX(-50%);padding:9px 13px;background:#071017d9;border:1px solid #fff2;color:#b8c0c7;font-size:10px;white-space:nowrap;backdrop-filter:blur(12px)}
-#status{position:absolute;left:24px;bottom:20px;font-size:10px;color:#d3c39d;letter-spacing:.08em;text-shadow:0 2px 10px #000}
-#info{display:none;position:absolute;left:50%;bottom:73px;transform:translateX(-50%);max-width:min(600px,88vw);padding:14px 18px;background:#070c11f2;border:1px solid #fff2;box-shadow:0 20px 60px #000a;line-height:1.7;font-size:12px;text-align:left;pointer-events:auto}
-#info strong{color:#efd79d;font-size:14px}
-#reticle{position:absolute;left:50%;top:50%;width:6px;height:6px;border:1px solid #ebd69b;border-radius:50%;margin:-3px;box-shadow:0 0 12px #000;pointer-events:none}
-#loading{position:absolute;inset:0;display:grid;place-items:center;background:#05090df6;transition:opacity .35s}
-#loading.off{opacity:0;pointer-events:none}
-.loadbox{text-align:center}
-.loadbox .seal{font-size:28px;letter-spacing:.2em;color:#d7bb78}
-.loadbox p{margin:12px 0 0;color:#9fa8ae;font-size:11px;letter-spacing:.12em}
-@media(max-width:760px){
- .card{right:10px;top:10px;width:min(260px,calc(100vw - 20px))}
- .brand{left:12px;top:12px}
- .brand h1{font-size:20px}
- #hint{display:none}
- #status{left:12px;bottom:12px}
-}
+:root{--ink:#eee7d5;--muted:#9ea4aa;--gold:#cfb16b;--glass:#11161bd4}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080a0d;color:var(--ink);font-family:Inter,"Noto Sans TC","Noto Serif TC",sans-serif}
+canvas{display:block;touch-action:none;cursor:crosshair}
+#brand{position:fixed;z-index:20;top:24px;left:28px;text-shadow:0 4px 25px #000;pointer-events:none}
+#brand h1{margin:0;font:600 29px/1 "Noto Serif TC",serif;letter-spacing:.15em}
+#brand p{margin:8px 0 0;font-size:10px;letter-spacing:.18em;color:#bdc1c5;text-transform:uppercase}
+#panel{position:fixed;z-index:20;top:22px;right:24px;width:292px;padding:17px 17px 16px;background:linear-gradient(180deg,#10151be8,#080b0fd7);border:1px solid #fff2;box-shadow:0 18px 60px #0008;backdrop-filter:blur(18px)}
+.kicker{font-size:9px;letter-spacing:.22em;color:var(--gold);text-transform:uppercase}.title{margin:7px 0 6px;font-size:18px}.copy{margin:0;color:#b8bdc3;font-size:12px;line-height:1.75}
+#enter,#timeBtn{width:100%;height:39px;border:1px solid #bf9c57;background:#17191a;color:#eadbad;cursor:pointer;letter-spacing:.14em;font-size:11px}
+#enter{margin-top:13px}
+#timeBtn{margin-top:8px;border-color:#fff3c6;color:#d8d4c8;background:#101318}
+#hint{position:fixed;z-index:20;bottom:18px;left:50%;transform:translateX(-50%);padding:9px 14px;background:#090c10cf;border:1px solid #fff2;color:#acb3ba;font-size:11px;white-space:nowrap;backdrop-filter:blur(13px)}
+#reticle{position:fixed;z-index:20;left:50%;top:50%;width:7px;height:7px;margin:-3.5px;border:1px solid #eedba7;border-radius:50%;pointer-events:none}
+#info{position:fixed;z-index:21;left:50%;bottom:70px;transform:translateX(-50%);display:none;max-width:min(560px,88vw);padding:13px 18px;background:#080b10ee;border:1px solid #fff2;color:#c9ccd1;font-size:12px;line-height:1.75;box-shadow:0 18px 50px #0009}
+#info strong{color:#e5d19b}
+@media(max-width:700px){#panel{right:10px;top:10px;width:225px}#brand{left:12px;top:12px}#hint{display:none}}
 </style>
 </head>
 <body>
-<div id="hud">
-  <div class="brand">
-    <h1>黃名歷史博物館</h1>
-    <p>WONGMING MUSEUM OF HISTORY</p>
-  </div>
-  <div class="card">
-    <div class="kicker">WMMOH · ARCHITECTURE</div>
-    <h2>黃名帝國歷史博物館</h2>
-    <p>全新雙層可步行版本。中央入口、中央主燈、挑高大廳、二樓展廳與戶外草坪全部重新建立，避免沿用舊版的碰撞與入口結構。</p>
-    <div class="row">
-      <button id="dayBtn">切換夜景</button>
-      <button id="resetBtn">回到入口</button>
-    </div>
-  </div>
-  <div id="hint">WASD 移動・Shift 加速・滑鼠拖曳轉向・N 日夜・點擊展區查看介紹</div>
-  <div id="status">位置：入口廣場　｜　樓層：GROUND</div>
-  <div id="info"></div>
-  <div id="reticle"></div>
-  <div id="loading"><div class="loadbox"><div class="seal">黃名歷史博物館</div><p>BUILDING THE NEW MUSEUM…</p></div></div>
+<div id="brand"><h1>黃名歷史博物館</h1><p>Wongming Museum of History · Architectural Study</p></div>
+<div id="panel">
+<div class="kicker">ARCHITECTURAL REFERENCE · M+</div>
+<div class="title">以現實博物館建築為藍本</div>
+<p class="copy">本館採用香港 M+ 的核心空間邏輯作為黃名版本：懸臂式大型基座、上升的縱向塔樓、公共屋頂花園、中央採光井與開放展覽空間。</p>
+<button id="enter">ENTER IMMERSIVE VR</button><button id="timeBtn">切換至夜景 · NIGHT</button>
 </div>
-
-<script type="importmap">
-{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}
-</script>
-
+<div id="hint">WASD 移動・Shift 加速・N 日夜切換・點擊展區　｜　VR：Enter Immersive</div>
+<div id="reticle"></div><div id="info"></div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from "three";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import {VRButton} from "three/addons/webxr/VRButton.js";
+import {HDRLoader} from "three/addons/loaders/HDRLoader.js";
+import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x9fb3c2);
+const scene=new THREE.Scene();
+const nightSkyColor=new THREE.Color(0x02050d);
+const dayFallbackColor=new THREE.Color(0x7f9db8);
+let daySky=null;
+let timeMode="day";
+scene.background=dayFallbackColor.clone();
+scene.backgroundBlurriness=0.12;
+scene.backgroundIntensity=0.72;
+scene.environmentIntensity=0.82;
+scene.fog=new THREE.Fog(0x080a0d,34,150);
 
-const camera = new THREE.PerspectiveCamera(68, innerWidth/innerHeight, .05, 260);
-const START = {x:0,y:1.72,z:34,yaw:0,pitch:0};
+const camera=new THREE.PerspectiveCamera(68,innerWidth/innerHeight,.05,260);
+camera.position.set(0,1.7,32);
 
-const renderer = new THREE.WebGLRenderer({antialias:true,powerPreference:"high-performance"});
-renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:"high-performance"});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));
 renderer.setSize(innerWidth,innerHeight);
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.15;
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.05;
+renderer.xr.enabled=true;
 document.body.appendChild(renderer.domElement);
 
-const clock = new THREE.Clock();
-const temp = new THREE.Vector3();
-
-const mats = {
-  asphalt: new THREE.MeshStandardMaterial({color:0x333940,roughness:.95}),
-  grass: new THREE.MeshStandardMaterial({color:0x5d7c48,roughness:1}),
-  concrete: new THREE.MeshStandardMaterial({color:0xb1b0a9,roughness:.8}),
-  concreteDark: new THREE.MeshStandardMaterial({color:0x424951,roughness:.86}),
-  stone: new THREE.MeshStandardMaterial({color:0x7e7469,roughness:.75}),
-  charcoal: new THREE.MeshStandardMaterial({color:0x1b2229,roughness:.78}),
-  black: new THREE.MeshStandardMaterial({color:0x0f1419,roughness:.82}),
-  wood: new THREE.MeshStandardMaterial({color:0x4e4035,roughness:.8}),
-  gold: new THREE.MeshStandardMaterial({color:0xc8a45a,metalness:.72,roughness:.24}),
-  white: new THREE.MeshStandardMaterial({color:0xe8e4da,roughness:.64}),
-  wall: new THREE.MeshStandardMaterial({color:0x777a78,roughness:.86}),
-  red: new THREE.MeshStandardMaterial({color:0x731c22,roughness:.76}),
-  glass: new THREE.MeshPhysicalMaterial({color:0x90abbc,roughness:.10,transmission:.35,transparent:true,opacity:.34,side:THREE.DoubleSide}),
-  water: new THREE.MeshPhysicalMaterial({color:0x2a475c,roughness:.08,transmission:.35,transparent:true,opacity:.76}),
-  light: new THREE.MeshBasicMaterial({color:0xf2d287})
-};
-
-const hemi = new THREE.HemisphereLight(0xbdd1df,0x231d17,1.15);
-scene.add(hemi);
-
-const sun = new THREE.DirectionalLight(0xffdfaf,2.2);
-sun.position.set(-35,48,34);
-sun.castShadow = true;
-sun.shadow.mapSize.set(2048,2048);
-sun.shadow.camera.left=-80; sun.shadow.camera.right=80;
-sun.shadow.camera.top=80; sun.shadow.camera.bottom=-80;
-sun.shadow.camera.near=1; sun.shadow.camera.far=180;
-scene.add(sun);
-
-const fill = new THREE.DirectionalLight(0x8ea9c7,.35);
-fill.position.set(38,18,-30);
-scene.add(fill);
-
-const museumLights = [];
-const lightObjects = [];
-
-function box(w,h,d,x,y,z,m,cast=true,receive=true){
-  const o = new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);
-  o.position.set(x,y,z);
-  o.castShadow=cast; o.receiveShadow=receive;
-  scene.add(o);
-  return o;
-}
-function cyl(r,h,x,y,z,m,segments=24){
-  const o = new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,segments),m);
-  o.position.set(x,y,z);
-  o.castShadow=true; o.receiveShadow=true;
-  scene.add(o);
-  return o;
-}
-function plane(w,d,x,y,z,m,rotX=-Math.PI/2){
-  const o = new THREE.Mesh(new THREE.PlaneGeometry(w,d),m);
-  o.position.set(x,y,z); o.rotation.x=rotX;
-  o.receiveShadow=true;
-  scene.add(o);
-  return o;
-}
-function textTexture(lines, width=1200, height=300, accent="#e6d19a"){
-  const c=document.createElement("canvas"); c.width=width; c.height=height;
-  const g=c.getContext("2d");
-  g.fillStyle="#11161b"; g.fillRect(0,0,width,height);
-  g.strokeStyle="#b99759"; g.lineWidth=8; g.strokeRect(18,18,width-36,height-36);
-  g.textAlign="center";
-  g.fillStyle=accent; g.font='700 54px "Noto Sans TC","Microsoft JhengHei",sans-serif';
-  g.fillText(lines[0],width/2,116);
-  g.fillStyle="#c3c8cb"; g.font="20px Arial,sans-serif";
-  if(lines[1]) g.fillText(lines[1],width/2,163);
-  if(lines[2]) g.fillText(lines[2],width/2,205);
-  return new THREE.CanvasTexture(c);
-}
-function plaque(title, sub, x,y,z, rotY=0, scale=1){
-  const tex=textTexture([title,sub||"", "WONGMING MUSEUM"]);
-  const m=new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide});
-  const o=new THREE.Mesh(new THREE.PlaneGeometry(3.8*scale,.95*scale),m);
-  o.position.set(x,y,z); o.rotation.y=rotY; scene.add(o);
-  return o;
-}
-
-// ---------- outdoor campus ----------
-plane(132,118,0,-.06,-18,mats.grass);
-plane(90,18,0,-.01,43,mats.asphalt);
-
-const reflectingPool=box(56,.18,9,0,.12,-46,mats.water,false);
-box(58,.25,10,0,.02,-46,mats.stone,false);
-
-for(let x=-40;x<=40;x+=10){
-  cyl(.42,.35,x,.12,25,mats.gold,20);
-  cyl(.12,2.6,x,1.4,25,mats.concreteDark,20);
-  cyl(.75,.18,x,2.72,25,mats.gold,20);
-}
-
-// ---------- building shell ----------
-const buildingW=64;
-const buildingD=46;
-const frontZ=10;
-const rearZ=-36;
-
-box(64,.75,46,0,2.65,-13,mats.charcoal);
-box(64,.55,46,0,7.25,-13,mats.black);
-
-// upper tower, set back from the entrance so the entrance reads as a separate element
-box(22,27,20,2,21,-8,mats.charcoal);
-box(24,.8,22,2,35,-8,mats.black);
-box(24,.55,22,2,8.8,-8,mats.stone);
-
-// vertical fins
-const finMat = new THREE.MeshStandardMaterial({color:0x746b63,roughness:.62,metalness:.08});
-for(let z=-28;z<=4;z+=3.0){
-  for(let x=-29;x<=29;x+=.8){
-    box(.16,3.05,.30,x,8.8,z,finMat,true,true);
-  }
-}
-for(let z=-28;z<=3;z+=3.0){
-  for(let x=-9.2;x<=13.2;x+=.46){
-    box(.13,24,.32,x,21,z,finMat,true,false);
-  }
-}
-
-// front glazing sections leave a generous true doorway in the middle
-box(22,7.1,.30,-21,4.55,10.55,mats.glass,false,false);
-box(22,7.1,.30,21,4.55,10.55,mats.glass,false,false);
-
-// ---------- true entrance ----------
-for(let i=0;i<6;i++){
-  const width=20-i*1.1;
-  box(width,.28,1.15,0,.14+i*.29,15.4-i*1.0,mats.concrete,false,true);
-}
-plane(6.4,16,0,.31,20.1,mats.red);
-
-box(24,.7,8.2,0,8.55,13.1,mats.black);
-box(18,.16,7.25,0,8.16,10.65,mats.gold);
-
-box(1.0,8.0,1.25,-9.1,4.45,10.72,mats.concrete);
-box(1.0,8.0,1.25,9.1,4.45,10.72,mats.concrete);
-
-// glass doors + header
-const doors=[
-  {mesh:box(3.2,6.7,.16,-1.62,3.72,10.45,mats.glass,false,false),side:-1,closed:-1.62},
-  {mesh:box(3.2,6.7,.16,1.62,3.72,10.45,mats.glass,false,false),side:1,closed:1.62}
-];
-box(13.8,.18,.22,0,7.2,10.38,mats.gold,false,false);
-
-const entranceLamp = new THREE.PointLight(0xffd58a,75,24,1.8);
-entranceLamp.position.set(0,6.2,8.6);
-scene.add(entranceLamp); museumLights.push(entranceLamp);
-
-for(const x of [-6.6,0,6.6]){
-  const l=new THREE.PointLight(0xffc777,18,15,1.8);
-  l.position.set(x,5.1,8.8);
-  scene.add(l); museumLights.push(l);
-}
-
-const marqueeMat=new THREE.MeshBasicMaterial({
-  map:textTexture(["帝國歷史博物館","WONGMING MUSEUM OF HISTORY","WMMOH"]),
-  side:THREE.DoubleSide
-});
-const marquee=new THREE.Mesh(new THREE.PlaneGeometry(16,3.2),marqueeMat);
-marquee.position.set(0,6.05,10.02);
-scene.add(marquee);
-
-plaque("黃名歷史博物館","MAIN ENTRANCE",0,7.15,9.98,0,1.05);
-
-// ---------- central atrium ----------
-box(18,.22,25,0,.72,-12,mats.white,false,true);
-box(17,.16,21,0,7.65,-12,mats.glass,false,false);
-
-// atrium vertical fins
-for(let x=-7.5;x<=7.5;x+=2.5){
-  box(.10,7,.10,x,4.2,-12,mats.gold,false,false);
-}
-
-// ---------- grand stair ----------
-const stair={x:0,startZ:8.0,run:16,rise:5.8,steps:24};
-for(let i=0;i<stair.steps;i++){
-  const z=stair.startZ-(i+1)*(stair.run/stair.steps);
-  const y=.76+(i+1)*(stair.rise/stair.steps);
-  const w=6.6;
-  box(w,stair.rise/stair.steps,stair.run/stair.steps,stair.x,y-(stair.rise/stair.steps)/2,z,mats.concrete,false,true);
-}
-for(const side of [-1,1]){
-  const x=side*3.45;
-  box(.12,1.05,17,x,3.45,0,mats.gold,false,false,[0,0,-Math.atan2(stair.rise,stair.run)]);
-}
-plaque("LEVEL 2 · 展廳","MAIN GALLERY FLOOR",0,7.0,-8.3,Math.PI,1.0);
-
-// ---------- ground-floor galleries ----------
-const groundRooms=[
-  {name:"帝國起源廳",sub:"WONGMING ORIGINS",x:-18,z:-5},
-  {name:"歷史沿革廳",sub:"HISTORY OF THE EMPIRE",x:18,z:-5},
-  {name:"宮廷文物廳",sub:"COURT & ARTIFACTS",x:-18,z:-19},
-  {name:"微國歷史廳",sub:"MICRONATION HISTORY",x:18,z:-19}
-];
-
-function makeGroundGallery(r){
-  const w=20,d=10,h=3.1;
-  box(w,.18,d,r.x,.75,r.z,mats.white,false,true);
-  box(w,h,.20,r.x,2.3,r.z-d/2,mats.white);
-  box(.20,h,d,r.x-w/2,2.3,r.z,mats.white);
-  box(.20,h,d,r.x+w/2,2.3,r.z,mats.white);
-  // back wall deliberately contains a wide opening, so the space feels like a gallery not a closed box
-  box(5.4,h,.20,r.x-w/2+3.0,2.3,r.z+d/2,mats.white);
-  box(5.4,h,.20,r.x+w/2-3.0,2.3,r.z+d/2,mats.white);
-  plaque(r.name,r.sub,r.x,2.85,r.z-d/2-.04,0,1);
-  for(const px of [r.x-5.8,r.x,r.x+5.8]){
-    box(3.5,1.55,.10,px,1.72,r.z-d/2-.08,mats.gold,false,false);
-    box(3.15,1.35,.05,px,1.72,r.z-d/2-.15,mats.black,false,false);
-  }
-  for(const px of [r.x-5,r.x+5]){
-    const l=new THREE.PointLight(0xffe1ab,7,8,2);
-    l.position.set(px,3.2,r.z);
-    scene.add(l); museumLights.push(l);
-  }
-}
-groundRooms.forEach(makeGroundGallery);
-
-// center ground orientation plaque
-plaque("中央大堂","CENTRAL ATRIUM",0,3.1,1.8,0,1.05);
-
-// ---------- second floor plan ----------
-const upperY=6.55;
-// side wings
-box(18,.20,34,-17.5,upperY,-14.0,mats.white,false,true);
-box(18,.20,34,17.5,upperY,-14.0,mats.white,false,true);
-// front and rear bridges
-box(16,.20,5,0,upperY,3.0,mats.white,false,true);
-box(16,.20,5,0,upperY,-31.0,mats.white,false,true);
-
-// balustrade around atrium
-box(.10,1.1,27,-8.2,upperY+.56,-13.8,mats.gold,false,false);
-box(.10,1.1,27,8.2,upperY+.56,-13.8,mats.gold,false,false);
-for(let z=-27;z<=0;z+=2.7){
-  box(.06,.95,.06,-8.2,upperY+.46,z,mats.gold,false,false);
-  box(.06,.95,.06,8.2,upperY+.46,z,mats.gold,false,false);
-}
-
-// ten exhibition rooms, five per side
-const upperRooms=[
-  ["紀念人物廳","MEMORIALS"],["黃名政治廳","GOVERNMENT"],["黃名文化廳","CULTURE"],
-  ["黃名軍事廳","DEFENCE"],["帝國人物廳","PERSONALITIES"],
-  ["微國制度廳","MICRONATION SYSTEMS"],["微國外交廳","DIPLOMACY"],["微國文化廳","MICRONATION CULTURE"],
-  ["微國文物廳","MICRONATION ARTIFACTS"],["未來展望廳","FUTURE EXHIBITION"]
-];
-const rows=[-2,-8.5,-15,-21.5,-28];
-
-function makeUpperRoom(title,sub,x,z,side){
-  const w=15.2,d=5.2,h=2.8, y=upperY+.14;
-  box(w,.16,d,x,y-.07,z,mats.white,false,true);
-  box(w,.24,.18,x,y+h/2,z-d/2,mats.white);
-  box(.18,h,d,x+side*(w/2),y+h/2,z,mats.white);
-  box(.18,h,d,x-side*(w/2),y+h/2,z,mats.white);
-  // open corridor side with short return walls
-  box(4.0,h,.18,x-side*(w/2)+side*2.0,y+h/2,z+d/2,mats.white);
-  box(4.0,h,.18,x+side*(w/2)-side*2.0,y+h/2,z+d/2,mats.white);
-  plaque(title,sub,x,y+h-.15,z-d/2-.06,0,.78);
-  box(3.6,1.45,.08,x-4.1,y+1.16,z-d/2-.10,mats.black,false,false);
-  box(3.6,1.45,.08,x+4.1,y+1.16,z-d/2-.10,mats.black,false,false);
-  box(3.0,1.10,.08,x,y+.88,z+d/2-.05,mats.gold,false,false);
-  const l=new THREE.PointLight(0xffdca4,6,7,2);
-  l.position.set(x,y+2.5,z);
-  scene.add(l); museumLights.push(l);
-}
-for(let i=0;i<5;i++){
-  makeUpperRoom(upperRooms[i][0],upperRooms[i][1],-18,rows[i],-1);
-  makeUpperRoom(upperRooms[i+5][0],upperRooms[i+5][1],18,rows[i],1);
-}
-
-// upper directional signage
-plaque("二樓歷史展廳","HISTORY GALLERIES",0,7.55,1.8,Math.PI,1.0);
-
-// ---------- roof garden ----------
-plane(54,34,0,10.05,-15,mats.grass);
-box(56,.8,1.0,0,10.5,2,mats.black);
-box(56,.8,1.0,0,10.5,-32,mats.black);
-box(1,.8,34,-27,10.5,-15,mats.black);
-box(1,.8,34,27,10.5,-15,mats.black);
-
-for(let x=-20;x<=20;x+=8){
-  for(let z=-28;z<=-4;z+=8){
-    cyl(.38,.9,x,10.65,z,mats.wood,18);
-    cyl(.72,.6,x,11.32,z,mats.grass,18);
-  }
-}
-plaque("屋頂公共花園","PUBLIC ROOF GARDEN",0,12.0,-31.3,Math.PI,.92);
-
-// ---------- exhibition markers ----------
-const hotspots=[
-  {p:new THREE.Vector3(-18,1.4,-5),title:"帝國起源廳",text:"黃名帝國歷史起源與早期發展。"},
-  {p:new THREE.Vector3(18,1.4,-5),title:"歷史沿革廳",text:"黃名帝國主要歷史階段與制度變遷。"},
-  {p:new THREE.Vector3(-18,1.4,-19),title:"宮廷文物廳",text:"宮廷文化、典禮與歷史文物。"},
-  {p:new THREE.Vector3(18,1.4,-19),title:"微國歷史廳",text:"世界微型國家與相關歷史脈絡。"},
-  {p:new THREE.Vector3(-18,8.1,-2),title:"紀念人物廳",text:"黃名帝國重要人物與紀念資料。"},
-  {p:new THREE.Vector3(18,8.1,-2),title:"微國制度廳",text:"微型國家的制度與治理形式。"}
-];
-for(const h of hotspots){
-  const ring=new THREE.Mesh(new THREE.RingGeometry(.62,.76,32),mats.gold);
-  ring.rotation.x=-Math.PI/2; ring.position.set(h.p.x,.10,h.p.z);
-  ring.userData.hotspot=h; scene.add(ring);
-}
-
-// ---------- central ceiling lamp, isolated and robust ----------
-const lampGroup=new THREE.Group();
-lampGroup.position.set(0,6.0,0.4);
-scene.add(lampGroup);
-
-function addProceduralMainLamp(){
-  const plate=new THREE.Mesh(new THREE.CylinderGeometry(2.15,.75,.22,64),mats.gold);
-  plate.position.y=0; lampGroup.add(plate);
-  for(let i=0;i<7;i++){
-    const a=(i/7)*Math.PI*2;
-    const x=Math.cos(a)*1.55,z=Math.sin(a)*1.55;
-    const ring=new THREE.Mesh(new THREE.CylinderGeometry(.34,.42,.12,32),mats.light);
-    ring.position.set(x,-.12,z); lampGroup.add(ring);
-    const l=new THREE.PointLight(0xffd88f,7,9,1.8);
-    l.position.set(x,-.35,z); lampGroup.add(l); lightObjects.push(l);
-  }
-  const center=new THREE.Mesh(new THREE.SphereGeometry(.65,32,20),new THREE.MeshStandardMaterial({color:0xe8cb82,emissive:0x6c521d,emissiveIntensity:1.1,metalness:.35,roughness:.24}));
-  center.position.y=-.15; lampGroup.add(center);
-}
-addProceduralMainLamp();
-
-// Optional supplied GLB: use it only as the decorative shell; the light system remains functional if the asset fails.
-new GLTFLoader().load(
-  "https://raw.githubusercontent.com/annynn1990/wk/main/assets/750221_and_750223_favo_lightstar_ceiling_lamp.glb",
-  gltf=>{
-    const lamp=gltf.scene;
-    const bb=new THREE.Box3().setFromObject(lamp);
-    const size=bb.getSize(new THREE.Vector3());
-    const maxDim=Math.max(size.x,size.y,size.z);
-    if(maxDim>0) lamp.scale.setScalar(3.1/maxDim);
-    const b2=new THREE.Box3().setFromObject(lamp);
-    const c=b2.getCenter(new THREE.Vector3());
-    lamp.position.sub(c);
-    lamp.position.y=.2;
-    lamp.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
-    lampGroup.add(lamp);
-  },
-  undefined,
-  ()=>{}
-);
-
-// ---------- navigation ----------
-camera.position.set(START.x,START.y,START.z);
-let yaw=0, pitch=0;
-const keys=Object.create(null);
-let dragging=false, lastX=0,lastY=0;
-let night=false;
-
-function resetView(){
-  camera.position.set(START.x,START.y,START.z);
-  yaw=0; pitch=0;
-}
-function insideBuilding(x,z){
-  return x>-31 && x<31 && z>-34 && z<10;
-}
-function upperWalkable(x,z){
-  if(x>-9 && x<9 && z>-29 && z<4) return false;
-  return x>-28 && x<28 && z>-32 && z<5;
-}
-function stairProgress(x,z){
-  if(Math.abs(x)>3.7 || z>8 || z<-8) return -1;
-  const p=(8-z)/16;
-  return THREE.MathUtils.clamp(p,0,1);
-}
-function floorHeight(x,z){
-  const p=stairProgress(x,z);
-  if(p>=0 && p<=1) return .76+p*5.75;
-  // second floor
-  if(upperWalkable(x,z) && camera.position.y>4.7) return upperY;
-  return .76;
-}
-function canStand(x,z){
-  if(x<-44||x>44||z<-49||z>39) return false;
-  if(z<-34 && x>-31 && x<31) return true;
-  if(insideBuilding(x,z)){
-    const p=stairProgress(x,z);
-    if(p>=0) return true;
-    if(camera.position.y>4.5) return upperWalkable(x,z);
-    return z<9.6;
-  }
-  return true;
-}
-function move(dx,dz){
-  const nx=camera.position.x+dx;
-  const nz=camera.position.z+dz;
-  if(canStand(nx,camera.position.z)) camera.position.x=nx;
-  if(canStand(camera.position.x,nz)) camera.position.z=nz;
-}
-
-renderer.domElement.tabIndex=0;
-renderer.domElement.addEventListener("mousedown",e=>{dragging=true;lastX=e.clientX;lastY=e.clientY});
-addEventListener("mouseup",()=>dragging=false);
-addEventListener("mousemove",e=>{
-  if(!dragging) return;
-  yaw-=(e.clientX-lastX)*.003;
-  pitch-=(e.clientY-lastY)*.002;
-  pitch=THREE.MathUtils.clamp(pitch,-1.18,1.18);
-  lastX=e.clientX; lastY=e.clientY;
-});
-renderer.domElement.addEventListener("click",()=>{
-  const forward=new THREE.Vector3(0,0,-1).applyEuler(new THREE.Euler(pitch,yaw,0,"YXZ"));
-  let best=null, bestD=9;
-  for(const h of hotspots){
-    const d=camera.position.distanceTo(h.p);
-    if(d>9) continue;
-    const dir=h.p.clone().sub(camera.position).normalize();
-    if(dir.dot(forward)>.35 && d<bestD){best=h;bestD=d;}
-  }
-  const info=document.getElementById("info");
-  if(best){
-    info.innerHTML="<strong>"+best.title+"</strong><br>"+best.text;
-    info.style.display="block";
-    clearTimeout(window.__infoTimer);
-    window.__infoTimer=setTimeout(()=>info.style.display="none",4500);
-  }
-});
-
-addEventListener("keydown",e=>{
-  keys[e.code]=true;
-  if(e.code==="KeyN") toggleNight();
-});
-addEventListener("keyup",e=>keys[e.code]=false);
-
-function applyNight(){
-  const n=night;
-  scene.background=new THREE.Color(n?0x03070d:0x9fb3c2);
-  hemi.intensity=n?.42:1.15;
-  sun.intensity=n?.25:2.2;
-  fill.intensity=n?.10:.35;
-  museumLights.forEach(l=>{ l.intensity = n ? Math.max(6,l.userData.dayIntensity||l.intensity) : (l.userData.dayIntensity||Math.max(3,l.intensity)) });
-  lightObjects.forEach(l=>l.intensity=n?10:7);
-  document.getElementById("dayBtn").textContent=n?"切換日景":"切換夜景";
-}
-museumLights.forEach(l=>l.userData.dayIntensity=l.intensity);
-function toggleNight(){night=!night;applyNight()}
-
-// initial daytime state
-applyNight();
-
-document.getElementById("dayBtn").onclick=toggleNight;
-document.getElementById("resetBtn").onclick=resetView;
-
-// camera update
-function updateCamera(dt){
-  const speed=(keys.ShiftLeft||keys.ShiftRight)?7.0:3.5;
-  const f=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw));
-  const r=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
-  let dx=0,dz=0;
-  if(keys.KeyW||keys.ArrowUp){dx+=-f.x*speed*dt;dz+=-f.z*speed*dt}
-  if(keys.KeyS||keys.ArrowDown){dx+=f.x*speed*dt;dz+=f.z*speed*dt}
-  if(keys.KeyA||keys.ArrowLeft){dx+=-r.x*speed*dt;dz+=-r.z*speed*dt}
-  if(keys.KeyD||keys.ArrowRight){dx+=r.x*speed*dt;dz+=r.z*speed*dt}
-  move(dx,dz);
-  const targetY=floorHeight(camera.position.x,camera.position.z)+1.68;
-  camera.position.y += (targetY-camera.position.y)*Math.min(1,dt*9);
-  camera.rotation.order="YXZ";
-  camera.rotation.y=yaw;
-  camera.rotation.x=pitch;
-}
-
-// update doors and UI
-function updateEntrance(dt){
-  const near=Math.abs(camera.position.z-10.4)<8.5 && Math.abs(camera.position.x)<8.5;
-  for(const d of doors){
-    const target=d.closed+(near?d.side*3.25:0);
-    d.mesh.position.x += THREE.MathUtils.clamp(target-d.mesh.position.x,-5*dt,5*dt);
-  }
-}
-function updateStatus(){
-  const y=camera.position.y;
-  const floor=y>7.5?"LEVEL 2": "GROUND";
-  let place="入口廣場";
-  if(camera.position.z<9 && camera.position.z>-34) place="館內";
-  if(camera.position.z<-35) place="戶外水景";
-  document.getElementById("status").textContent="位置："+place+"　｜　樓層："+floor;
-}
-
-function animate(){
-  const dt=Math.min(clock.getDelta(),.045);
-  updateEntrance(dt);
-  updateCamera(dt);
-
-  lampGroup.rotation.y += dt*.08;
-  const pulse=.88+.12*Math.sin(performance.now()*.0027);
-  lampGroup.children.forEach(o=>{
-    if(o.material && o.material===mats.light) o.scale.setScalar(pulse);
+renderer.domElement.style.background="#080a0d";
+const pmrem=new THREE.PMREMGenerator(renderer);
+pmrem.compileEquirectangularShader();
+new HDRLoader()
+  .setPath("https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/equirectangular/")
+  .load("venice_sunset_1k.hdr",(hdr)=>{
+    hdr.mapping=THREE.EquirectangularReflectionMapping;
+    daySky=hdr;
+    scene.environment=hdr;
+    if(timeMode==="day"){
+      scene.background=daySky;
+      scene.backgroundIntensity=0.66;
+    }
+    scene.environmentIntensity=timeMode==="day" ? 0.9 : 0.2;
+  },undefined,(err)=>{
+    console.warn("HDR sky failed; using procedural fallback.",err);
   });
 
-  updateStatus();
-  renderer.render(scene,camera);
-}
-renderer.setAnimationLoop(animate);
+// HDR sky/environment is loaded above; materials below are lit by both image-based light and a directional sun.
+// ---------- realistic museum lawn ----------
+// Outdoor ground uses the supplied Wongming forum grass image directly.
+// It is intentionally unlit so architectural shadows cannot turn the lawn black.
+const grassTexture=new THREE.TextureLoader().load(
+  "https://raw.githubusercontent.com/annynn1990/wk/main/assets/gress2k.jpg",
+  (tex)=>{
+    tex.colorSpace=THREE.SRGBColorSpace;
+    tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+    tex.repeat.set(5,5);
+    tex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+    realisticGrassSurface.map=tex;
+    realisticGrassSurface.needsUpdate=true;
+  },
+  undefined,
+  (err)=>{
+    console.warn("wk/assets/gress2k.jpg unavailable; using natural green fallback.",err);
+  }
+);
 
-addEventListener("resize",()=>{
-  camera.aspect=innerWidth/innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);
+const realisticGrassSurface=new THREE.MeshBasicMaterial({
+  color:0x6d914f,
+  toneMapped:false
 });
 
-window.addEventListener("load",()=>setTimeout(()=>document.getElementById("loading").classList.add("off"),350));
+function createGrassSurface(width,depth,x,y,z){
+  const geo=new THREE.PlaneGeometry(width,depth,96,72);
+  const pos=geo.attributes.position;
+  for(let i=0;i<pos.count;i++){
+    const px=pos.getX(i),py=pos.getY(i);
+    const wave=
+      Math.sin(px*.36+z*.11)*.018+
+      Math.cos(py*.43+x*.08)*.014+
+      Math.sin((px-py)*.72)*.008;
+    pos.setZ(i,wave);
+  }
+  pos.needsUpdate=true;
+  geo.computeVertexNormals();
+  geo.rotateX(-Math.PI/2);
+  const mesh=new THREE.Mesh(geo,realisticGrassSurface);
+  mesh.position.set(x,y,z);
+  mesh.receiveShadow=false;
+  scene.add(mesh);
+  return mesh;
+}
+
+const mat={
+ground:new THREE.MeshStandardMaterial({color:0x34353a,roughness:.8}),
+grass:new THREE.MeshStandardMaterial({color:0x33412f,roughness:.98}),
+concrete:new THREE.MeshStandardMaterial({color:0x55565a,roughness:.86}),
+concrete2:new THREE.MeshStandardMaterial({color:0x8d8e8a,roughness:.8}),
+concreteLight:new THREE.MeshStandardMaterial({color:0xb3b0a6,roughness:.72}),
+ceramic:new THREE.MeshStandardMaterial({color:0x6c6258,roughness:.56,metalness:.10}),
+dark:new THREE.MeshStandardMaterial({color:0x2b3036,roughness:.72}),
+glass:new THREE.MeshPhysicalMaterial({color:0x7793a4,roughness:.1,transmission:.42,transparent:true,opacity:.38,side:THREE.DoubleSide}),
+glassDark:new THREE.MeshPhysicalMaterial({color:0x435762,roughness:.2,transmission:.35,transparent:true,opacity:.34,side:THREE.DoubleSide}),
+gold:new THREE.MeshStandardMaterial({color:0xc5a15a,metalness:.78,roughness:.24}),
+white:new THREE.MeshStandardMaterial({color:0xb8b5ad,roughness:.62}),
+black:new THREE.MeshStandardMaterial({color:0x171b20,roughness:.84}),
+water:new THREE.MeshPhysicalMaterial({color:0x203747,roughness:.07,transmission:.52,transparent:true,opacity:.7}),
+light:new THREE.MeshBasicMaterial({color:0xf1d17d})
+};
+
+scene.add(new THREE.HemisphereLight(0xaebed1,0x100b07,1.15));
+const key=new THREE.DirectionalLight(0xffdca0,2.25);key.position.set(-28,42,30);key.castShadow=true;key.shadow.mapSize.set(3072,3072);key.shadow.camera.near=1;key.shadow.camera.far=160;key.shadow.camera.left=-70;key.shadow.camera.right=70;key.shadow.camera.top=70;key.shadow.camera.bottom=-70;key.shadow.bias=-0.00025;scene.add(key);
+const fill=new THREE.DirectionalLight(0x8ea4c7,.42);fill.position.set(32,18,-35);scene.add(fill);
+const rim=new THREE.DirectionalLight(0xdde8ff,.3);rim.position.set(-30,12,-55);scene.add(rim);
+
+const nightLights=[];
+for(const x of [-7,-3.5,0,3.5,7]){
+ const pl=new THREE.PointLight(0xffd27a,0,18,2);pl.position.set(x,5.5,2.1);scene.add(pl);nightLights.push(pl);
+}
+for(const p of [[-24,3,14],[-12,3,14],[0,3,14],[12,3,14],[24,3,14]]){
+ const pl=new THREE.PointLight(0xc7d9ff,0,12,2);pl.position.set(...p);scene.add(pl);nightLights.push(pl);
+}
+const starGeo=new THREE.BufferGeometry();
+const starPos=new Float32Array(1100*3);
+for(let i=0;i<1100;i++){
+ const a=i*12.9898,b=i*78.233,u=(Math.sin(a)*.5+.5)*2-1,t=(Math.sin(b)*.5+.5)*Math.PI*2,r=175,q=Math.sqrt(1-u*u);
+ starPos[i*3]=r*q*Math.cos(t);starPos[i*3+1]=Math.max(18,r*u);starPos[i*3+2]=r*q*Math.sin(t);
+}
+starGeo.setAttribute("position",new THREE.BufferAttribute(starPos,3));
+const stars=new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xffffff,size:.36,sizeAttenuation:true,transparent:true,opacity:0}));
+scene.add(stars);
+
+function add(g,m,p=[0,0,0],r=[0,0,0],cast=true){
+ const o=new THREE.Mesh(g,m);o.position.set(...p);o.rotation.set(...r);o.castShadow=cast;o.receiveShadow=true;scene.add(o);return o;
+}
+function B(w,h,d,x,y,z,m=mat.concrete,r=[0,0,0]){const cast=r===false?false:true;const rot=r===false?[0,0,0]:r;return add(new THREE.BoxGeometry(w,h,d),m,[x,y,z],rot,cast)}
+function C(r,h,x,y,z,m=mat.concrete,seg=28){return add(new THREE.CylinderGeometry(r,r,h,seg),m,[x,y,z])}
+
+// ---------- monumental automatic entrance ----------
+const entranceDoors=[];
+const entranceLights=[];
+function makeSlidingDoor(x0){
+  const door=add(new THREE.BoxGeometry(3.55,6.75,.12),mat.glass,[x0,3.69,10.72]);
+  door.userData.closedX=x0;
+  door.userData.side=x0<0?-1:1;
+  entranceDoors.push(door);
+}
+// One continuous outdoor lawn. No concrete slab underneath it.
+createGrassSurface(110,106,0,.07,-10);
+
+
+// harbor water behind
+B(92,.08,18,0,.03,-72,mat.water,false);
+
+
+// ---------- M+ style upside-down T massing ----------
+// podium: broad horizontal base, raised and cantilevered
+// Original M+ massing kept intact; only the podium is converted to a walkable shell.
+B(58,.42,48,0,2.72,-13,mat.dark,false);
+B(58,.42,48,0,6.38,-13,mat.dark,false);
+B(.75,3.25,48,-28.65,4.55,-13,mat.dark);
+B(.75,3.25,48,28.65,4.55,-13,mat.dark);
+B(58,3.25,.75,0,4.55,-36.65,mat.dark);
+B(9.0,3.25,.75,-24.5,4.55,10.62,mat.glassDark);
+B(9.0,3.25,.75,24.5,4.55,10.62,mat.glassDark);
+B(62,1.0,50,0,7.0,-13,mat.ceramic);
+B(66,.55,54,0,9.25,-13,mat.black);
+
+// tower: slim vertical block fused into podium
+B(22,27,21,2,22.0,-10,mat.dark);
+B(24,.8,23,2,35.8,-10,mat.black);
+B(23,1.0,22,2,8.9,-10,mat.ceramic);
+
+// slight offset creates distinctive monolithic silhouette
+B(3,24,15.0,14.2,22,-10,mat.black);
+
+// ---------- facade terracotta / vertical fins ----------
+const finGeo=new THREE.BoxGeometry(.22,3.15,.34);
+const finMat=new THREE.MeshStandardMaterial({color:0x73685d,roughness:.58,metalness:.08});
+function finsFront(y,z,width,step,top){
+ const n=Math.floor(width/step);
+ const im=new THREE.InstancedMesh(finGeo,finMat,n);im.castShadow=true;
+ for(let i=0;i<n;i++){
+  const x=-width/2+i*step;
+  const m=new THREE.Matrix4().makeTranslation(x,y,z);
+  im.setMatrixAt(i,m);
+ }
+ im.instanceMatrix.needsUpdate=true;scene.add(im);
+}
+for(let y=8.3;y<35.6;y+=3.3)finsFront(y,-21.7,59,0.48,0);
+for(let y=9;y<35.6;y+=3.4)finsFront(y,1.2,59,0.48,0);
+
+// tower vertical louvers
+const towerFinGeo=new THREE.BoxGeometry(.16,25,.34);
+const towerFinCount=54, towerFinStep=.415, towerFinStart=2-11.2;
+const im1=new THREE.InstancedMesh(towerFinGeo,mat.ceramic,towerFinCount);im1.castShadow=true;
+for(let i=0;i<towerFinCount;i++){const x=towerFinStart+i*towerFinStep;im1.setMatrixAt(i,new THREE.Matrix4().makeTranslation(x,22,-20.7))}
+im1.instanceMatrix.needsUpdate=true;scene.add(im1);
+const im2=new THREE.InstancedMesh(towerFinGeo,mat.ceramic,towerFinCount);im2.castShadow=true;
+for(let i=0;i<towerFinCount;i++){const x=towerFinStart+i*towerFinStep;im2.setMatrixAt(i,new THREE.Matrix4().makeTranslation(x,22,0.7))}
+im2.instanceMatrix.needsUpdate=true;scene.add(im2);
+
+// ---------- ground under cantilever / main hall ----------
+// Continuous interior floor: no floating/void walking on the ground level.
+B(54,.18,44,0,.47,-12.8,mat.concrete2,false);
+B(12,.06,9,0,.575,10.8,mat.ceramic,false);
+// ---------- ground under cantilever / main hall ----------
+B(15.5,3.0,29,-13.25,1.8,-10,mat.black);
+B(15.5,3.0,29,13.25,1.8,-10,mat.black);
+for(const x of [-24,-18,-12,-6,0,6,12,18,24]){
+ C(.42,5.6,x,2.9,2.4,mat.concrete2,24);
+}
+for(const x of [-21,-14,-7,0,7,14,21])C(.3,5.8,x,2.9,-23.8,mat.ceramic,24);
+
+// ---------- MAIN ENTRANCE / MONUMENTAL PORTAL ----------
+
+// Broad arrival steps.
+for(let i=0;i<5;i++)B(17-i*.7,.32,1.05,0,.16+i*.32,15.7-i*1.0,mat.concrete2);
+
+// Monumental projecting portal canopy, deliberately much taller and deeper.
+B(23,.72,7.8,0,8.45,13.85,mat.black);
+B(19,.18,7.1,0,8.08,10.95,mat.gold);
+// One front curtain-wall plane. The center is the only opening.
+B(21,6.7,.34,-13.0,4.35,11.02,mat.glass);
+B(21,6.7,.34,13.0,4.35,11.02,mat.glass);
+
+// Tall architectural side piers. Nothing occupies the centerline.
+for(const x of [-9.2,9.2])B(.95,8.2,1.15,x,4.25,11.1,mat.concrete2);
+
+// Automatic sliding glass doors on the same plane as the entrance glazing.
+makeSlidingDoor(-1.78);
+makeSlidingDoor(1.78);
+
+// Header and sensor only; no center mullion.
+B(14.2,.16,.20,0,7.12,10.70,mat.gold);
+const sensorBar=B(13.8,.11,.12,0,7.28,10.58,mat.light,false);
+sensorBar.userData.entranceSensor=true;
+entranceLights.push(sensorBar);
+
+// Central main ceiling lamp — supplied GLB from wk/assets.
+const centralLampLight=new THREE.PointLight(0xffd89a,68,24,1.7);
+centralLampLight.position.set(0,6.35,8.0);
+centralLampLight.castShadow=false;
+scene.add(centralLampLight);
+
+const centralLampGroup=new THREE.Group();
+centralLampGroup.position.set(0,6.55,8.0);
+scene.add(centralLampGroup);
+
+for(const x of [-6.6,6.6]){
+  const glow=B(3.8,2.8,.045,x,4.0,10.92,new THREE.MeshBasicMaterial({color:0xffd58a,transparent:true,opacity:.72,side:THREE.DoubleSide}),false);
+  glow.material.depthWrite=false;
+}
+for(const x of [-6.6,0,6.6]){
+  const pl=new THREE.PointLight(0xffc978,11,14,1.8);
+  pl.position.set(x,4.7,9.2);
+  scene.add(pl);
+}
+
+const centralLampLoader=new GLTFLoader();
+centralLampLoader.load(
+  "https://raw.githubusercontent.com/annynn1990/wk/main/assets/750221_and_750223_favo_lightstar_ceiling_lamp.glb",
+  (gltf)=>{
+    const lamp=gltf.scene;
+    lamp.traverse((o)=>{
+      if(o.isMesh){
+        o.castShadow=true;
+        o.receiveShadow=true;
+      }
+    });
+
+    // Normalize the source model so the fixture reads as a single architectural focal light.
+    const box=new THREE.Box3().setFromObject(lamp);
+    const size=box.getSize(new THREE.Vector3());
+    const maxDim=Math.max(size.x,size.y,size.z);
+    if(maxDim>0)lamp.scale.setScalar(4.4/maxDim);
+
+    const scaledBox=new THREE.Box3().setFromObject(lamp);
+    const center=scaledBox.getCenter(new THREE.Vector3());
+    lamp.position.sub(center);
+    centralLampGroup.add(lamp);
+  },
+  undefined,
+  (err)=>console.warn("Central ceiling lamp GLB failed to load.",err)
+);
+
+const sensorIndicator=B(.20,.20,.08,0,7.12,10.56,mat.light,false);
+entranceLights.push(sensorIndicator);
+
+// Physical entrance marquee: requested Wongming forum banner as the primary artwork.
+function makeFallbackMarquee(){
+  const c=document.createElement("canvas");c.width=1600;c.height=420;
+  const g=c.getContext("2d");g.textAlign="center";
+  g.fillStyle="#68181b";g.fillRect(0,0,c.width,c.height);
+  g.strokeStyle="#d9b56d";g.lineWidth=10;g.strokeRect(22,22,c.width-44,c.height-44);
+  g.fillStyle="#f3dfac";g.font="700 106px serif";g.fillText("帝國歷史博物館",800,185);
+  g.fillStyle="#e5d2a2";g.font="32px sans-serif";g.fillText("WONGMING MUSEUM OF HISTORY",800,270);
+  g.fillStyle="#f0c76c";g.font="24px sans-serif";g.fillText("WMMOH",800,325);
+  return new THREE.CanvasTexture(c);
+}
+const marqueeMaterial=new THREE.MeshBasicMaterial({map:makeFallbackMarquee(),transparent:false,side:THREE.DoubleSide});
+const marquee=add(new THREE.PlaneGeometry(16.6,3.45),marqueeMaterial,[0,6.08,10.12],[0,0,0],false);
+new THREE.TextureLoader().load("/api/museum-banner",(tex)=>{
+  tex.colorSpace=THREE.SRGBColorSpace;
+  marqueeMaterial.map=tex;
+  marqueeMaterial.needsUpdate=true;
+},undefined,(err)=>console.warn("Forum banner unavailable; fallback marquee remains.",err));
+
+// WMMOH architectural wordmark — gold lettering on upper-right tower facade.
+const wmCanvas=document.createElement("canvas");wmCanvas.width=1400;wmCanvas.height=220;
+const wmctx=wmCanvas.getContext("2d");wmctx.clearRect(0,0,1400,220);wmctx.textAlign="center";
+wmctx.fillStyle="#e0bd70";wmctx.font="800 126px Arial,sans-serif";wmctx.fillText("WMMOH",700,148);
+const wmTex=new THREE.CanvasTexture(wmCanvas);
+add(new THREE.PlaneGeometry(12.5,1.95),
+    new THREE.MeshBasicMaterial({map:wmTex,transparent:true,side:THREE.DoubleSide}),
+    [8.0,32.0,0.52],[0,0,0],false);
+
+// Roofline spotlights over the entrance.
+for(const x of [-8,-4,0,4,8]) {
+  const spot=new THREE.SpotLight(0xffd98b,9,24,.48,.42,1.5);
+  spot.position.set(x,8.0,15.2);spot.target.position.set(x,0,11);
+  scene.add(spot);scene.add(spot.target);
+}
+
+//// ---------- roof garden / public roof deck ----------
+createGrassSurface(52,38,0,9.755,-13);
+for(let x=-20;x<=20;x+=8){
+ for(let z=-26;z<=0;z+=8)C(.65,1.0,x,10.45,z,mat.ceramic,20);
+}
+
+// roof garden parapet
+B(54,1.0,1,0,10.25,5.2,mat.black);
+B(54,1.0,1,0,10.25,-31.2,mat.black);
+B(1,1,38,-26.5,10.25,-13,mat.black);
+B(1,1,38,26.5,10.25,-13,mat.black);
+
+// ---------- CENTRAL ATRIUM + FORUM-DRIVEN EXHIBITION HALLS ----------
+B(17,.35,22,0,8.2,-13,mat.glass);
+for(let x=-6;x<=6;x+=3)B(.16,7,.22,x,4.7,-13,mat.gold);
+
+// ---------- REAL GRAND STAIR / LEVEL 2 CONNECTION ----------
+const stairX=-7.6;
+const stairStartZ=4.4;
+const stairSteps=26;
+const stairRun=.30;
+const stairRise=.225;
+const level2Y=.60+stairSteps*stairRise;
+
+for(let i=0;i<stairSteps;i++){
+  const z=stairStartZ-(i+1)*stairRun;
+  const y=.60+(i+1)*stairRise;
+  B(5.2,stairRise,stairRun,stairX,y-stairRise/2,z,mat.concrete2);
+}
+B(5.2,.12,1.35,stairX,.66,4.9,mat.concreteLight,false);
+B(5.2,.18,2.0,stairX,level2Y+.09,stairStartZ-stairSteps*stairRun-.68,mat.concreteLight,false);
+
+for(const side of [-1,1]){
+  const x=stairX+side*2.42;
+  for(let i=0;i<9;i++){
+    const t=i/8;
+    const z=stairStartZ-t*(stairSteps*stairRun);
+    const y=.95+t*(stairSteps*stairRise);
+    B(.07,1.05,.07,x,y-.5,z,mat.gold,false);
+  }
+  const railLen=Math.hypot(stairSteps*stairRise,stairSteps*stairRun);
+  const railAngle=-Math.atan2(stairSteps*stairRise,stairSteps*stairRun);
+  B(.10,.10,railLen,x,.95+(stairSteps*stairRise)/2,stairStartZ-(stairSteps*stairRun)/2,mat.gold,[railAngle,0,0],false);
+}
+
+// Level 2 floor: side gallery wings + front/rear bridges around a real atrium void.
+const floorMat=new THREE.MeshStandardMaterial({color:0x9b9488,roughness:.68});
+B(31,.22,38,-15.0,level2Y,-14.0,floorMat,false);
+B(31,.22,38,15.0,level2Y,-14.0,floorMat,false);
+B(14,.22,7,0,level2Y,-.25,floorMat,false);
+B(14,.22,8,0,level2Y,-30.0,floorMat,false);
+
+for(const x of [-7.15,7.15]){
+  B(.08,1.10,27,x,level2Y+.55,-15.0,mat.gold,false);
+  for(let z=-28;z<=-2;z+=2.4)B(.06,.92,.06,x,level2Y+.46,z,mat.gold,false);
+}
+for(const z of [-28.2,-1.8]){
+  B(14.3,1.10,.08,0,level2Y+.55,z,mat.gold,false);
+  for(let x=-7.0;x<=7.0;x+=2.3)B(.06,.92,.06,x,level2Y+.46,z,mat.gold,false);
+}
+
+// Level 2 wayfinding sign at the stair landing.
+const wayCanvas=document.createElement("canvas");wayCanvas.width=1100;wayCanvas.height=190;
+const wayctx=wayCanvas.getContext("2d");wayctx.fillStyle="#171a1e";wayctx.fillRect(0,0,1100,190);wayctx.textAlign="center";
+wayctx.fillStyle="#f0dda8";wayctx.font='700 48px "Microsoft JhengHei","Noto Sans TC","Noto Serif TC",sans-serif';wayctx.fillText("LEVEL 2 · 展廳",550,80);
+wayctx.fillStyle="#c8cdd2";wayctx.font="19px Arial,sans-serif";wayctx.fillText("十個歷史展廳　／　HISTORY GALLERIES",550,125);
+add(new THREE.PlaneGeometry(6.8,1.18),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(wayCanvas),side:THREE.DoubleSide}),[stairX,level2Y+1.8,stairStartZ-stairSteps*stairRun-.2],[0,Math.PI,0],false);
+
+// Level 2 circulation markers
+for(const z of [-2,-9,-16,-23,-30])B(4.6,.035,.06,0,level2Y+.14,z,mat.gold,false);
+
+const galleryData=[
+ {title:"帝國紀念廳",sub:"紀念本國功勛人士",kind:"MEMORIAL"},
+ {title:"黃名歷史廳",sub:"黃名帝國歷史展覽",kind:"WONGMING HISTORY"},
+ {title:"微國歷史廳",sub:"微國歷史展覽",kind:"MICRONATION HISTORY"},
+ {title:"黃名專題廳",sub:"黃名帝國專題歷史介紹",kind:"SPECIAL COLLECTION"},
+ {title:"黃名文物廳",sub:"黃名帝國文物展覽",kind:"ARTIFACTS"},
+ {title:"微國專題廳",sub:"微國專題歷史介紹",kind:"MICRONATION TOPICS"},
+ {title:"微國文物廳",sub:"微國文物展覽",kind:"MICRONATION ARTIFACTS"},
+ {title:"歷史回顧廳",sub:"討論黃名或微國歷史故事",kind:"HISTORICAL REVIEW"},
+ {title:"文化景區中心",sub:"全國歷史建築與景區導覽中心",kind:"CULTURAL SITES"},
+ {title:"歷史文物局辦公室",sub:"本國歷史研究及文物事務部門",kind:"HERITAGE OFFICE"}
+];
+
+function galleryTexture(g){
+  const c=document.createElement("canvas");c.width=1100;c.height=240;
+  const q=c.getContext("2d");q.clearRect(0,0,1100,240);q.textAlign="center";
+  q.fillStyle="#eee0b4";q.font='700 48px "Noto Sans CJK TC","Noto Serif CJK TC","Microsoft JhengHei",sans-serif';q.fillText(g.title,550,90);
+  q.fillStyle="#bfc5ca";q.font="20px Arial,sans-serif";q.fillText(g.kind,550,130);
+  q.fillStyle="#d8dbde";q.font='18px "Microsoft JhengHei","Noto Sans TC",sans-serif';q.fillText(g.sub,550,168);
+  return new THREE.CanvasTexture(c);
+}
+function doorPlaqueTexture(g){
+  const c=document.createElement("canvas");c.width=820;c.height=190;
+  const q=c.getContext("2d");
+  q.fillStyle="#12161b";q.fillRect(0,0,820,190);
+  q.strokeStyle="#d5b16a";q.lineWidth=5;q.strokeRect(8,8,804,174);
+  q.textAlign="center";
+  q.fillStyle="#f2dfaa";q.font='700 40px "Microsoft JhengHei","Noto Serif TC","Noto Sans TC",sans-serif';q.fillText(g.title,410,76);
+  q.fillStyle="#c8cdd2";q.font="18px Arial,sans-serif";q.fillText(g.kind,410,112);
+  q.fillStyle="#d8dbde";q.font='17px "Microsoft JhengHei","Noto Sans TC","Noto Sans TC",sans-serif';q.fillText(g.sub,410,145);
+  return new THREE.CanvasTexture(c);
+}
+function makeGallery(g,x,z,side){
+  const w=10.8,d=6.2,h=2.95;
+  const floor=level2Y+.12;
+  B(w,.16,d,x,floor-.08,z,mat.white,false);
+  B(w,.30,.22,x,floor+h/2,z-d/2,mat.white);
+  B(.22,h,d,x+side*(w/2),floor+h/2,z,mat.white);
+  const spineX=x-side*(w/2);
+  const seg=(d-2.8)/2;
+  B(.22,h,seg,spineX,floor+h/2,z-(2.8+seg)/2,mat.white);
+  B(.22,h,seg,spineX,floor+h/2,z+(2.8+seg)/2,mat.white);
+
+  // Real double-leaf gallery door.
+  B(1.34,2.38,.10,spineX-.68,floor+1.20,z,mat.dark,false);
+  B(1.34,2.38,.10,spineX+.68,floor+1.20,z,mat.dark,false);
+
+  // Chinese plaque mounted immediately above the actual door, facing the corridor.
+  add(new THREE.PlaneGeometry(4.0,.88),
+      new THREE.MeshBasicMaterial({map:doorPlaqueTexture(g),side:THREE.DoubleSide}),
+      [spineX-side*.08,floor+2.55,z],[0,-side*Math.PI/2,0],false);
+
+  for(const px of [x-2.2,x+2.2]){
+    B(2.2,.20,1.30,px,floor+.10,z,mat.black,false);
+    B(1.85,.95,1.05,px,floor+.68,z,mat.glass,false);
+    B(1.45,.06,.70,px,floor+1.18,z,mat.gold,false);
+  }
+  for(const px of [x-3.5,x,x+3.5]){
+    B(2.30,1.72,.08,px,floor+1.63,z-d/2-.07,mat.white,false);
+    B(2.02,1.48,.05,px,floor+1.63,z-d/2-.13,mat.gold,false);
+  }
+  B(3.0,.15,.48,x,floor+.93,z+1.08,mat.ceramic,false);
+  for(const lx of [x-1.1,x+1.1])B(.10,.72,.10,lx,floor+.50,z+1.08,mat.black,false);
+  B(5.4,.07,.10,x,floor+h-.17,z,mat.black,false);
+  for(const px of [x-2.0,x-.7,x+.7,x+2.0]){
+    C(.07,.16,px,floor+h-.35,z,mat.black,18);
+    C(.12,.07,px,floor+h-.47,z,mat.light,18);
+  }
+}
+
+// Five halls per side, arranged as a formal museum promenade.
+const zRows=[-2,-9,-16,-23,-30];
+for(let i=0;i<5;i++){
+  makeGallery(galleryData[i],-18,zRows[i],-1);
+  makeGallery(galleryData[i+5],18,zRows[i],1);
+}
+
+// ---------- history timeline facade / LED wall ---------- 
+const led=new THREE.MeshBasicMaterial({color:0x365b7a});
+B(21,12,.10,2,22.0,0.82,led,false);
+for(let i=0;i<9;i++)for(let j=0;j<18;j++){
+ const p=B(1.4,.34,.05,-6+i*2,15.2+j*.75,0.72,new THREE.MeshBasicMaterial({color:0x1b2630}),false);
+ p.userData.led=true;
+}
+
+// ---------- formal arrival sequence ----------
+const carpetMat=new THREE.MeshStandardMaterial({color:0x74171c,roughness:.76,metalness:.02});
+// Continuous carpet from the public plaza to the automatic doors.
+B(6.4,.035,13.8,0,.12,20.9,carpetMat,false);
+
+// Five real risers, with carpet flush on each tread.
+for(let i=0;i<5;i++){
+  const z=15.05-i*.86;
+  const top=(i+1)*.12;
+  B(11.6-i*.32,.12,.86,0,top-.06,z,mat.concrete2);
+  B(6.4,.035,.84,0,top+.035,z,carpetMat,false);
+}
+B(6.4,.04,1.55,0,.72,10.95,carpetMat,false);
+B(6.4,.04,5.2,0,.72,8.35,carpetMat,false);
+B(13.6,.08,7.8,0,.54,6.55,mat.concreteLight,false);
+B(13.0,.06,7.0,0,.59,9.15,mat.ceramic,false);
+
+// Keep the route visually formal without placing obstacles in the walking line.
+// ---------- exterior wayfinding ----------
+function tex(top,sub){
+ const c=document.createElement("canvas");c.width=900;c.height=260;const g=c.getContext("2d");
+ g.clearRect(0,0,900,260);g.textAlign="center";g.fillStyle="#ead8a7";g.font="700 68px serif";g.fillText(top,450,105);
+ g.fillStyle="#c2c6cb";g.font="28px sans-serif";g.fillText(sub,450,165);
+ return new THREE.CanvasTexture(c);
+}
+// ---------- exterior wayfinding ----------
+// Main arrival axis left open; no decorative poles.
+
+// ---------- exhibition hotspots ----------
+const hotspots=[
+ {p:new THREE.Vector3(-18,1.2,-2),title:"帝國紀念廳",text:"紀念本國功勛人士。"},
+ {p:new THREE.Vector3(-18,1.2,-9),title:"黃名歷史廳",text:"黃名帝國歷史展覽。"},
+ {p:new THREE.Vector3(-18,1.2,-16),title:"微國歷史廳",text:"微國歷史展覽。"},
+ {p:new THREE.Vector3(-18,1.2,-23),title:"黃名專題廳",text:"黃名帝國專題歷史介紹。"},
+ {p:new THREE.Vector3(-18,1.2,-30),title:"黃名文物廳",text:"黃名帝國文物展覽。"},
+ {p:new THREE.Vector3(18,1.2,-2),title:"微國專題廳",text:"微國專題歷史介紹。"},
+ {p:new THREE.Vector3(18,1.2,-9),title:"微國文物廳",text:"微國文物展覽。"},
+ {p:new THREE.Vector3(18,1.2,-16),title:"歷史回顧廳",text:"討論黃名或微國歷史故事。"},
+ {p:new THREE.Vector3(18,1.2,-23),title:"文化景區中心",text:"全國歷史建築與景區導覽中心。"},
+ {p:new THREE.Vector3(18,1.2,-30),title:"歷史文物局辦公室",text:"本國歷史研究及文物事務部門。"},
+ {p:new THREE.Vector3(0,1.4,10.2),title:"中央入口大堂",text:"從主入口進入中央大堂後，左右兩側分流至十個主題展廳。"}
+];
+const ringMat=new THREE.MeshBasicMaterial({color:0xd1af63});
+hotspots.forEach(h=>{const r=new THREE.Mesh(new THREE.RingGeometry(.72,.82,36),ringMat);r.rotation.x=-Math.PI/2;r.position.set(h.p.x,.09,h.p.z);r.userData=h;scene.add(r)});
+
+// Automatic sensor door controller.
+function updateEntrance(dt){
+  const dz=Math.abs(camera.position.z-10.8);
+  const dx=Math.abs(camera.position.x);
+  const detected=dz<12.5 && dx<8.5;
+  for(const d of entranceDoors){
+    const target=d.userData.closedX + (detected ? d.userData.side*3.75 : 0);
+    d.position.x += THREE.MathUtils.clamp(target-d.position.x,-3.6*dt,3.6*dt);
+  }
+  const pulse=detected ? .78+.18*Math.sin(performance.now()*.009) : .32;
+  for(const l of entranceLights)if(l.material?.color)l.material.color.setScalar(pulse);
+}
+
+// Human-scale floor elevations: footsteps and ramps create real vertical movement.
+let currentLevel=0;
+function stairProgress(x,z){
+  if(x>stairX-2.7&&x<stairX+2.7&&z<=stairStartZ&&z>=stairStartZ-stairSteps*stairRun){
+    return Math.max(0,Math.min(1,(stairStartZ-z)/(stairSteps*stairRun)));
+  }
+  return -1;
+}
+function groundHeight(x,z){
+  const p=stairProgress(x,z);
+  if(p>=0){
+    if(currentLevel===0&&p>.92)currentLevel=1;
+    if(currentLevel===1&&p<.08)currentLevel=0;
+    return .56+p*(level2Y-.56);
+  }
+  return currentLevel===1?level2Y:.56;
+}
+function upperFloorWalkable(x,z){
+  if(x<-7.15||x>7.15)return x>-28.2&&x<28.2&&z>-33.0&&z<5.0;
+  return z>-2.0||z<-28.0;
+}
+
+// Collision boundaries: solve X/Z separately so the camera cannot tunnel through walls.
+const colliders=[
+ {minX:-29.6,maxX:-28.7,minZ:-37,maxZ:11.0},
+ {minX:28.7,maxX:29.6,minZ:-37,maxZ:11.0},
+ {minX:-29,maxX:29,minZ:-37.6,maxZ:-36.7},
+ // Front facade: only the central doorway remains open.
+ {minX:-29,maxX:-7.25,minZ:10.65,maxZ:11.18},
+ {minX:7.25,maxX:29,minZ:10.65,maxZ:11.18}
+];
+for(const z of zRows){
+  colliders.push({minX:-23.5,maxX:-22.9,minZ:z-3.15,maxZ:z+3.15});
+  colliders.push({minX:22.9,maxX:23.5,minZ:z-3.15,maxZ:z+3.15});
+  colliders.push({minX:-23.5,maxX:-12.6,minZ:z-3.18,maxZ:z-2.95});
+  colliders.push({minX:12.6,maxX:23.5,minZ:z-3.18,maxZ:z-2.95});
+  colliders.push({minX:-12.9,maxX:-12.25,minZ:z-3.15,maxZ:z-1.42});
+  colliders.push({minX:-12.9,maxX:-12.25,minZ:z+1.42,maxZ:z+3.15});
+  colliders.push({minX:12.25,maxX:12.9,minZ:z-3.15,maxZ:z-1.42});
+  colliders.push({minX:12.25,maxX:12.9,minZ:z+1.42,maxZ:z+3.15});
+}
+function insideRect(x,z,r){return x>r.minX&&x<r.maxX&&z>r.minZ&&z<r.maxZ;}
+function blockedAt(x,z){
+  if(currentLevel===1&&stairProgress(x,z)<0&&!upperFloorWalkable(x,z))return true;
+  for(const r of colliders)if(x>r.minX&&x<r.maxX&&z>r.minZ&&z<r.maxZ)return true;
+  // Automatic doors are visual/animated only. Never trap the player at the threshold.
+  // The facade colliders above already define the actual entrance opening.
+
+  return false;
+}
+function moveWithCollision(dx,dz){
+  const nx=camera.position.x+dx;
+  const nz=camera.position.z+dz;
+
+  // Main entrance corridor: force a clear path through the original center opening.
+  // This is deliberately checked before general collision so the old facade never
+  // traps the camera outside the museum.
+  const corridorNow =
+    camera.position.z > 9.5 && camera.position.z < 22.5 &&
+    Math.abs(camera.position.x) < 7.9;
+
+  const corridorNext =
+    nz > 9.1 && nz < 22.8 &&
+    Math.abs(nx) < 7.9;
+
+  if(corridorNow || corridorNext){
+    camera.position.x = THREE.MathUtils.clamp(nx,-7.85,7.85);
+    camera.position.z = nz;
+    return;
+  }
+
+  if(!blockedAt(nx,camera.position.z)) camera.position.x=nx;
+  if(!blockedAt(camera.position.x,nz)) camera.position.z=nz;
+}
+
+function applyTimeMode(mode){
+  timeMode=mode;
+  const night=mode==="night";
+  if(night){
+    scene.background=nightSkyColor;
+    scene.backgroundIntensity=.72;
+    scene.environmentIntensity=.20;
+    scene.fog.color.set(0x030711);
+    key.intensity=.26;
+    fill.intensity=.08;
+    rim.intensity=.16;
+    stars.material.opacity=.92;
+    nightLights.forEach(l=>{l.intensity=l.color.r>.8?28:8;});
+    document.getElementById("timeBtn").textContent="切換至日景 · DAY";
+  }else{
+    scene.background=daySky || dayFallbackColor;
+    scene.backgroundIntensity=.66;
+    scene.environmentIntensity=.90;
+    scene.fog.color.set(0x080a0d);
+    key.intensity=2.25;
+    fill.intensity=.42;
+    rim.intensity=.30;
+    stars.material.opacity=0;
+    nightLights.forEach(l=>{l.intensity=0;});
+    document.getElementById("timeBtn").textContent="切換至夜景 · NIGHT";
+  }
+}
+document.getElementById("timeBtn").onclick=()=>applyTimeMode(timeMode==="day"?"night":"day");
+addEventListener("keydown",e=>{if(e.code==="KeyN")applyTimeMode(timeMode==="day"?"night":"day")});
+
+// navigation
+let yaw=0,pitch=0,drag=false,lastX=0,lastY=0,locked=false;
+const keys=Object.create(null);
+const canvas=renderer.domElement;
+canvas.tabIndex=0;
+canvas.addEventListener("click",()=>{
+  if(renderer.xr.isPresenting)return;
+  if(document.pointerLockElement!==canvas) canvas.requestPointerLock?.();
+  const f=new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
+  let best=null,bd=99;
+  for(const h of hotspots){
+    const d=camera.position.distanceTo(h.p);
+    if(d<8){
+      const t=h.p.clone().sub(camera.position).normalize();
+      if(t.dot(f)>.5&&d<bd){best=h;bd=d;}
+    }
+  }
+  if(best){const el=document.getElementById("info");el.innerHTML="<strong>"+best.title+"</strong><br>"+best.text;el.style.display="block";clearTimeout(window.__inf);window.__inf=setTimeout(()=>el.style.display="none",5000);}
+});
+document.addEventListener("pointerlockchange",()=>{locked=document.pointerLockElement===canvas;canvas.style.cursor=locked?"none":"crosshair";});
+document.addEventListener("mousemove",e=>{
+  if(renderer.xr.isPresenting)return;
+  if(locked){
+    yaw-=e.movementX*.0025;
+    pitch-=e.movementY*.0020;
+    pitch=Math.max(-1.15,Math.min(1.15,pitch));
+  }else if(drag){
+    yaw-=(e.clientX-lastX)*.003;
+    pitch-=(e.clientY-lastY)*.002;
+    pitch=Math.max(-1.15,Math.min(1.15,pitch));
+  }
+  lastX=e.clientX;lastY=e.clientY;
+});
+canvas.addEventListener("mousedown",e=>{drag=true;lastX=e.clientX;lastY=e.clientY;});
+document.addEventListener("mouseup",()=>drag=false);
+addEventListener("keydown",e=>{
+  keys[e.code]=true;
+  if(["KeyW","KeyA","KeyS","KeyD","ShiftLeft","ShiftRight","Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.code)) e.preventDefault();
+});
+addEventListener("keyup",e=>{keys[e.code]=false;});
+
+
+// immersive
+document.getElementById("enter").onclick=()=>{
+ if(renderer.xr.isPresenting)return;
+ const b=VRButton.createButton(renderer);
+ b.style.position="fixed";b.style.bottom="48px";b.style.left="50%";b.style.transform="translateX(-50%)";b.style.zIndex="50";
+ document.body.appendChild(b);b.click();
+};
+
+const clock=new THREE.Clock();
+function animate(){
+ const dt=Math.min(clock.getDelta(),.045);
+ updateEntrance(dt);
+ if(!renderer.xr.isPresenting){
+   const f=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw)),r=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
+   const sp=(keys.ShiftLeft?6.4:3.1)*dt;
+   let mdx=0,mdz=0;
+   if(keys.KeyW||keys.ArrowUp){mdx+=-f.x*sp;mdz+=-f.z*sp;}
+   if(keys.KeyS||keys.ArrowDown){mdx+=f.x*sp;mdz+=f.z*sp;}
+   if(keys.KeyA||keys.ArrowLeft){mdx+=-r.x*sp;mdz+=-r.z*sp;}
+   if(keys.KeyD||keys.ArrowRight){mdx+=r.x*sp;mdz+=r.z*sp;}
+   moveWithCollision(mdx,mdz);
+   const floorY=groundHeight(camera.position.x,camera.position.z);
+   camera.position.y += ((floorY+1.68)-camera.position.y)*Math.min(1,dt*10);
+   camera.position.x=Math.max(-37,Math.min(37,camera.position.x));camera.position.z=Math.max(-74,Math.min(41,camera.position.z));
+   camera.rotation.set(pitch,yaw,0,"YXZ");
+ }
+ const t=performance.now()*.001;
+ scene.traverse(o=>{if(o.userData&&o.userData.led&&o.material&&o.material.color){const n=o.position.x*7+o.position.y*3;const v=.12+.18*(.5+.5*Math.sin(t*1.25+n));o.material.color.setHSL(.56,.28,.08+v)}});
+ renderer.render(scene,camera);
+}
+applyTimeMode("day");
+renderer.setAnimationLoop(animate);
+addEventListener("resize",()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script>
-</body>
-</html>
+</body></html>
