@@ -257,8 +257,11 @@ B(12,.06,9,0,.575,10.8,mat.concreteLight,false);
 // ---------- ground under cantilever / main hall ----------
 B(15.5,3.0,29,-13.25,1.8,-10,mat.black);
 B(15.5,3.0,29,13.25,1.8,-10,mat.black);
-for(const x of [-24,-18,-12,-6,0,6,12,18,24]){
- C(.42,5.6,x,2.9,2.4,mat.concrete2,24);
+// Keep the main entrance axis completely clear.
+ // The front support columns begin outside the pedestrian approach;
+ // never place a column at x=0 or within the central entrance corridor.
+for(const x of [-24,-18,-12,12,18,24]){
+  C(.42,5.6,x,2.9,2.4,mat.concrete2,24);
 }
 for(const x of [-21,-14,-7,0,7,14,21])C(.3,5.8,x,2.9,-23.8,mat.ceramic,24);
 
