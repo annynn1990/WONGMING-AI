@@ -259,9 +259,9 @@ B(54,.18,44,0,.47,-12.8,mat.concrete2,false);
 B(13.0,.08,9.2,0,.68,10.8,mat.concreteLight,false);
 B(13.0,.08,5.8,0,.68,7.6,mat.concreteLight,false);
 // ---------- ground under cantilever / main hall ----------
-B(15.5,3.0,29,-13.25,1.8,-10,mat.black);
-B(15.5,3.0,29,13.25,1.8,-10,mat.black);
-// Keep the main entrance axis completely clear.
+// The original 15.5 x 3 x 29 black side blocks were full-height visual barriers.
+// Remove them: the ground floor is an open public hall, supported by the perimeter structure.
+ // Keep the main entrance axis completely clear.
  // The front support columns begin outside the pedestrian approach;
  // never place a column at x=0 or within the central entrance corridor.
 for(const x of [-24,-18,-12,12,18,24]){
