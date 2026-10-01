@@ -252,7 +252,8 @@ B(13.2,.22,3.6,0,.42,8.15,foundationMat,false,true);
 
 // Continuous interior floor: no floating/void walking on the ground level.
 B(54,.18,44,0,.47,-12.8,mat.concrete2,false);
-B(12,.06,9,0,.575,10.8,mat.ceramic,false);
+// T0 entrance floor: light continuous finished floor, never the black podium material.
+B(12,.06,9,0,.575,10.8,mat.concreteLight,false);
 // ---------- ground under cantilever / main hall ----------
 B(15.5,3.0,29,-13.25,1.8,-10,mat.black);
 B(15.5,3.0,29,13.25,1.8,-10,mat.black);
@@ -273,8 +274,8 @@ B(19,.18,7.1,0,8.08,10.95,mat.gold);
 B(21,6.7,.34,-13.0,4.35,11.02,mat.glass);
 B(21,6.7,.34,13.0,4.35,11.02,mat.glass);
 
-// Tall architectural side piers. Nothing occupies the centerline.
-for(const x of [-9.2,9.2])B(.95,8.2,1.15,x,4.25,11.1,mat.concrete2);
+// T0 entrance: keep the entire central portal visually open.
+ // Do not add architectural entrance pillars here; the facade wings already frame the doorway.
 
 // Automatic sliding glass doors on the same plane as the entrance glazing.
 makeSlidingDoor(-1.78);
@@ -549,7 +550,8 @@ for(let i=0;i<5;i++){
 B(6.4,.04,1.55,0,.72,10.95,carpetMat,false);
 B(6.4,.04,5.2,0,.72,8.35,carpetMat,false);
 B(13.6,.08,7.8,0,.54,6.55,mat.concreteLight,false);
-B(13.0,.06,7.0,0,.59,9.15,mat.ceramic,false);
+// Keep the entrance approach on the same light finished-floor palette.
+B(13.0,.06,7.0,0,.59,9.15,mat.concreteLight,false);
 
 // Keep the route visually formal without placing obstacles in the walking line.
 // ---------- exterior wayfinding ----------
