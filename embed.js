@@ -40,10 +40,18 @@
     }
     if (bootstrapForumFid !== '55') sessionStorage.removeItem('wm_fid55_blocked');
     bootstrapBlocked55 = bootstrapForumFid === '55' && sessionStorage.getItem('wm_fid55_blocked') === '1';
+
+    // 永享堂（fid=55）是特殊的「禁用區」：
+    // 第一次進入時必須強制建立導覽員，才能說出「嗚嗚嗚」；
+    // 不受使用者上一次把導覽員收合（wm_ai_open=0）的狀態影響。
+    // 說完後會由 ready handler 設定 wm_fid55_blocked 並移除導覽員。
+    if (bootstrapForumFid === '55' && !bootstrapBlocked55) {
+      bootstrapStartOpen = true;
+    }
   } catch (e) {}
 
-  // 55 區已經說過並關閉後，在同一區及其帖子內完全不建立導覽員。
-  if (bootstrapForumFid === '55' && (bootstrapBlocked55 || bootstrapStartOpen !== true)) {
+  // 永享堂已經說過並關閉後，在同一區及其帖子內完全不建立導覽員。
+  if (bootstrapForumFid === '55' && bootstrapBlocked55) {
     return;
   }
 
