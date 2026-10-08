@@ -703,7 +703,7 @@
     const t=String(q||'').trim().replace(/[！!。．？?]+$/g,'');
     if(!t) return false;
     const cmd=guideCommands();
-    if(guideCommandMatch(t,cmd.changeSkin)){changeModel14Skin();return true;}
+    if(guideCommandMatch(t,cmd.changeSkin)){rejectSkinChange();return true;}
     if(guideCommandMatch(t,cmd.register)){
       if(registrationRedirectPending)return true;
       registrationRedirectPending=true;
@@ -771,135 +771,12 @@
     return 'application/octet-stream';
   }
 
-  // ===== 模型 14：隔離 iframe，避免舊版 Cubism 2 runtime 污染第一個導覽員 =====
-  const MODEL14_IFRAME_URL = new URL('model14.html', location.href).href;
-
-  async function bootModel14() {
-    const stage = document.getElementById('stage');
-    const frame = document.createElement('iframe');
-    frame.id = 'model14-frame';
-    frame.title = 'Live2D 模型 14';
-    frame.allow = 'autoplay';
-    frame.setAttribute('aria-hidden', 'true');
-    frame.style.cssText = [
-      'position:absolute',
-      'inset:0',
-      'width:100%',
-      'height:100%',
-      'border:0',
-      'background:transparent',
-      'pointer-events:auto',
-      'display:block',
-      'transform:translateY(-5%)',
-      'transform-origin:50% 100%'
-    ].join(';');
-    stage.appendChild(frame);
-
-    const readyPromise = new Promise((resolve, reject) => {
-      let done = false;
-      const timer = setTimeout(() => {
-        if (done) return;
-        done = true;
-        reject(new Error('模型 14 iframe 啟動逾時'));
-      }, 8000);
-
-      const onMessage = (e) => {
-        if (e.source !== frame.contentWindow) return;
-        const d = e.data || {};
-        if (d.ns !== 'model14-frame') return;
-        if (d.type === 'ready') {
-          if (done) return;
-          done = true;
-          clearTimeout(timer);
-          window.removeEventListener('message', onMessage);
-          resolve();
-        } else if (d.type === 'error') {
-          if (done) return;
-          done = true;
-          clearTimeout(timer);
-          window.removeEventListener('message', onMessage);
-          reject(new Error(String(d.message || '模型 14 載入失敗')));
-        } else if (d.type === 'tap') {
-          onTap();
-        }
-      };
-      window.addEventListener('message', onMessage);
-
-      frame.addEventListener('load', () => {
-        try { frame.contentWindow.postMessage({ns:'avatar-widget-host',type:'model14-init'}, '*'); } catch(e) {}
-      }, {once:true});
-    });
-
-    frame.src = MODEL14_IFRAME_URL + (MODEL14_IFRAME_URL.indexOf('?') < 0 ? '?v=1' : '&v=1');
-
-    try {
-      await readyPromise;
-      postToParent('ready');
-      return {
-        dispose() {
-          try { frame.remove(); } catch(e) {}
-        }
-      };
-    } catch(err) {
-      try { frame.remove(); } catch(e) {}
-      throw err;
-    }
-  }
-
-  async function changeModel14Skin() {
-    const switchingBack = currentSkinName === 'model14';
-
-    try {
-      speak(switchingBack ? '好，換回原本的角色。' : '好，換成模型編號 14。');
-      await waitForAvatarRetry(650);
-
-      if (_renderer) {
-        try { _renderer.dispose(); } catch (e) {}
-        _renderer = null;
-      }
-
-      if (switchingBack) {
-        currentSkinName = 'default';
-        _engineMode = null;
-        await setEngine('2d');
-        if (!_renderer) throw new Error('原本角色恢復失敗');
-        if (document.getElementById('direct-warn')) {
-          document.getElementById('direct-warn').style.display = 'none';
-        }
-        stopSpeaking();
-        showBubble('已換回原本的角色。');
-        return true;
-      }
-
-      stopSpeaking();
-      _engineMode = 'model14';
-      _renderer = await bootModel14();
-      if (!_renderer) throw new Error('模型 14 啟動失敗');
-
-      currentSkinName = 'model14';
-
-      if (document.getElementById('direct-warn')) {
-        document.getElementById('direct-warn').style.display = 'none';
-      }
-
-      showBubble('換好啦，現在是模型編號 14。');
-      return true;
-    } catch (err) {
-      console.error('[Wongming Avatar] model14 switch failed:', err);
-      try { window.__MODEL14_LAST_ERROR__ = String(err && (err.stack || err.message) || err); } catch (_) {}
-
-      currentSkinName = switchingBack ? 'model14' : 'default';
-      _engineMode = null;
-      try { await setEngine('2d'); } catch (_) {}
-      stopSpeaking();
-
-      const failText = switchingBack
-        ? '換回原本的角色失敗，我先維持現在的樣子。'
-        : '模型 14 載入失敗，我先維持原本的樣子。';
-      showBubble(failText);
-      speak(failText);
-      return false;
-    }
+  // ===== 換人請求：目前沒有安排其他人員 =====
+  function rejectSkinChange() {
+    const msg = '目前沒有安排其他人員，暫時無法換人。';
+    showBubble(msg);
+    speak(msg);
+    return true;
   }
 
     function handleUser(text) {
@@ -1317,7 +1194,7 @@
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'sugg'; b.textContent = s;
       b.onclick = () => {
-        if (s === '我可以換人嗎？') { changeModel14Skin(); return; }
+        if (s === '我可以換人嗎？') { rejectSkinChange(); return; }
         if (s === '我有疑問') {
           const msg = '當然，直接把你的問題告訴我就好。關於目前這個版面、帝國資料或論壇操作，都可以直接問我。';
           speak(msg);
