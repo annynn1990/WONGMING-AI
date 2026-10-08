@@ -569,6 +569,12 @@
       location.href = url;
       return;
     }
+    if (type === 'navigate-url') {
+      var directUrl = String(action.url || '').trim();
+      if (!/^https:\/\/www\.wongmingempire\.com\/bbswm\//i.test(directUrl)) return;
+      location.href = directUrl;
+      return;
+    }
     if (type === 'back') { history.back(); return; }
     if (type === 'forward') { history.forward(); return; }
     if (type === 'scroll') { scrollHost(String(action.direction || 'down').toLowerCase(), action.amount); return; }
