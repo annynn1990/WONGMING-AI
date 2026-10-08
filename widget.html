@@ -703,7 +703,7 @@
     const t=String(q||'').trim().replace(/[！!。．？?]+$/g,'');
     if(!t) return false;
     const cmd=guideCommands();
-    if(guideCommandMatch(t,cmd.changeSkin)){changeNpc300302Skin();return true;}
+    if(guideCommandMatch(t,cmd.changeSkin)){changeModel14Skin();return true;}
     if(guideCommandMatch(t,cmd.register)){
       if(registrationRedirectPending)return true;
       registrationRedirectPending=true;
@@ -771,106 +771,82 @@
     return 'application/octet-stream';
   }
 
-  // ===== 模型 14：只封鎖來源模型自帶 voice，保留黃名導覽員自己的 TTS =====
-  function installModel14AudioGuard() {
-    if (window.__WM_MODEL14_AUDIO_GUARD__) return;
-    const proto = window.HTMLMediaElement && window.HTMLMediaElement.prototype;
-    if (!proto || !proto.play) return;
-    const originalPlay = proto.play;
-    proto.play = function () {
-      const src = String(this.currentSrc || this.src || '');
-      if (/imuncle\\.github\\.io\\/live2d\\/model\\/liang\\/voice\\//i.test(src)) {
-        try { this.pause(); } catch (e) {}
-        try { this.currentTime = 0; } catch (e) {}
-        return Promise.resolve();
-      }
-      return originalPlay.apply(this, arguments);
-    };
-    window.__WM_MODEL14_AUDIO_GUARD__ = true;
-  }
-
-  // ===== 模型 14：imuncle/live2d 的第 14 個模型（liang / Aoba）=====
-  const MODEL14_JSON_URL = 'https://imuncle.github.io/live2d/model/liang/2.json';
-  const MODEL14_LIVE2D_JS = 'https://imuncle.github.io/live2d/js/live2d.js';
-
-  async function loadModel14Runtime() {
-    if (typeof window.loadlive2d === 'function') return;
-    if (npc300302LoadingPromise) return npc300302LoadingPromise;
-
-    npc300302LoadingPromise = new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = MODEL14_LIVE2D_JS;
-      script.async = true;
-      script.dataset.model14Live2d = '1';
-      script.onload = () => {
-        if (typeof window.loadlive2d === 'function') resolve();
-        else reject(new Error('模型14 Live2D runtime 載入後沒有 loadlive2d'));
-      };
-      script.onerror = () => reject(new Error('模型14 Live2D runtime 載入失敗'));
-      document.head.appendChild(script);
-    }).finally(() => {
-      npc300302LoadingPromise = null;
-    });
-
-    return npc300302LoadingPromise;
-  }
+  // ===== 模型 14：隔離 iframe，避免舊版 Cubism 2 runtime 污染第一個導覽員 =====
+  const MODEL14_IFRAME_URL = new URL('model14.html', location.href).href;
 
   async function bootModel14() {
-    installModel14AudioGuard();
-    await loadModel14Runtime();
-
     const stage = document.getElementById('stage');
-    const canvas = newCanvas();
-    canvas.id = 'model14-live2d-canvas';
+    const frame = document.createElement('iframe');
+    frame.id = 'model14-frame';
+    frame.title = 'Live2D 模型 14';
+    frame.allow = 'autoplay';
+    frame.setAttribute('aria-hidden', 'true');
+    frame.style.cssText = [
+      'position:absolute',
+      'inset:0',
+      'width:100%',
+      'height:100%',
+      'border:0',
+      'background:transparent',
+      'pointer-events:auto',
+      'display:block',
+      'transform:translateY(-5%)',
+      'transform-origin:50% 100%'
+    ].join(';');
+    stage.appendChild(frame);
 
-    // 模型 14 是舊版 Cubism 2。它依賴 canvas 的「實際繪圖尺寸」來計算投影，
-    // 不能只靠 CSS 100% 撐大；否則預設 300x150 會讓取景與原本角色完全不同。
-    function syncModel14CanvasSize() {
-      const w = Math.max(1, Math.round(stage.clientWidth));
-      const h = Math.max(1, Math.round(stage.clientHeight));
-      if (canvas.width !== w) canvas.width = w;
-      if (canvas.height !== h) canvas.height = h;
-      canvas.style.width = '100%';
-      canvas.style.height = '100%';
-      canvas.style.left = '0';
-      canvas.style.top = '0';
-      canvas.style.right = '0';
-      canvas.style.bottom = '0';
-      canvas.style.transform = 'none';
-      // 原本導覽員採「半身近景」：頭頂約在舞台高度 4% 的位置。
-      // 模型 14 的 Cubism 2 layout 天生較低，因此只把整個模型向上抬約 5% 舞台高度，
-      // 不改模型本身的比例；這樣頭部基準會與第一個導覽員對齊。
-      const lift = Math.round(h * 0.05);
-      canvas.style.transform = 'translateY(' + (-lift) + 'px)';
-      canvas.style.transformOrigin = '50% 100%';
-    }
+    const readyPromise = new Promise((resolve, reject) => {
+      let done = false;
+      const timer = setTimeout(() => {
+        if (done) return;
+        done = true;
+        reject(new Error('模型 14 iframe 啟動逾時'));
+      }, 8000);
 
-    syncModel14CanvasSize();
-    window.addEventListener('resize', syncModel14CanvasSize);
-
-    try {
-      // 直接沿用原站的 loadlive2d() 載入方式。
-      window.loadlive2d(canvas.id, MODEL14_JSON_URL);
-      canvas.addEventListener('pointerdown', onTap, { passive:true });
-
-      // legacy Cubism 2 loader 是非 Promise API；等模型開始初始化後再通知父頁。
-      await waitForAvatarRetry(900);
-      postToParent('ready');
-
-      return {
-        dispose() {
-          try { window.removeEventListener('resize', syncModel14CanvasSize); } catch (e) {}
-          try { canvas.remove(); } catch (e) {}
+      const onMessage = (e) => {
+        if (e.source !== frame.contentWindow) return;
+        const d = e.data || {};
+        if (d.ns !== 'model14-frame') return;
+        if (d.type === 'ready') {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          window.removeEventListener('message', onMessage);
+          resolve();
+        } else if (d.type === 'error') {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          window.removeEventListener('message', onMessage);
+          reject(new Error(String(d.message || '模型 14 載入失敗')));
+        } else if (d.type === 'tap') {
+          onTap();
         }
       };
-    } catch (err) {
-      try { window.removeEventListener('resize', syncModel14CanvasSize); } catch (e) {}
-      try { canvas.remove(); } catch (e) {}
+      window.addEventListener('message', onMessage);
+
+      frame.addEventListener('load', () => {
+        try { frame.contentWindow.postMessage({ns:'avatar-widget-host',type:'model14-init'}, '*'); } catch(e) {}
+      }, {once:true});
+    });
+
+    frame.src = MODEL14_IFRAME_URL + (MODEL14_IFRAME_URL.indexOf('?') < 0 ? '?v=1' : '&v=1');
+
+    try {
+      await readyPromise;
+      postToParent('ready');
+      return {
+        dispose() {
+          try { frame.remove(); } catch(e) {}
+        }
+      };
+    } catch(err) {
+      try { frame.remove(); } catch(e) {}
       throw err;
     }
   }
 
-  async function changeNpc300302Skin() {
+  async function changeModel14Skin() {
     const switchingBack = currentSkinName === 'model14';
 
     try {
