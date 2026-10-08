@@ -771,29 +771,24 @@
     return 'application/octet-stream';
   }
 
-  // ===== NPC300302 皮：使用檔案自身標示的 Spine 4.1.11 runtime =====
-  async function loadNpc300302Runtime() {
-    if (window.spine && window.spine.SpinePlayer) return;
+  // ===== 模型 14：imuncle/live2d 的第 14 個模型（liang / Aoba）=====
+  const MODEL14_JSON_URL = 'https://imuncle.github.io/live2d/model/liang/2.json';
+  const MODEL14_LIVE2D_JS = 'https://imuncle.github.io/live2d/js/live2d.js';
+
+  async function loadModel14Runtime() {
+    if (typeof window.loadlive2d === 'function') return;
     if (npc300302LoadingPromise) return npc300302LoadingPromise;
 
     npc300302LoadingPromise = new Promise((resolve, reject) => {
-      if (!document.querySelector('link[data-npc300302-spine-css]')) {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = NPC300302_SPINE_CSS;
-        link.dataset.npc300302SpineCss = '1';
-        document.head.appendChild(link);
-      }
-
       const script = document.createElement('script');
-      script.src = NPC300302_SPINE_JS;
+      script.src = MODEL14_LIVE2D_JS;
       script.async = true;
-      script.dataset.npc300302Spine = '1';
+      script.dataset.model14Live2d = '1';
       script.onload = () => {
-        if (window.spine && window.spine.SpinePlayer) resolve();
-        else reject(new Error('Spine 4.1.11 player 載入後沒有 SpinePlayer'));
+        if (typeof window.loadlive2d === 'function') resolve();
+        else reject(new Error('模型14 Live2D runtime 載入後沒有 loadlive2d'));
       };
-      script.onerror = () => reject(new Error('Spine 4.1.11 player 載入失敗'));
+      script.onerror = () => reject(new Error('模型14 Live2D runtime 載入失敗'));
       document.head.appendChild(script);
     }).finally(() => {
       npc300302LoadingPromise = null;
@@ -802,81 +797,38 @@
     return npc300302LoadingPromise;
   }
 
-  async function bootNPC300302() {
-    await loadNpc300302Runtime();
+  async function bootModel14() {
+    await loadModel14Runtime();
 
     const stage = document.getElementById('stage');
-    const host = document.createElement('div');
-    host.id = 'npc300302-player';
-    host.style.cssText = [
-      'position:absolute',
-      'inset:0',
-      'width:100%',
-      'height:100%',
-      'overflow:hidden',
-      'background:transparent',
-      'pointer-events:auto'
-    ].join(';');
-    stage.appendChild(host);
+    const canvas = newCanvas();
+    canvas.id = 'model14-live2d-canvas';
 
     try {
-      // 成功案例使用 skelUrl + atlasUrl，而且三個素材放在同一個資料夾。
-      const player = new window.spine.SpinePlayer(host, {
-        skelUrl: NPC300302_SKEL_URL,
-        atlasUrl: NPC300302_ATLAS_URL,
-        animation: 'idle',
-        premultipliedAlpha: true,
-        backgroundColor: '#00000000',
-        alpha: true,
-        showControls: false,
-        showLoading: false,
-        success: function (playerInstance) {
-          npc300302Player = playerInstance;
-          try {
-            if (playerInstance.skeleton) {
-              playerInstance.skeleton.updateWorldTransform();
-            }
-            // npc300302 的 skeleton 內有 idle / motion 動畫；明確指定 idle 並循環播放。
-            if (playerInstance.setAnimation) {
-              playerInstance.setAnimation('idle', true);
-            } else if (playerInstance.animationState) {
-              playerInstance.animationState.setAnimation(0, 'idle', true);
-            }
-          } catch (e) {
-            console.warn('[Wongming Avatar] NPC300302 idle animation setup failed:', e);
-          }
-          postToParent('ready');
-        },
-        error: function (_player, msg) {
-          console.error('[Wongming Avatar] NPC300302 Spine 4.1.11 error:', msg);
-          try {
-            window.__NPC300302_LAST_ERROR__ = String(msg || 'NPC300302 Spine 載入失敗');
-          } catch (e) {}
-          postToParent('error', { message: String(msg || 'NPC300302 Spine 載入失敗') });
-        }
-      });
+      // 直接沿用原站的 loadlive2d() 載入方式。
+      window.loadlive2d(canvas.id, MODEL14_JSON_URL);
+      canvas.addEventListener('pointerdown', onTap, { passive:true });
 
-      npc300302Player = player;
-      host.addEventListener('pointerdown', onTap, { passive:true });
+      // legacy Cubism 2 loader 是非 Promise API；等模型開始初始化後再通知父頁。
+      await waitForAvatarRetry(900);
+      postToParent('ready');
 
       return {
         dispose() {
-          try { player && player.dispose(); } catch (e) {}
-          npc300302Player = null;
-          try { host.remove(); } catch (e) {}
+          try { canvas.remove(); } catch (e) {}
         }
       };
     } catch (err) {
-      try { host.remove(); } catch (e) {}
+      try { canvas.remove(); } catch (e) {}
       throw err;
     }
   }
 
   async function changeNpc300302Skin() {
-    const switchingBack = currentSkinName === 'npc300302';
+    const switchingBack = currentSkinName === 'model14';
 
     try {
-      speak(switchingBack ? '好，換回原本的角色。' : '好，換成新的角色。');
+      speak(switchingBack ? '好，換回原本的角色。' : '好，換成模型編號 14。');
       await waitForAvatarRetry(650);
 
       if (_renderer) {
@@ -898,30 +850,30 @@
       }
 
       stopSpeaking();
-      _engineMode = 'spine';
-      _renderer = await bootNPC300302();
-      if (!_renderer) throw new Error('NPC300302 皮膚啟動失敗');
+      _engineMode = 'model14';
+      _renderer = await bootModel14();
+      if (!_renderer) throw new Error('模型 14 啟動失敗');
 
-      currentSkinName = 'npc300302';
+      currentSkinName = 'model14';
 
       if (document.getElementById('direct-warn')) {
         document.getElementById('direct-warn').style.display = 'none';
       }
 
-      showBubble('換好啦，現在是 NPC300302。');
+      showBubble('換好啦，現在是模型編號 14。');
       return true;
     } catch (err) {
-      console.error('[Wongming Avatar] NPC300302 skin switch failed:', err);
-      try { window.__NPC300302_LAST_ERROR__ = String(err && (err.stack || err.message) || err); } catch (_) {}
+      console.error('[Wongming Avatar] model14 switch failed:', err);
+      try { window.__MODEL14_LAST_ERROR__ = String(err && (err.stack || err.message) || err); } catch (_) {}
 
-      currentSkinName = switchingBack ? 'npc300302' : 'default';
+      currentSkinName = switchingBack ? 'model14' : 'default';
       _engineMode = null;
       try { await setEngine('2d'); } catch (_) {}
       stopSpeaking();
 
       const failText = switchingBack
         ? '換回原本的角色失敗，我先維持現在的樣子。'
-        : 'NPC300302 載入失敗，我先維持原本的樣子。';
+        : '模型 14 載入失敗，我先維持原本的樣子。';
       showBubble(failText);
       speak(failText);
       return false;
