@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wongming Model 14</title>
+<style>
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}
+  #live2d{position:absolute;left:0;top:0;width:100%;height:100%;display:block;background:transparent}
+</style>
+<script>
+// 只在模型 14 的隔離 iframe 內攔截來源模型自帶語音。
+// 不影響父頁的黃名導覽員 TTS。
+(function(){
+  const proto = window.HTMLMediaElement && window.HTMLMediaElement.prototype;
+  if (!proto || !proto.play) return;
+  const originalPlay = proto.play;
+  proto.play = function(){
+    const src = String(this.currentSrc || this.src || '');
+    if (/^https://imuncle\.github\.io\/live2d\/model\/liang\/voice\//i.test(src)) {
+      try { this.pause(); } catch(e) {}
+      try { this.currentTime = 0; } catch(e) {}
+      return Promise.resolve();
+    }
+    return originalPlay.apply(this, arguments);
+  };
+})();
+</script>
+<script src="https://imuncle.github.io/live2d/js/live2d.js"></script>
+</head>
+<body>
+<canvas id="live2d"></canvas>
+<script>
+(function(){
+  const canvas = document.getElementById('live2d');
+
+  function resize(){
+    const w = Math.max(1, Math.round(window.innerWidth));
+    const h = Math.max(1, Math.round(window.innerHeight));
+    canvas.width = w;
+    canvas.height = h;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // 保留原站模型的動畫，但不讓其 voice mp3 播放。
+  try {
+    loadlive2d('live2d', 'https://imuncle.github.io/live2d/model/liang/2.json');
+    setTimeout(function(){
+      try { parent.postMessage({ns:'model14-frame',type:'ready'}, '*'); } catch(e) {}
+    }, 1200);
+  } catch(e) {
+    try { parent.postMessage({ns:'model14-frame',type:'error',message:String(e && e.message || e)}, '*'); } catch(_) {}
+  }
+
+  canvas.addEventListener('pointerdown', function(){
+    try { parent.postMessage({ns:'model14-frame',type:'tap'}, '*'); } catch(e) {}
+  }, {passive:true});
+})();
+</script>
+</body>
+</html>
