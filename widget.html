@@ -158,8 +158,8 @@
   let npc300302Loading = null;
   let npc300302Player = null;
   let npc300302Runtime = null;
-  const NPC300302_SKEL_URL = 'https://raw.githubusercontent.com/annynn1990/WONGMING-AI/main/npc300302/npc300302.skel';
-  const NPC300302_ATLAS_URL = 'https://raw.githubusercontent.com/annynn1990/WONGMING-AI/main/npc300302/npc300302.atlas';
+  const NPC300302_SKEL_URL = new URL('npc300302/npc300302.skel', location.href).href;
+  const NPC300302_ATLAS_URL = new URL('npc300302/npc300302.atlas', location.href).href;
   // Spine 官方要求 runtime 主版本必須與匯出資料一致，因此這裡自動逐版試到成功。
   const NPC300302_SPINE_CANDIDATES = [
     {
@@ -185,7 +185,7 @@
     },
     {
       name: '4.3',
-      js: 'PLACEHOLDER_UNUSED_JS',
+      js: 'https://unpkg.com/@esotericsoftware/spine-player@4.3.0/dist/iife/spine-player.min.js',
       css: 'https://unpkg.com/@esotericsoftware/spine-player@4.3.*/dist/spine-player.min.css'
     }
   ];
