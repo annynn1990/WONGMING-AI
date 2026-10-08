@@ -804,6 +804,26 @@
     const canvas = newCanvas();
     canvas.id = 'model14-live2d-canvas';
 
+    // 模型 14 是舊版 Cubism 2。它依賴 canvas 的「實際繪圖尺寸」來計算投影，
+    // 不能只靠 CSS 100% 撐大；否則預設 300x150 會讓取景與原本角色完全不同。
+    function syncModel14CanvasSize() {
+      const w = Math.max(1, Math.round(stage.clientWidth));
+      const h = Math.max(1, Math.round(stage.clientHeight));
+      if (canvas.width !== w) canvas.width = w;
+      if (canvas.height !== h) canvas.height = h;
+      canvas.style.width = '100%';
+      canvas.style.height = '100%';
+      canvas.style.left = '0';
+      canvas.style.top = '0';
+      canvas.style.right = '0';
+      canvas.style.bottom = '0';
+      canvas.style.transform = 'none';
+      canvas.style.transformOrigin = '50% 100%';
+    }
+
+    syncModel14CanvasSize();
+    window.addEventListener('resize', syncModel14CanvasSize);
+
     try {
       // 直接沿用原站的 loadlive2d() 載入方式。
       window.loadlive2d(canvas.id, MODEL14_JSON_URL);
@@ -815,10 +835,12 @@
 
       return {
         dispose() {
+          try { window.removeEventListener('resize', syncModel14CanvasSize); } catch (e) {}
           try { canvas.remove(); } catch (e) {}
         }
       };
     } catch (err) {
+      try { window.removeEventListener('resize', syncModel14CanvasSize); } catch (e) {}
       try { canvas.remove(); } catch (e) {}
       throw err;
     }
