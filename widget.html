@@ -702,6 +702,15 @@
   function tryHostCommand(q) {
     const t=String(q||'').trim().replace(/[！!。．？?]+$/g,'');
     if(!t) return false;
+
+    // 特殊文字指令：說到「墳場」及「垃圾」時，直接前往 fid=219。
+    if (t.includes('墳場') && t.includes('垃圾')) {
+      sendHostAction({
+        action: 'navigate-url',
+        url: 'https://www.wongmingempire.com/bbswm/forum.php?mod=forumdisplay&fid=219'
+      });
+      return true;
+    }
     const cmd=guideCommands();
     if(guideCommandMatch(t,cmd.changeSkin)){rejectSkinChange();return true;}
     if(guideCommandMatch(t,cmd.register)){
