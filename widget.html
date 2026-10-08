@@ -157,38 +157,11 @@
   let currentSkinName = 'default';
   let npc300302Loading = null;
   let npc300302Player = null;
-  let npc300302Runtime = null;
-  const NPC300302_SKEL_URL = new URL('npc300302/npc300302.skel', location.href).href;
-  const NPC300302_ATLAS_URL = new URL('npc300302/npc300302.atlas', location.href).href;
-  // Spine 官方要求 runtime 主版本必須與匯出資料一致，因此這裡自動逐版試到成功。
-  const NPC300302_SPINE_CANDIDATES = [
-    {
-      name: '3.8',
-      js: 'https://esotericsoftware.com/files/spine-player/3.8/spine-player.js',
-      css: 'https://esotericsoftware.com/files/spine-player/3.8/spine-player.css',
-      legacy: true
-    },
-    {
-      name: '4.0',
-      js: 'https://unpkg.com/@esotericsoftware/spine-player@4.0.*/dist/iife/spine-player.min.js',
-      css: 'https://unpkg.com/@esotericsoftware/spine-player@4.0.*/dist/spine-player.min.css'
-    },
-    {
-      name: '4.1',
-      js: 'https://unpkg.com/@esotericsoftware/spine-player@4.1.55/dist/iife/spine-player.min.js',
-      css: 'https://unpkg.com/@esotericsoftware/spine-player@4.1.55/dist/spine-player.min.css'
-    },
-    {
-      name: '4.2',
-      js: 'https://unpkg.com/@esotericsoftware/spine-player@4.2.*/dist/iife/spine-player.min.js',
-      css: 'https://unpkg.com/@esotericsoftware/spine-player@4.2.*/dist/spine-player.min.css'
-    },
-    {
-      name: '4.3',
-      js: 'https://unpkg.com/@esotericsoftware/spine-player@4.3.0/dist/iife/spine-player.min.js',
-      css: 'https://unpkg.com/@esotericsoftware/spine-player@4.3.*/dist/spine-player.min.css'
-    }
-  ];
+  let npc300302LoadingPromise = null;
+  const NPC300302_SKEL_URL = new URL('/WONGMING-AI/npc300302/npc300302.skel', location.origin).href;
+  const NPC300302_ATLAS_URL = new URL('/WONGMING-AI/npc300302/npc300302.atlas', location.origin).href;
+  const NPC300302_SPINE_JS = 'https://cdn.jsdelivr.net/npm/@esotericsoftware/spine-player@4.2.86/dist/iife/spine-player.min.js';
+  const NPC300302_SPINE_CSS = 'https://cdn.jsdelivr.net/npm/@esotericsoftware/spine-player@4.2.86/dist/spine-player.min.css';
   const TTS_ENDPOINT = 'https://wongming-ai.vercel.app/api/tts';
   const KNOWLEDGE_URL = CFG.get('knowledge') || '';
   if (KNOWLEDGE_URL) { fetch(KNOWLEDGE_URL).then(r => r.json()).then(kb => { if (Array.isArray(kb)) window.KB = kb; }).catch(() => {}); }
@@ -798,152 +771,96 @@
     return 'application/octet-stream';
   }
 
-  // ===== NPC300302 皮：自動選擇相容的 Spine runtime =====
-  function removeNpc300302RuntimeTags() {
-    document.querySelectorAll('script[data-npc300302-spine],link[data-npc300302-spine-css]').forEach((el) => {
-      try { el.remove(); } catch (e) {}
-    });
-    try { delete window.spine; } catch (e) { window.spine = undefined; }
-  }
+  // ===== NPC300302 皮：依成功案例方式載入 Spine 4.2 =====
+  async function loadNpc300302Runtime() {
+    if (window.spine && window.spine.SpinePlayer) return;
+    if (npc300302LoadingPromise) return npc300302LoadingPromise;
 
-  function loadScriptOnce(src) {
-    return new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = src;
-      s.async = true;
-      s.dataset.npc300302Spine = '1';
-      s.onload = () => resolve(s);
-      s.onerror = () => reject(new Error('載入 Spine runtime 失敗：' + src));
-      document.head.appendChild(s);
-    });
-  }
-
-  function loadCssOnce(href) {
-    return new Promise((resolve) => {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = href;
-      link.dataset.npc300302SpineCss = '1';
-      link.onload = () => resolve(link);
-      link.onerror = () => resolve(link);
-      document.head.appendChild(link);
-    });
-  }
-
-  async function loadNpc300302Runtime(candidate) {
-    if (npc300302Runtime && npc300302Runtime.name === candidate.name && window.spine && window.spine.SpinePlayer) {
-      return;
-    }
-
-    removeNpc300302RuntimeTags();
-    await loadCssOnce(candidate.css);
-    await loadScriptOnce(candidate.js);
-
-    if (!window.spine || !window.spine.SpinePlayer) {
-      throw new Error('Spine ' + candidate.name + ' 沒有提供 SpinePlayer');
-    }
-
-    npc300302Runtime = candidate;
-  }
-
-  function createNpc300302Player(host, candidate) {
-    return new Promise(async (resolve, reject) => {
-      let settled = false;
-      let player = null;
-      let timeout = null;
-
-      const fail = (err) => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timeout);
-        try { if (player && typeof player.dispose === 'function') player.dispose(); } catch (e) {}
-        player = null;
-        reject(err instanceof Error ? err : new Error(String(err || 'Spine player error')));
-      };
-
-      const success = (p) => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timeout);
-        resolve(p || player);
-      };
-
-      timeout = setTimeout(() => {
-        fail(new Error('Spine ' + candidate.name + ' 載入逾時'));
-      }, 18000);
-
-      try {
-        const cfg = {
-          showControls: false,
-          showLoading: false,
-          alpha: true,
-          backgroundColor: '#00000000',
-          premultipliedAlpha: true,
-          defaultMix: 0.15,
-          success,
-          error: (_p, msg) => fail(new Error(String(msg || ('Spine ' + candidate.name + ' 解析失敗'))))
-        };
-
-        if (candidate.legacy) {
-          cfg.skelUrl = NPC300302_SKEL_URL;
-          cfg.atlasUrl = NPC300302_ATLAS_URL;
-        } else {
-          cfg.skeleton = NPC300302_SKEL_URL;
-          cfg.atlas = NPC300302_ATLAS_URL;
-        }
-
-        player = new window.spine.SpinePlayer(host, cfg);
-      } catch (err) {
-        fail(err);
+    npc300302LoadingPromise = new Promise((resolve, reject) => {
+      if (!document.querySelector('link[data-npc300302-spine-css]')) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = NPC300302_SPINE_CSS;
+        link.dataset.npc300302SpineCss = '1';
+        document.head.appendChild(link);
       }
+
+      const script = document.createElement('script');
+      script.src = NPC300302_SPINE_JS;
+      script.async = true;
+      script.dataset.npc300302Spine = '1';
+      script.onload = () => {
+        if (window.spine && window.spine.SpinePlayer) resolve();
+        else reject(new Error('Spine 4.2.86 player 載入後沒有 SpinePlayer'));
+      };
+      script.onerror = () => reject(new Error('Spine 4.2.86 player 載入失敗'));
+      document.head.appendChild(script);
+    }).finally(() => {
+      npc300302LoadingPromise = null;
     });
+
+    return npc300302LoadingPromise;
   }
 
   async function bootNPC300302() {
+    await loadNpc300302Runtime();
+
     const stage = document.getElementById('stage');
-    const failures = [];
+    const host = document.createElement('div');
+    host.id = 'npc300302-player';
+    host.style.cssText = [
+      'position:absolute',
+      'inset:0',
+      'width:100%',
+      'height:100%',
+      'overflow:hidden',
+      'background:transparent',
+      'pointer-events:auto'
+    ].join(';');
+    stage.appendChild(host);
 
-    for (const candidate of NPC300302_SPINE_CANDIDATES) {
-      const host = document.createElement('div');
-      host.id = 'npc300302-player-' + candidate.name.replace(/\./g, '_');
-      host.style.cssText = [
-        'position:absolute',
-        'inset:0',
-        'width:100%',
-        'height:100%',
-        'overflow:hidden',
-        'background:transparent',
-        'pointer-events:auto'
-      ].join(';');
-      stage.appendChild(host);
+    try {
+      // 成功案例使用 skelUrl + atlasUrl，而且三個素材放在同一個資料夾。
+      const player = new window.spine.SpinePlayer(host, {
+        skelUrl: NPC300302_SKEL_URL,
+        atlasUrl: NPC300302_ATLAS_URL,
+        premultipliedAlpha: true,
+        backgroundColor: '#00000000',
+        alpha: true,
+        showControls: false,
+        showLoading: false,
+        success: function (playerInstance) {
+          npc300302Player = playerInstance;
+          try {
+            if (playerInstance.skeleton) {
+              playerInstance.skeleton.updateWorldTransform();
+            }
+          } catch (e) {}
+          postToParent('ready');
+        },
+        error: function (_player, msg) {
+          console.error('[Wongming Avatar] NPC300302 Spine 4.2 error:', msg);
+          try {
+            window.__NPC300302_LAST_ERROR__ = String(msg || 'NPC300302 Spine 載入失敗');
+          } catch (e) {}
+          postToParent('error', { message: String(msg || 'NPC300302 Spine 載入失敗') });
+        }
+      });
 
-      try {
-        await loadNpc300302Runtime(candidate);
-        const player = await createNpc300302Player(host, candidate);
+      npc300302Player = player;
+      host.addEventListener('pointerdown', onTap, { passive:true });
 
-        npc300302Player = player;
-        host.addEventListener('pointerdown', onTap, { passive: true });
-
-        showBubble('NPC300302 已載入（Spine ' + candidate.name + '）。');
-        postToParent('ready');
-
-        return {
-          dispose() {
-            try { player && player.dispose(); } catch (e) {}
-            npc300302Player = null;
-            try { host.remove(); } catch (e) {}
-          }
-        };
-      } catch (err) {
-        failures.push(candidate.name + ': ' + String(err && err.message || err));
-        console.warn('[Wongming Avatar] NPC300302 Spine ' + candidate.name + ' failed:', err);
-        try { host.remove(); } catch (e) {}
-        removeNpc300302RuntimeTags();
-        npc300302Runtime = null;
-      }
+      return {
+        dispose() {
+          try { player && player.dispose(); } catch (e) {}
+          npc300302Player = null;
+          try { host.remove(); } catch (e) {}
+        }
+      };
+    } catch (err) {
+      try { host.remove(); } catch (e) {}
+      throw err;
     }
-
-    throw new Error('NPC300302 所有 Spine runtime 都無法解析：\n' + failures.join('\n'));
   }
 
   async function changeNpc300302Skin() {
@@ -963,11 +880,9 @@
         _engineMode = null;
         await setEngine('2d');
         if (!_renderer) throw new Error('原本角色恢復失敗');
-
         if (document.getElementById('direct-warn')) {
           document.getElementById('direct-warn').style.display = 'none';
         }
-
         stopSpeaking();
         showBubble('已換回原本的角色。');
         return true;
@@ -976,7 +891,6 @@
       stopSpeaking();
       _engineMode = 'spine';
       _renderer = await bootNPC300302();
-
       if (!_renderer) throw new Error('NPC300302 皮膚啟動失敗');
 
       currentSkinName = 'npc300302';
@@ -993,10 +907,9 @@
 
       currentSkinName = switchingBack ? 'npc300302' : 'default';
       _engineMode = null;
-
       try { await setEngine('2d'); } catch (_) {}
-
       stopSpeaking();
+
       const failText = switchingBack
         ? '換回原本的角色失敗，我先維持現在的樣子。'
         : 'NPC300302 載入失敗，我先維持原本的樣子。';
