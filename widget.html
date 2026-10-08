@@ -159,8 +159,8 @@
   let npc300302Player = null;
   const NPC300302_SKEL_URL = 'https://raw.githubusercontent.com/annynn1990/WONGMING-AI/main/npc300302/npc300302.skel';
   const NPC300302_ATLAS_URL = 'https://raw.githubusercontent.com/annynn1990/WONGMING-AI/main/npc300302/npc300302.atlas';
-  const NPC300302_SPINE_JS = 'https://unpkg.com/@esotericsoftware/spine-player@4.2.*/dist/iife/spine-player.min.js';
-  const NPC300302_SPINE_CSS = 'https://unpkg.com/@esotericsoftware/spine-player@4.2.*/dist/spine-player.min.css';
+  const NPC300302_SPINE_JS = 'https://unpkg.com/@esotericsoftware/spine-player@4.1.55/dist/iife/spine-player.min.js';
+  const NPC300302_SPINE_CSS = 'https://unpkg.com/@esotericsoftware/spine-player@4.1.55/dist/spine-player.min.css';
   const TTS_ENDPOINT = 'https://wongming-ai.vercel.app/api/tts';
   const KNOWLEDGE_URL = CFG.get('knowledge') || '';
   if (KNOWLEDGE_URL) { fetch(KNOWLEDGE_URL).then(r => r.json()).then(kb => { if (Array.isArray(kb)) window.KB = kb; }).catch(() => {}); }
