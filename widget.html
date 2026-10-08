@@ -824,6 +824,7 @@
       const player = new window.spine.SpinePlayer(host, {
         skelUrl: NPC300302_SKEL_URL,
         atlasUrl: NPC300302_ATLAS_URL,
+        animation: 'idle',
         premultipliedAlpha: true,
         backgroundColor: '#00000000',
         alpha: true,
@@ -835,7 +836,15 @@
             if (playerInstance.skeleton) {
               playerInstance.skeleton.updateWorldTransform();
             }
-          } catch (e) {}
+            // npc300302 的 skeleton 內有 idle / motion 動畫；明確指定 idle 並循環播放。
+            if (playerInstance.setAnimation) {
+              playerInstance.setAnimation('idle', true);
+            } else if (playerInstance.animationState) {
+              playerInstance.animationState.setAnimation(0, 'idle', true);
+            }
+          } catch (e) {
+            console.warn('[Wongming Avatar] NPC300302 idle animation setup failed:', e);
+          }
           postToParent('ready');
         },
         error: function (_player, msg) {
