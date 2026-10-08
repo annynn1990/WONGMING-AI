@@ -158,10 +158,10 @@
   let npc300302Loading = null;
   let npc300302Player = null;
   let npc300302LoadingPromise = null;
-  const NPC300302_SKEL_URL = new URL('/WONGMING-AI/npc300302/npc300302.skel', location.origin).href;
-  const NPC300302_ATLAS_URL = new URL('/WONGMING-AI/npc300302/npc300302.atlas', location.origin).href;
-  const NPC300302_SPINE_JS = 'https://cdn.jsdelivr.net/npm/@esotericsoftware/spine-player@4.2.86/dist/iife/spine-player.min.js';
-  const NPC300302_SPINE_CSS = 'https://cdn.jsdelivr.net/npm/@esotericsoftware/spine-player@4.2.86/dist/spine-player.min.css';
+  const NPC300302_SKEL_URL = new URL('npc300302/npc300302.skel', location.href).href;
+  const NPC300302_ATLAS_URL = new URL('npc300302/npc300302.atlas', location.href).href;
+  const NPC300302_SPINE_JS = 'https://cdn.jsdelivr.net/npm/@esotericsoftware/spine-player@4.1.11/dist/iife/spine-player.min.js';
+  const NPC300302_SPINE_CSS = 'https://cdn.jsdelivr.net/npm/@esotericsoftware/spine-player@4.1.11/dist/spine-player.min.css';
   const TTS_ENDPOINT = 'https://wongming-ai.vercel.app/api/tts';
   const KNOWLEDGE_URL = CFG.get('knowledge') || '';
   if (KNOWLEDGE_URL) { fetch(KNOWLEDGE_URL).then(r => r.json()).then(kb => { if (Array.isArray(kb)) window.KB = kb; }).catch(() => {}); }
@@ -771,7 +771,7 @@
     return 'application/octet-stream';
   }
 
-  // ===== NPC300302 皮：依成功案例方式載入 Spine 4.2 =====
+  // ===== NPC300302 皮：使用檔案自身標示的 Spine 4.1.11 runtime =====
   async function loadNpc300302Runtime() {
     if (window.spine && window.spine.SpinePlayer) return;
     if (npc300302LoadingPromise) return npc300302LoadingPromise;
@@ -791,9 +791,9 @@
       script.dataset.npc300302Spine = '1';
       script.onload = () => {
         if (window.spine && window.spine.SpinePlayer) resolve();
-        else reject(new Error('Spine 4.2.86 player 載入後沒有 SpinePlayer'));
+        else reject(new Error('Spine 4.1.11 player 載入後沒有 SpinePlayer'));
       };
-      script.onerror = () => reject(new Error('Spine 4.2.86 player 載入失敗'));
+      script.onerror = () => reject(new Error('Spine 4.1.11 player 載入失敗'));
       document.head.appendChild(script);
     }).finally(() => {
       npc300302LoadingPromise = null;
@@ -839,7 +839,7 @@
           postToParent('ready');
         },
         error: function (_player, msg) {
-          console.error('[Wongming Avatar] NPC300302 Spine 4.2 error:', msg);
+          console.error('[Wongming Avatar] NPC300302 Spine 4.1.11 error:', msg);
           try {
             window.__NPC300302_LAST_ERROR__ = String(msg || 'NPC300302 Spine 載入失敗');
           } catch (e) {}
