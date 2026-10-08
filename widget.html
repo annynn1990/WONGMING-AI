@@ -771,6 +771,24 @@
     return 'application/octet-stream';
   }
 
+  // ===== 模型 14：只封鎖來源模型自帶 voice，保留黃名導覽員自己的 TTS =====
+  function installModel14AudioGuard() {
+    if (window.__WM_MODEL14_AUDIO_GUARD__) return;
+    const proto = window.HTMLMediaElement && window.HTMLMediaElement.prototype;
+    if (!proto || !proto.play) return;
+    const originalPlay = proto.play;
+    proto.play = function () {
+      const src = String(this.currentSrc || this.src || '');
+      if (/imuncle\\.github\\.io\\/live2d\\/model\\/liang\\/voice\\//i.test(src)) {
+        try { this.pause(); } catch (e) {}
+        try { this.currentTime = 0; } catch (e) {}
+        return Promise.resolve();
+      }
+      return originalPlay.apply(this, arguments);
+    };
+    window.__WM_MODEL14_AUDIO_GUARD__ = true;
+  }
+
   // ===== 模型 14：imuncle/live2d 的第 14 個模型（liang / Aoba）=====
   const MODEL14_JSON_URL = 'https://imuncle.github.io/live2d/model/liang/2.json';
   const MODEL14_LIVE2D_JS = 'https://imuncle.github.io/live2d/js/live2d.js';
@@ -798,6 +816,7 @@
   }
 
   async function bootModel14() {
+    installModel14AudioGuard();
     await loadModel14Runtime();
 
     const stage = document.getElementById('stage');
@@ -818,6 +837,11 @@
       canvas.style.right = '0';
       canvas.style.bottom = '0';
       canvas.style.transform = 'none';
+      // 原本導覽員採「半身近景」：頭頂約在舞台高度 4% 的位置。
+      // 模型 14 的 Cubism 2 layout 天生較低，因此只把整個模型向上抬約 5% 舞台高度，
+      // 不改模型本身的比例；這樣頭部基準會與第一個導覽員對齊。
+      const lift = Math.round(h * 0.05);
+      canvas.style.transform = 'translateY(' + (-lift) + 'px)';
       canvas.style.transformOrigin = '50% 100%';
     }
 
