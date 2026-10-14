@@ -235,7 +235,7 @@
   let ttsMuted = false, ttsRate = 1.0, ttVoice = null;
   let audioMouth = 0, useAudioMouth = false, audioCtx = null;
   let speakSeq = 0, currentSource = null, currentRaf = 0; // 控制「點第二下打斷第一下」
-  let neuralDisabled = false; // 抓不到神經語音後端就鎖定瀏覽器語音，避免每句都打 404
+  let neuralDisabled = true; // 微軟 Edge TTS 上游目前持續回 403；暫時直接使用瀏覽器語音，避免依賴失效的雲端端點
   const NEURAL_VOICE = 'zh-TW-HsiaoChenNeural'; // 全站固定使用同一個神經女聲
   let recognition = null, listening = false;
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -354,6 +354,11 @@
       if (localized && localized !== text) showBubble(localized);
       if (ttsMuted) return;
       stopSpeaking();
+      // 暫時繞過會回 502 的 Vercel /api/tts（其上游 Edge TTS 回 403），直接播放瀏覽器語音。
+      if (neuralDisabled) {
+        speakBrowser(localized || text);
+        return;
+      }
       await speakNeural(localized || text, myseq);
     } catch (e) {
       if (myseq !== speakSeq || ttsMuted) return;
@@ -445,6 +450,14 @@
     u.onboundary = () => { mouthTarget = 0.5 + Math.random() * 0.5; };
     const stopLip = () => { isSpeaking = false; };
     u.onend = stopLip;
+    u.onerror = (event) => {
+      isSpeaking = false;
+      const reason = event && event.error || 'unknown';
+      console.warn('[Wongming TTS] browser speech error:', reason);
+      if (reason !== 'canceled' && reason !== 'interrupted') {
+        showBubble('瀏覽器語音播放失敗，請檢查電腦是否有可用的中文語音。');
+      }
+    };
     const estMs = Math.min(16000, Math.max(1500, (text.length * 130) / (ttsRate || 1)));
     const fire = () => {
       try { speechSynthesis.resume(); } catch (e) {}
