@@ -26,19 +26,20 @@ function hostOf(u) { try { return new URL(u).host.toLowerCase(); } catch (e) { r
 
 // 來源檢查：只允許「與本服務同網域」或環境變數 TTS_ALLOWED_HOSTS 指定的來源；localhost 放行供開發
 function isAllowed(req) {
-function isAllowed(req) {
-  return true; // 暫時全放行，確認 TTS 能通再補回來
-  // ...
-}
   const self = (req.headers.host || '').toLowerCase();
   const extra = (process.env.TTS_ALLOWED_HOSTS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
   const allow = new Set([self, ...extra]);
-  const ref = req.headers.referer || req.headers.origin || '';
-  const h = hostOf(ref);
-  if (!h) return false;                                   // 沒有來源（curl/腳本）→ 擋
-  if (allow.has(h)) return true;
-  if (/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(h)) return true;
-  return false;
+  const sources = [req.headers.referer, req.headers.origin].filter(Boolean);
+
+  // 必須存在來源標頭，且至少一個來源屬於允許網域。
+  // 同時檢查 Referer 與 Origin，避免隱私政策省略其中一項時誤擋。
+  if (!sources.length) return false;
+  return sources.some((source) => {
+    const h = hostOf(source);
+    if (!h) return false;
+    if (allow.has(h)) return true;
+    return /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(h);
+  });
 }
 
 // 簡易 in-memory 限流：best-effort（Vercel 每個實例各自計數、冷啟動會重置），擋單一 IP 明顯灌爆。
@@ -93,6 +94,8 @@ module.exports = async (req, res) => {
     res.setHeader('Cache-Control', 'public, max-age=86400'); // 同句快取一天
     res.end(buf);
   } catch (e) {
+    // 不記錄使用者朗讀文字，只記錄合成失敗原因，方便排查音色突然切換的根因。
+    console.error('[Wongming TTS] synthesis failed:', e && e.message || e);
     res.statusCode = 502;
     res.end('tts error: ' + (e && e.message || e));
   }
