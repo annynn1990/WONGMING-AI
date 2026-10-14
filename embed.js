@@ -73,7 +73,7 @@
     return null;
   })();
   var base = me ? me.src.replace(/[^/]*$/, '') : '';
-  var widgetUrl = (me && me.getAttribute('data-widget')) || (base + 'widget.html?v=20260926p9');
+  var widgetUrl = (me && me.getAttribute('data-widget')) || (base + 'widget.html?v=20261014voicefix');
   var savedOpen = null;
   try { savedOpen = localStorage.getItem('wm_ai_open'); } catch (e) {}
   var attrOpen = me ? me.getAttribute('data-open') : null;
@@ -92,8 +92,11 @@
     var v = me && me.getAttribute('data-' + k);
     if (v) cfg.set(k, v);
   });
-  // 所有論壇頁統一使用同一個神經語音端點與聲線，避免首頁/版面音色不一致。
-  cfg.set('api', 'https://wongming-ai.vercel.app/api/tts');
+  // 語音端點跟隨 widget 所在網域；預設使用同站 /api/tts，避免寫死特定部署網址。
+  if (!cfg.has('api')) {
+    try { cfg.set('api', new URL('/api/tts', new URL(widgetUrl, location.href).origin).href); }
+    catch (e) { cfg.set('api', 'api/tts'); }
+  }
   cfg.set('voice', 'zh-TW-HsiaoChenNeural');
   var cfgQs = cfg.toString();
   var iframeSrc = widgetUrl + (cfgQs ? (widgetUrl.indexOf('?') < 0 ? '?' : '&') + cfgQs : '');
