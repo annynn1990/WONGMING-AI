@@ -162,7 +162,7 @@
   const NPC300302_ATLAS_URL = new URL('npc300302/npc300302.atlas', location.href).href;
   const NPC300302_SPINE_JS = 'https://cdn.jsdelivr.net/npm/@esotericsoftware/spine-player@4.1.11/dist/iife/spine-player.min.js';
   const NPC300302_SPINE_CSS = 'https://cdn.jsdelivr.net/npm/@esotericsoftware/spine-player@4.1.11/dist/spine-player.min.css';
-  const TTS_ENDPOINT = 'https://wongming-ai.vercel.app/api/tts';
+  const TTS_ENDPOINT = CFG.get('api') || 'api/tts'; // 使用虛擬人所在網域的語音端點，保留可設定能力
   const KNOWLEDGE_URL = CFG.get('knowledge') || '';
   if (KNOWLEDGE_URL) { fetch(KNOWLEDGE_URL).then(r => r.json()).then(kb => { if (Array.isArray(kb)) window.KB = kb; }).catch(() => {}); }
 
