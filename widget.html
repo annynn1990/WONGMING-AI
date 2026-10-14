@@ -235,7 +235,7 @@
   let ttsMuted = false, ttsRate = 1.0, ttVoice = null;
   let audioMouth = 0, useAudioMouth = false, audioCtx = null;
   let speakSeq = 0, currentSource = null, currentRaf = 0; // 控制「點第二下打斷第一下」
-  let neuralDisabled = false; // 優先使用伺服器端 Azure AI Speech Neural；未設定服務時才回退瀏覽器語音
+  // 語音合成統一走 Edge Read Aloud；失敗時不再偷偷改用瀏覽器逐字朗讀。
   const NEURAL_VOICE = 'zh-TW-HsiaoChenNeural'; // 全站固定使用同一個神經女聲
   let recognition = null, listening = false;
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -373,7 +373,6 @@
   // 對外入口：先試官方 Azure AI Speech 神經語音，失敗自動退回瀏覽器語音
   async function speak(text) {
     const myseq = ++speakSeq;
-    let fallbackText = String(text);
     showBubble(text);
     postToParent('speaking', { text });
     try {
@@ -384,29 +383,24 @@
       const localized = (window.WM_I18N && typeof window.WM_I18N.localize === 'function')
         ? await window.WM_I18N.localize(String(text))
         : text;
-      fallbackText = String(localized || text);
       if (myseq !== speakSeq) return;
+      const speechText = String(localized || text);
       if (localized && localized !== text) showBubble(localized);
       if (ttsMuted) return;
       stopSpeaking();
-      // 若官方神經語音已知尚未設定，直接使用瀏覽器語音，避免每句重試。
-      if (neuralDisabled) {
-        speakBrowser(localized || text);
-        return;
-      }
-      await speakNeural(localized || text, myseq);
+      await speakNeural(speechText, myseq);
     } catch (e) {
       if (myseq !== speakSeq || ttsMuted) return;
       const reason = String(e && e.message || e || '');
-      console.warn('[Wongming TTS] neural failed, using browser voice:', reason);
-      // HTTP 503 表示尚未在 Vercel 設定官方語音服務；本分頁只回退一次，避免每句重複等待。
-      if (/http 503/.test(reason)) neuralDisabled = true;
+      console.warn('[Wongming TTS] Edge neural speech failed:', reason);
+      // 不再默默退回瀏覽器逐字朗讀；保留文字並明確提示語音端點故障。
       useAudioMouth = false;
-      speakBrowser(fallbackText || text);
+      isSpeaking = false;
+      showBubble('曉臻神經語音暫時無法連線，請稍後再試。');
     }
   }
 
-  // 官方 Azure AI Speech 神經語音：抓 /api/tts 的 MP3，用 Web Audio 播放並以實際音量驅動嘴型
+  // Microsoft Edge Read Aloud 神經語音：抓取 /api/tts 的 MP3，再以實際音量驅動嘴型
   async function speakNeural(text, seq) {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') { try { await audioCtx.resume(); } catch (e) {} }
