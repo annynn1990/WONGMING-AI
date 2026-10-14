@@ -316,17 +316,50 @@
   // ===== TTS：開口說話 + 對嘴 =====
   function loadVoice() {
     const vs = speechSynthesis.getVoices();
-    const pick = (re) => vs.find(v => re.test(v.name + ' ' + v.lang) && !/Google/i.test(v.name)); // 避開 Chrome 會靜默失敗的 Google 遠端語音
+    const pick = (re, list = vs) =>
+      list.find(v => re.test(v.name + ' ' + v.lang) && !/Google/i.test(v.name))
+      || list.find(v => re.test(v.name + ' ' + v.lang));
+
+    // 保留繁體中文時原本偏好的女聲，作為中文朗讀的優先選項。
     ttVoice =
-         pick(/(HsiaoChen|HsiaoYu|曉臻|曉雨).*zh/i)        // 微軟神經女聲（最自然，若有安裝）
-      || pick(/(Yating|Zhiwei).*zh[-_]TW/i)               // 較新、較不機械的微軟 zh-TW 女聲
-      || pick(/Microsoft.*zh[-_]TW/i)                      // 任何微軟 zh-TW（本地、可靠）
+         pick(/(HsiaoChen|HsiaoYu|曉臻|曉雨).*zh/i)
+      || pick(/(Yating|Zhiwei).*zh[-_]TW/i)
+      || pick(/Microsoft.*zh[-_]TW/i)
       || pick(/zh[-_]TW/i)
       || pick(/^zh/i)
       || vs.find(v => /zh/i.test(v.lang))
       || null;
   }
-  if ('speechSynthesis' in window) { speechSynthesis.onvoiceschanged = loadVoice; loadVoice(); }
+
+  // 依目前翻譯語言選擇同語言的系統聲線；不能再把中文 ttVoice 強塞給日文／韓文。
+  function browserVoiceForLanguage(languageCode) {
+    const vs = ('speechSynthesis' in window) ? speechSynthesis.getVoices() : [];
+    const requested = String(languageCode || 'zh-TW').toLowerCase();
+    const prefix = requested.split('-')[0];
+    const exact = vs.filter(v => String(v.lang || '').toLowerCase() === requested);
+    const sameLanguage = vs.filter(v => String(v.lang || '').toLowerCase().split('-')[0] === prefix);
+    const candidates = exact.length ? exact : sameLanguage;
+    if (!candidates.length) return null;
+
+    const preferredNames = {
+      'zh-tw': /(HsiaoChen|HsiaoYu|Yating|Zhiwei|曉臻|曉雨|Microsoft)/i,
+      'zh-cn': /(Xiaoxiao|Xiaoyi|Microsoft)/i,
+      'en-us': /(Aria|Jenny|Microsoft)/i,
+      'ja-jp': /(Nanami|Haruka|Microsoft|日本語)/i,
+      'ko-kr': /(SunHi|InJoon|Microsoft|한국어)/i
+    };
+    const preference = preferredNames[requested];
+    if (preference) {
+      const preferred = candidates.find(v => preference.test(v.name || '') && !/Google/i.test(v.name || ''));
+      if (preferred) return preferred;
+    }
+    return candidates.find(v => !/Google/i.test(v.name || '')) || candidates[0] || null;
+  }
+
+  if ('speechSynthesis' in window) {
+    speechSynthesis.onvoiceschanged = loadVoice;
+    loadVoice();
+  }
 
   // 中止目前正在講的（神經語音音檔 + 瀏覽器 TTS + 對嘴），給「點第二下打斷第一下」用
   function stopSpeaking() {
@@ -440,12 +473,23 @@
       showBubble('此瀏覽器沒有可用的語音播放功能。');
       return;
     }
+
     const u = new SpeechSynthesisUtterance(text);
-    if (!ttVoice) loadVoice();
-    if (ttVoice) u.voice = ttVoice;
     const guideLang = (window.WM_I18N && typeof window.WM_I18N.getLanguage === 'function')
       ? window.WM_I18N.getLanguage() : 'zh-Hant';
-    u.lang = ({'zh-Hant':'zh-TW','zh-Hans':'zh-CN','en':'en-US','ja':'ja-JP','ko':'ko-KR'}[guideLang]) || ((ttVoice && ttVoice.lang) || 'zh-TW');
+    const speechLang = (window.WM_I18N && typeof window.WM_I18N.getSpeechLanguage === 'function')
+      ? window.WM_I18N.getSpeechLanguage()
+      : ({'zh-Hant':'zh-TW','zh-Hans':'zh-CN','en':'en-US','ja':'ja-JP','ko':'ko-KR'}[guideLang] || 'zh-TW');
+
+    u.lang = speechLang;
+    const languageVoice = browserVoiceForLanguage(speechLang);
+    if (languageVoice) {
+      u.voice = languageVoice;
+    } else if ((speechLang === 'zh-TW' || speechLang === 'zh-CN') && ttVoice) {
+      // 只有中文才允許使用中文後備聲線；日文／韓文未裝聲線時交給瀏覽器依 u.lang 處理。
+      u.voice = ttVoice;
+    }
+
     u.rate = ttsRate; u.pitch = 1.0;
     u.onboundary = () => { mouthTarget = 0.5 + Math.random() * 0.5; };
     const stopLip = () => { isSpeaking = false; };
@@ -455,7 +499,7 @@
       const reason = event && event.error || 'unknown';
       console.warn('[Wongming TTS] browser speech error:', reason);
       if (reason !== 'canceled' && reason !== 'interrupted') {
-        showBubble('瀏覽器語音播放失敗，請檢查電腦是否有可用的中文語音。');
+        showBubble('瀏覽器語音播放失敗，請確認電腦已安裝並啟用對應語言的語音。');
       }
     };
     const estMs = Math.min(16000, Math.max(1500, (text.length * 130) / (ttsRate || 1)));
@@ -475,7 +519,6 @@
       fire();
     }
   }
-
 
   // ===== 大腦：M4 檢索 + M4b（WebLLM）生成 =====
   // 中文不好斷詞，改用「字元 bigram（相鄰兩字）」相似度，對中文很有效、又不用任何函式庫。
