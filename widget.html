@@ -357,12 +357,10 @@
       await speakNeural(localized || text, myseq);
     } catch (e) {
       if (myseq !== speakSeq || ttsMuted) return;
-      // 保持全站固定神經聲線：服務失敗時不改播作業系統任意聲音，避免角色音色突然改變。
-      console.error('[Wongming TTS] neural voice unavailable:', e && e.message || e);
+      console.warn('[Wongming TTS] neural failed, using browser voice:', e && e.message || e);
       useAudioMouth = false;
-      isSpeaking = false;
-      audioMouth = 0;
-      showBubble('語音服務暫時無法使用，請稍後再試。');
+      // 恢復原本的雙路徑：神經語音失敗時，改用瀏覽器已有的中文語音，確保角色仍能發聲。
+      speakBrowser(text);
     }
   }
 
