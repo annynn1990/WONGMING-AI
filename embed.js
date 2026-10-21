@@ -14,6 +14,36 @@
     if (new URLSearchParams(location.search).get('wm_holiday_reader') === '1') return;
   } catch (e) {}
 
+  // 黃名天文台（fid=554）不載入虛擬人；從該版面進入的主題頁也沿用停用狀態。
+  var wmHideForForum554 = false;
+  try {
+    var earlyParams554 = new URLSearchParams(location.search || '');
+    var earlyMod554 = earlyParams554.get('mod') || '';
+    var earlyFid554 = earlyParams554.get('fid') || '';
+    if (/\/bbswm\/forum\.php$/i.test(location.pathname)) {
+      if (earlyMod554 === 'forumdisplay' && earlyFid554 === '554') {
+        wmHideForForum554 = true;
+        try { sessionStorage.setItem('wm_current_forum_fid', '554'); } catch (e) {}
+      } else if (earlyMod554 === 'viewthread') {
+        if (earlyFid554) {
+          wmHideForForum554 = earlyFid554 === '554';
+          try { sessionStorage.setItem('wm_current_forum_fid', earlyFid554); } catch (e) {}
+        } else {
+          try { wmHideForForum554 = sessionStorage.getItem('wm_current_forum_fid') === '554'; } catch (e) {}
+        }
+      }
+    }
+  } catch (e) {}
+  if (wmHideForForum554) {
+    try {
+      var oldAvatarRoot554 = document.getElementById('avatar-widget-root');
+      if (oldAvatarRoot554) oldAvatarRoot554.remove();
+      delete window.AvatarWidget;
+    } catch (e) {}
+    window.__WM_AVATAR_WIDGET_INSTANCE__ = false;
+    return;
+  }
+
   if (document.getElementById('avatar-widget-root') || window.__WM_AVATAR_WIDGET_INSTANCE__) return;
   window.__WM_AVATAR_WIDGET_INSTANCE__ = true;
 
