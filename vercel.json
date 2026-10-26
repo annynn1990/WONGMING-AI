@@ -25,5 +25,37 @@
     {"src":"/museum/?","dest":"/museum.html"},
     {"src":"/","dest":"/index.html"},
     {"handle":"filesystem"}
+  ],
+  "headers": [
+    {
+      "source": "/embed.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=300, stale-while-revalidate=86400" }
+      ]
+    },
+    {
+      "source": "/widget.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=300, stale-while-revalidate=86400" }
+      ]
+    },
+    {
+      "source": "/i18n.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" }
+      ]
+    },
+    {
+      "source": "/translation-page.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" }
+      ]
+    },
+    {
+      "source": "/knowledge.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" }
+      ]
+    }
   ]
 }

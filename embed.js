@@ -103,16 +103,20 @@
     return null;
   })();
   var base = me ? me.src.replace(/[^/]*$/, '') : '';
-  var widgetUrl = (me && me.getAttribute('data-widget')) || (base + 'widget.html?v=20261014edgetts21');
-  var savedOpen = null;
-  try { savedOpen = localStorage.getItem('wm_ai_open'); } catch (e) {}
+  var widgetUrl = (me && me.getAttribute('data-widget')) || (base + 'widget.html?v=20261026quota1');
+  // 預設先收合；只在同一分頁已開啟，或嵌入端明確設定 data-open="true" 時自動載入。
+  // 用 sessionStorage 保留同一分頁的操作狀態，不再沿用舊的跨工作階段 localStorage 開啟值。
+  var savedOpenSession = null;
+  try { savedOpenSession = sessionStorage.getItem('wm_ai_open_session'); } catch (e) {}
   var attrOpen = me ? me.getAttribute('data-open') : null;
   var startOpen = bootstrapStartOpen !== null
     ? bootstrapStartOpen
-    : (savedOpen === '1' ? true : (savedOpen === '0' ? false : attrOpen !== 'false')); // 預設展開，可跨頁保留狀態
+    : (savedOpenSession === '1' ? true : (savedOpenSession === '0' ? false : attrOpen === 'true'));
   var widgetOpen = startOpen;
+  var iframeLoaded = false;
   var widgetReady = false;
   var widgetReadyHandled = false;
+  var pendingSayText = null;
   var widgetHandshakeTimers = [];
   var widgetOrigin = (function () { try { return new URL(widgetUrl, location.href).origin; } catch (e) { return '*'; } })();
 
@@ -145,34 +149,53 @@
 
   // 3) iframe（虛擬人本體）
   var iframe = document.createElement('iframe');
-  iframe.src = iframeSrc;
+  // iframe 暫不設定 src；setOpen(true) 時才載入虛擬人資源。
   iframe.title = 'AI 虛擬人助理';                 // 無障礙：給 iframe 一個名字
   iframe.setAttribute('allow', 'microphone; autoplay'); // 語音輸入 + 音訊播放
   iframe.setAttribute('allowtransparency', 'true');
   iframe.style.cssText = 'width:100%;height:100%;border:0;background:transparent;color-scheme:normal;';
 
-  // 獨立國際化模組：翻譯層失效時不影響虛擬人本體。
-  try {
-    var i18nScript = document.createElement('script');
-    i18nScript.src = 'https://wongming-ai.vercel.app/i18n.js?v=20260925c';
-    i18nScript.async = true;
-    document.head.appendChild(i18nScript);
-  } catch (e) {}
-
-  try {
-    var translationPageScript = document.createElement('script');
-    translationPageScript.src = 'https://wongming-ai.vercel.app/translation-page.js?v=20260925e';
-    translationPageScript.async = true;
-    translationPageScript.onload = function () {
-      try {
-        if (window.__WM_TRANSLATE_PENDING__ && window.__WM_TRANSLATE_PAGE__) {
+  // 整頁翻譯程式只在訪客主動選擇頁面語言時載入，避免每次論壇翻頁都多抓一支 script。
+  var translationPageScriptLoading = false;
+  function loadTranslationPageScript(target) {
+    var requested = String(target || '');
+    if (['zh-Hant', 'zh-Hans', 'en', 'ja', 'ko'].indexOf(requested) < 0) return;
+    if (typeof window.__WM_TRANSLATE_PAGE__ === 'function') {
+      window.__WM_TRANSLATE_PAGE__(requested);
+      return;
+    }
+    window.__WM_TRANSLATE_PENDING__ = requested;
+    if (translationPageScriptLoading) return;
+    translationPageScriptLoading = true;
+    try {
+      var translationPageScript = document.createElement('script');
+      translationPageScript.src = base + 'translation-page.js?v=20261026lazy1';
+      translationPageScript.async = true;
+      translationPageScript.onload = function () {
+        translationPageScriptLoading = false;
+        try {
           var pendingTarget = window.__WM_TRANSLATE_PENDING__;
-          window.__WM_TRANSLATE_PENDING__ = '';
-          window.__WM_TRANSLATE_PAGE__(pendingTarget);
-        }
-      } catch (e) {}
-    };
-    document.head.appendChild(translationPageScript);
+          if (pendingTarget && window.__WM_TRANSLATE_PAGE__) {
+            window.__WM_TRANSLATE_PENDING__ = '';
+            window.__WM_TRANSLATE_PAGE__(pendingTarget);
+          }
+        } catch (e) {}
+      };
+      translationPageScript.onerror = function () {
+        translationPageScriptLoading = false;
+      };
+      document.head.appendChild(translationPageScript);
+    } catch (e) {
+      translationPageScriptLoading = false;
+    }
+  }
+
+  // 保留曾主動選擇整頁翻譯的訪客偏好；未選擇過的人不載入翻譯程式。
+  try {
+    var savedPageLanguage = localStorage.getItem('wm_site_language_manual') || '';
+    if (savedPageLanguage && savedPageLanguage !== 'zh-Hant') {
+      loadTranslationPageScript(savedPageLanguage);
+    }
   } catch (e) {}
 
   // 4) 收合後的小泡泡（iframe 收起時顯示，點它再展開）
@@ -193,11 +216,17 @@
   root.appendChild(bubble);
   (document.body || document.documentElement).appendChild(root);
 
-  // 5) 展開 / 收合
+  // 5) 展開 / 收合。iframe 第一次展開才會開始載入，之後重複展開不重載。
+  function ensureIframeLoaded() {
+    if (iframeLoaded) return;
+    iframeLoaded = true;
+    iframe.src = iframeSrc;
+  }
   function setOpen(open) {
     widgetOpen = !!open;
-    try { localStorage.setItem('wm_ai_open', open ? '1' : '0'); } catch (e) {}
+    try { sessionStorage.setItem('wm_ai_open_session', open ? '1' : '0'); } catch (e) {}
     if (open) {
+      ensureIframeLoaded();
       root.style.width = EXPANDED.w + 'px';
       root.style.height = EXPANDED.h + 'px';
       iframe.style.display = 'block';
@@ -619,14 +648,10 @@
 
     // 國際化模組：只處理翻譯，不介入導覽員核心。
     if (d.ns === 'avatar-widget' && d.type === 'action' && d.action && d.action.action === 'translate') {
+      // 這個跨頁面訊息只接受來自虛擬人 iframe 的請求。
+      if (widgetOrigin !== '*' && e.origin !== widgetOrigin) return;
       var target = String(d.action.target || 'en');
-      if (['zh-Hant','zh-Hans','en','ja','ko'].indexOf(target) >= 0) {
-        if (window.__WM_TRANSLATE_PAGE__) {
-          window.__WM_TRANSLATE_PAGE__(target);
-        } else {
-          window.__WM_TRANSLATE_PENDING__ = target;
-        }
-      }
+      loadTranslationPageScript(target);
       return;
     }
 
@@ -669,6 +694,11 @@
         }, 3750);
         return;
       }
+      if (pendingSayText !== null && iframe.contentWindow) {
+        var queuedSayText = pendingSayText;
+        pendingSayText = null;
+        iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'say', text: queuedSayText }, widgetOrigin);
+      }
       (async function () {
         startHolidaySource();
         var ctx = await preparePageContext();
@@ -694,9 +724,13 @@
     open: function () { setOpen(true); },
     close: function () { setOpen(false); },
     say: function (text) {
+      var safeText = String(text || '').slice(0, 600);
       setOpen(true);
-      iframe.contentWindow && iframe.contentWindow.postMessage(
-        { ns: NS_OUT, type: 'say', text: String(text || '').slice(0, 600) }, widgetOrigin);
+      if (widgetReady && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({ ns: NS_OUT, type: 'say', text: safeText }, widgetOrigin);
+      } else {
+        pendingSayText = safeText;
+      }
     }
   };
 })();

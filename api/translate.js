@@ -1,5 +1,34 @@
 // Public translation proxy for Wongming guide.
 // No GROQ_API_KEY or user-provided API key is required.
+// Best-effort per-instance throttling helps stop accidental loops and simple abuse.
+// For hard cross-instance limits, configure Vercel Firewall/Spend Management.
+const RATE_WINDOW_MS = 60 * 1000;
+const RATE_LIMIT = 30;
+const requestHits = new Map();
+
+function getClientIp(req) {
+  return String(req.headers['x-forwarded-for'] || '').split(',')[0].trim()
+    || String(req.headers['x-real-ip'] || '').trim()
+    || 'unknown';
+}
+
+function isRateLimited(req) {
+  const ip = getClientIp(req);
+  const now = Date.now();
+  let entry = requestHits.get(ip);
+  if (!entry || now > entry.reset) {
+    entry = { count: 0, reset: now + RATE_WINDOW_MS };
+    requestHits.set(ip, entry);
+  }
+  entry.count++;
+  if (requestHits.size > 5000) {
+    for (const [key, value] of requestHits) {
+      if (now > value.reset) requestHits.delete(key);
+    }
+  }
+  return entry.count > RATE_LIMIT;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -7,6 +36,10 @@ export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (isRateLimited(req)) {
+    res.setHeader('Retry-After', '60');
+    return res.status(429).json({ error: 'Rate limited. Please retry in 60 seconds.' });
+  }
 
   const body = req.body || {};
   const target = String(body.target || 'en');

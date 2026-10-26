@@ -55,6 +55,9 @@ export default async function handler(req, res) {
     }
   }
 
+  // 語言偵測對同一瀏覽器通常穩定，允許瀏覽器快取一小時，避免論壇每次換頁都呼叫 Function。
+  // shrine=1/2 的讀寫路徑仍維持 no-store。
+  res.setHeader('Cache-Control', 'private, max-age=3600');
   const country = String(req.headers['x-vercel-ip-country'] || req.headers['x-country-code'] || '').toUpperCase();
   const accept = String(req.headers['accept-language'] || '').toLowerCase();
   let language = '';
