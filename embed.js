@@ -53,10 +53,11 @@
   var bootstrapForumFid = '';
   var bootstrapBlocked55 = false;
   try {
-    var saved = localStorage.getItem('wm_ai_open');
+    // 不讀取舊的跨工作階段開啟值，否則會繞過延遲載入。
+    var savedSession = sessionStorage.getItem('wm_ai_open_session');
     var me0 = document.currentScript || null;
     var attrOpen0 = me0 ? me0.getAttribute('data-open') : null;
-    bootstrapStartOpen = saved === '1' ? true : (saved === '0' ? false : attrOpen0 !== 'false');
+    bootstrapStartOpen = savedSession === '1' ? true : (savedSession === '0' ? false : attrOpen0 === 'true');
     var search0 = location.search || '';
     var fidMatch0 = search0.match(/[?&]fid=(\d+)/i);
     if (fidMatch0) {
