@@ -1,6 +1,5 @@
 (function(){
 'use strict';
-var API='https://wongming-ai.vercel.app';
 var LANG={'zh-Hant':'繁體中文','zh-Hans':'简体中文','en':'English','ja':'日本語','ko':'한국어'};
 var VOICE={'zh-Hant':'zh-TW-HsiaoChenNeural','zh-Hans':'zh-CN-XiaoxiaoNeural','en':'en-US-AriaNeural','ja':'ja-JP-NanamiNeural','ko':'ko-KR-SunHiNeural'};
 var UI={
