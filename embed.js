@@ -104,7 +104,8 @@
     return null;
   })();
   var base = me ? me.src.replace(/[^/]*$/, '') : '';
-  var widgetUrl = (me && me.getAttribute('data-widget')) || (base + 'widget.html?v=20261028static1');
+  var widgetOverride = me ? (me.getAttribute('data-widget') || '') : '';
+  var widgetUrl = (widgetOverride && !/wongming-ai\.vercel\.app/i.test(widgetOverride)) ? widgetOverride : (base + 'widget.html?v=20261028static1');
   // 預設先收合；只在同一分頁已開啟，或嵌入端明確設定 data-open="true" 時自動載入。
   // 用 sessionStorage 保留同一分頁的操作狀態，不再沿用舊的跨工作階段 localStorage 開啟值。
   var savedOpenSession = null;
@@ -566,7 +567,7 @@
       frame.setAttribute('aria-hidden', 'true');
       frame.tabIndex = -1;
       frame.style.cssText = 'position:fixed;width:1px;height:1px;left:-10000px;top:-10000px;border:0;opacity:0;pointer-events:none;';
-      frame.src = 'https://wongming-ai.vercel.app/holiday-source.html?v=20260925';
+      frame.src = base + 'holiday-source.html?v=20261028static1';
       (document.body || document.documentElement).appendChild(frame);
 
       setTimeout(function () {
