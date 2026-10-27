@@ -132,11 +132,13 @@
 
   // 把可設定項帶進 widget：皮=model / 肉的語音後端=api / 內容=knowledge / 聲線=voice
   var cfg = new URLSearchParams();
-  ['model', 'api', 'knowledge'].forEach(function (k) {
+  ['model', 'knowledge'].forEach(function (k) {
     var v = me && me.getAttribute('data-' + k);
-    if (v && !(k === 'api' && /wongming-ai\.vercel\.app/i.test(v))) cfg.set(k, v);
+    if (v) cfg.set(k, v);
   });
-  // 不預設連線雲端 TTS。未明確指定非 Vercel API 時，widget 會使用瀏覽器內建語音。
+  // 神經語音使用原本的 Vercel API；Vercel 回應用量限制或其他錯誤時由 widget 自動退回瀏覽器語音。
+  var ttsEndpoint = me && me.getAttribute('data-api');
+  cfg.set('api', ttsEndpoint || 'https://wongming-ai.vercel.app/api/tts');
   cfg.set('voice', 'zh-TW-HsiaoChenNeural');
   var cfgQs = cfg.toString();
   var iframeSrc = widgetUrl + (cfgQs ? (widgetUrl.indexOf('?') < 0 ? '?' : '&') + cfgQs : '');
