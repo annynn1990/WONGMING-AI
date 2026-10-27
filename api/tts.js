@@ -28,7 +28,8 @@ function hostOf(u) { try { return new URL(u).host.toLowerCase(); } catch (e) { r
 function isAllowed(req) {
   const self = (req.headers.host || '').toLowerCase();
   const extra = (process.env.TTS_ALLOWED_HOSTS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
-  const allow = new Set([self, ...extra]);
+  // Allow the official static frontend hosted on GitHub Pages.
+  const allow = new Set([self, 'annynn1990.github.io', ...extra]);
   const sources = [req.headers.referer, req.headers.origin].filter(Boolean);
 
   // 必須存在來源標頭，且至少一個來源屬於允許網域。
