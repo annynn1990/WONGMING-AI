@@ -105,7 +105,10 @@
   })();
   var base = me ? me.src.replace(/[^/]*$/, '') : '';
   var widgetOverride = me ? (me.getAttribute('data-widget') || '') : '';
-  var widgetUrl = (widgetOverride && !/wongming-ai\.vercel\.app/i.test(widgetOverride)) ? widgetOverride : (base + 'widget.html?v=20261028static1');
+  // HTML 不可用 jsDelivr 提供（它會以 text/plain 回傳），改用正確 MIME 的 rawcdn.githack。
+  var widgetUrl = (widgetOverride && !/wongming-ai\.vercel\.app/i.test(widgetOverride))
+    ? widgetOverride
+    : 'https://rawcdn.githack.com/annynn1990/WONGMING-AI/e73b497e3940d2fead0c14df847713f6c26ef8a6/widget.html?v=20261028static2';
   // 預設先收合；只在同一分頁已開啟，或嵌入端明確設定 data-open="true" 時自動載入。
   // 用 sessionStorage 保留同一分頁的操作狀態，不再沿用舊的跨工作階段 localStorage 開啟值。
   var savedOpenSession = null;
@@ -567,7 +570,7 @@
       frame.setAttribute('aria-hidden', 'true');
       frame.tabIndex = -1;
       frame.style.cssText = 'position:fixed;width:1px;height:1px;left:-10000px;top:-10000px;border:0;opacity:0;pointer-events:none;';
-      frame.src = base + 'holiday-source.html?v=20261028static1';
+      frame.src = 'https://rawcdn.githack.com/annynn1990/WONGMING-AI/e73b497e3940d2fead0c14df847713f6c26ef8a6/holiday-source.html?v=20261028static2';
       (document.body || document.documentElement).appendChild(frame);
 
       setTimeout(function () {
