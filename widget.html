@@ -162,7 +162,7 @@
   const NPC300302_ATLAS_URL = new URL('npc300302/npc300302.atlas', location.href).href;
   const NPC300302_SPINE_JS = 'https://cdn.jsdelivr.net/npm/@esotericsoftware/spine-player@4.1.11/dist/iife/spine-player.min.js';
   const NPC300302_SPINE_CSS = 'https://cdn.jsdelivr.net/npm/@esotericsoftware/spine-player@4.1.11/dist/spine-player.min.css';
-  const TTS_ENDPOINT = CFG.get('api') || ''; // 預設純前端語音，不呼叫雲端 TTS
+  const TTS_ENDPOINT = CFG.get('api') || 'https://wongming-ai.vercel.app/api/tts'; // Vercel 神經語音；失敗時自動退回瀏覽器語音
   const KNOWLEDGE_URL = CFG.get('knowledge') || '';
   if (KNOWLEDGE_URL) { fetch(KNOWLEDGE_URL).then(r => r.json()).then(kb => { if (Array.isArray(kb)) window.KB = kb; }).catch(() => {}); }
 
@@ -403,10 +403,9 @@
       if (myseq !== speakSeq || ttsMuted) return;
       const reason = String(e && e.message || e || '');
       console.warn('[Wongming TTS] Edge neural speech failed:', reason);
-      // 不再默默退回瀏覽器逐字朗讀；保留文字並明確提示語音端點故障。
-      useAudioMouth = false;
-      isSpeaking = false;
-      showBubble('曉臻神經語音暫時無法連線，請稍後再試。');
+      // 神經語音連線失敗時，退回瀏覽器內建語音，避免導覽完全無聲。
+      console.warn('[Wongming TTS] falling back to browser speech:', reason);
+      speakBrowser(String(text));
     }
   }
 
