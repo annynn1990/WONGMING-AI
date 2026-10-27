@@ -176,7 +176,7 @@
     try {
       var translationPageScript = document.createElement('script');
       translationPageScript.charset = 'utf-8';
-      translationPageScript.src = base + 'translation-page.js?v=20261028pages2';
+      translationPageScript.src = base + 'translation-page.js?v=20261028pages3';
       translationPageScript.async = true;
       translationPageScript.onload = function () {
         translationPageScriptLoading = false;
@@ -197,14 +197,8 @@
     }
   }
 
-  // 保留曾主動選擇整頁翻譯的訪客偏好；未選擇過的人不載入翻譯程式。
-  try {
-    var savedPageLanguage = localStorage.getItem('wm_site_language_manual') || '';
-    if (savedPageLanguage && savedPageLanguage !== 'zh-Hant') {
-      loadTranslationPageScript(savedPageLanguage);
-    }
-  } catch (e) {}
-
+  // 不在頁面載入時自動顯示翻譯提示；只有使用者在虛擬人中主動選擇頁面語言時才觸發。
+  
   // 4) 收合後的小泡泡（iframe 收起時顯示，點它再展開）
   var bubble = document.createElement('button');
   bubble.type = 'button';
