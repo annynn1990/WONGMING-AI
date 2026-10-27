@@ -104,7 +104,7 @@
     return null;
   })();
   var base = me ? me.src.replace(/[^/]*$/, '') : '';
-  var widgetUrl = (me && me.getAttribute('data-widget')) || (base + 'widget.html?v=20261026quota1');
+  var widgetUrl = (me && me.getAttribute('data-widget')) || (base + 'widget.html?v=20261028static1');
   // 預設先收合；只在同一分頁已開啟，或嵌入端明確設定 data-open="true" 時自動載入。
   // 用 sessionStorage 保留同一分頁的操作狀態，不再沿用舊的跨工作階段 localStorage 開啟值。
   var savedOpenSession = null;
@@ -125,13 +125,9 @@
   var cfg = new URLSearchParams();
   ['model', 'api', 'knowledge'].forEach(function (k) {
     var v = me && me.getAttribute('data-' + k);
-    if (v) cfg.set(k, v);
+    if (v && !(k === 'api' && /wongming-ai\.vercel\.app/i.test(v))) cfg.set(k, v);
   });
-  // 語音端點跟隨 widget 所在網域；預設使用同站 /api/tts，避免寫死特定部署網址。
-  if (!cfg.has('api')) {
-    try { cfg.set('api', new URL('/api/tts', new URL(widgetUrl, location.href).origin).href); }
-    catch (e) { cfg.set('api', 'api/tts'); }
-  }
+  // 不預設連線雲端 TTS。未明確指定非 Vercel API 時，widget 會使用瀏覽器內建語音。
   cfg.set('voice', 'zh-TW-HsiaoChenNeural');
   var cfgQs = cfg.toString();
   var iframeSrc = widgetUrl + (cfgQs ? (widgetUrl.indexOf('?') < 0 ? '?' : '&') + cfgQs : '');
@@ -170,7 +166,7 @@
     translationPageScriptLoading = true;
     try {
       var translationPageScript = document.createElement('script');
-      translationPageScript.src = base + 'translation-page.js?v=20261026lazy1';
+      translationPageScript.src = base + 'translation-page.js?v=20261028static1';
       translationPageScript.async = true;
       translationPageScript.onload = function () {
         translationPageScriptLoading = false;
