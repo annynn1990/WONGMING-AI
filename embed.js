@@ -112,7 +112,7 @@
     try { widgetUrl = new URL(widgetOverride, base || 'https://annynn1990.github.io/WONGMING-AI/').toString(); } catch (e) {}
   }
   if (!widgetUrl) {
-    widgetUrl = (base || 'https://annynn1990.github.io/WONGMING-AI/') + 'widget.html?v=20261028pages1';
+    widgetUrl = (base || 'https://annynn1990.github.io/WONGMING-AI/') + 'widget.html?v=20261028pages2';
   }
   // 預設先收合；只在同一分頁已開啟，或嵌入端明確設定 data-open="true" 時自動載入。
   // 用 sessionStorage 保留同一分頁的操作狀態，不再沿用舊的跨工作階段 localStorage 開啟值。
@@ -444,6 +444,7 @@
   }
   function detectForumArea() {
     var fid = getForumFid();
+    if (fid === '235') return '郡政府';
     if (fid === '88') return '皇宮';
     if (fid === '92') return '內閣';
     if (fid === '90') return '國會';
@@ -530,6 +531,59 @@
     return { count: titles.length, titles: titles.slice(0, 8) };
   }
 
+  // 只從目前登入者的帳戶/導覽區域判斷用戶組，避免把主題內容裡提到「公民」誤認成訪客身分。
+  function wmIsCitizenUserGroup() {
+    var accountSelectors = [
+      '#um',
+      '#toptb',
+      '#hd .p_pop',
+      '#hd .vwmy',
+      '#hd .user-info',
+      '#hd .userinfo',
+      '.header-user',
+      '.user-menu'
+    ];
+
+    function isCitizenLabel(value) {
+      var text = String(value || '').replace(/\s+/g, ' ').trim();
+      return text === '公民' ||
+        /^(?:用戶組|用户组|會員組|会员组|用戶組別|用户组别)\s*[:：]\s*公民$/.test(text) ||
+        text === '公民用戶組' || text === '公民用户组';
+    }
+
+    function isCitizenNode(node) {
+      if (!node) return false;
+      var attrs = ['title', 'aria-label', 'alt', 'data-usergroup', 'data-group', 'data-grouptitle'];
+      for (var a = 0; a < attrs.length; a++) {
+        if (isCitizenLabel(node.getAttribute && node.getAttribute(attrs[a]))) return true;
+      }
+      return isCitizenLabel(node.innerText || node.textContent || '');
+    }
+
+    var roots = [];
+    for (var i = 0; i < accountSelectors.length; i++) {
+      var root = document.querySelector(accountSelectors[i]);
+      if (!root || roots.indexOf(root) >= 0) continue;
+      roots.push(root);
+      if (isCitizenNode(root)) return true;
+      var nodes = root.querySelectorAll('a,span,em,strong,small,b,i,li,dt,dd,td,div,img,[title],[aria-label],[alt],[data-usergroup],[data-group],[data-grouptitle]');
+      for (var j = 0; j < nodes.length; j++) {
+        if (isCitizenNode(nodes[j])) return true;
+      }
+    }
+
+    // 部分 Discuz 佈景會把用戶組名稱放在帳戶列的群組標籤內。
+    var markers = document.querySelectorAll(
+      '#um .grouptitle, #um .usergroup, #um .user-group, #um [class*="group"], ' +
+      '#toptb .grouptitle, #toptb .usergroup, #toptb .user-group, ' +
+      '#hd .grouptitle, #hd .usergroup, #hd .user-group'
+    );
+    for (var k = 0; k < markers.length; k++) {
+      if (isCitizenNode(markers[k])) return true;
+    }
+    return false;
+  }
+
   function getForumGreeting() {
     var fid = getForumFid();
     if (detectForumArea() === '論壇首頁') {
@@ -554,6 +608,11 @@
       return parts.join(' ');
     }
     if (detectForumArea() === '論壇首頁' && wmTodayHolidayGreeting) return wmTodayHolidayGreeting;
+    if (fid === '235') {
+      return wmIsCitizenUserGroup()
+        ? '郡政府隨時幫助您！'
+        : '執政官您好，歡迎回到郡政府，有什麼指示嗎？';
+    }
     if (fid && WM_FORUM_GREETINGS[fid]) return WM_FORUM_GREETINGS[fid];
     var title = (document.title || '').replace(/[-|｜].*$/, '').trim();
     if (fid && title) return '現在我們來到「' + title + '」，這裡有自己的主題與特色。你可以先看看目前的討論，也可以直接問我這個版面是做什麼的。';
