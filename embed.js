@@ -175,7 +175,8 @@
     translationPageScriptLoading = true;
     try {
       var translationPageScript = document.createElement('script');
-      translationPageScript.src = base + 'translation-page.js?v=20261028static1';
+      translationPageScript.charset = 'utf-8';
+      translationPageScript.src = base + 'translation-page.js?v=20261028pages2';
       translationPageScript.async = true;
       translationPageScript.onload = function () {
         translationPageScriptLoading = false;
